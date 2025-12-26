@@ -1,0 +1,23 @@
+# ====================================================================
+# SYND_GEST - Configuration Apache pour MVC
+# ====================================================================
+
+# Définir index.php comme page par défaut
+DirectoryIndex index.php
+
+# Autoriser l'accès
+Options -Indexes +FollowSymLinks
+
+# Activer le moteur de réécriture
+RewriteEngine On
+RewriteBase /Synd_Gest/public/
+
+# Rediriger toutes les requêtes vers index.php sauf les fichiers existants
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+
+# Protéger les fichiers sensibles
+<FilesMatch "\.(htaccess|htpasswd|ini|log|sh)$">
+    Require all denied
+</FilesMatch>

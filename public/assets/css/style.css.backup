@@ -1,0 +1,247 @@
+/**
+ * ====================================================================
+ * SYND_GEST - Styles CSS personnalisés
+ * ====================================================================
+ * Ce fichier contient les styles de base qui peuvent être facilement
+ * remplacés par des styles personnalisés avancés
+ */
+
+/* ====================================================================
+   VARIABLES CSS (facilement modifiables)
+   ==================================================================== */
+:root {
+    /* Couleurs principales */
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+    
+    /* Couleurs de texte */
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-light: #f8f9fa;
+    
+    /* Couleurs de fond */
+    --bg-light: #f8f9fa;
+    --bg-white: #ffffff;
+    --bg-dark: #212529;
+    
+    /* Bordures */
+    --border-color: #dee2e6;
+    --border-radius: 0.375rem;
+    
+    /* Ombres */
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+    
+    /* Police */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ====================================================================
+   STYLES GÉNÉRAUX
+   ==================================================================== */
+body {
+    font-family: var(--font-family);
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    background-color: var(--bg-light);
+}
+
+/* ====================================================================
+   PAGE D'AUTHENTIFICATION
+   ==================================================================== */
+.auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem 0;
+}
+
+.auth-card {
+    background: var(--bg-white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    max-width: 450px;
+    width: 100%;
+}
+
+.auth-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: var(--text-light);
+    padding: 2rem;
+    text-align: center;
+}
+
+.auth-header .logo {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.auth-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.auth-body {
+    padding: 2rem;
+}
+
+.auth-footer {
+    background-color: var(--bg-light);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+}
+
+/* ====================================================================
+   FORMULAIRES
+   ==================================================================== */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.input-group-text {
+    background-color: var(--bg-light);
+    border-color: var(--border-color);
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+/* ====================================================================
+   BOUTONS
+   ==================================================================== */
+.btn {
+    font-weight: 500;
+    border-radius: var(--border-radius);
+    padding: 0.5rem 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* ====================================================================
+   ALERTES
+   ==================================================================== */
+.alert {
+    border-radius: var(--border-radius);
+    border: none;
+    padding: 1rem 1.25rem;
+}
+
+.alert i {
+    font-size: 1.1rem;
+}
+
+/* ====================================================================
+   LIENS
+   ==================================================================== */
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
+
+/* ====================================================================
+   CHECKBOX ET RADIO
+   ==================================================================== */
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* ====================================================================
+   ANIMATIONS
+   ==================================================================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease;
+}
+
+/* ====================================================================
+   UTILITAIRES
+   ==================================================================== */
+.text-muted {
+    color: var(--text-secondary) !important;
+}
+
+.text-small {
+    font-size: 0.875rem;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* ====================================================================
+   RESPONSIVE
+   ==================================================================== */
+@media (max-width: 576px) {
+    .auth-wrapper {
+        padding: 1rem;
+    }
+    
+    .auth-header {
+        padding: 1.5rem;
+    }
+    
+    .auth-body {
+        padding: 1.5rem;
+    }
+    
+    .auth-footer {
+        padding: 1rem 1.5rem;
+    }
+}
+
+/* ====================================================================
+   NOTE: Pour remplacer ces styles par des styles personnalisés
+   avancés, créez un nouveau fichier CSS (par exemple custom.css)
+   et incluez-le après style.css dans header.php
+   ==================================================================== */

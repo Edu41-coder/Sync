@@ -1,0 +1,370 @@
+/**
+ * Styles pour la carte Leaflet.js
+ * Résidences Seniors - Synd_Gest
+ */
+
+/* ===========================
+   DÉSACTIVER LES ICÔNES PAR DÉFAUT DE LEAFLET
+   =========================== */
+/* Masquer les images PNG de marqueurs par défaut */
+.leaflet-marker-icon img {
+    display: none !important;
+}
+
+/* Forcer l'affichage des divIcon personnalisés */
+.leaflet-div-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+/* ===========================
+   CARTE PRINCIPALE
+   =========================== */
+#map {
+    height: 600px;
+    width: 100%;
+    border-radius: 0;
+    z-index: 1;
+}
+
+/* ===========================
+   PERSONNALISATION DES POPUPS - FOND BLANC OPAQUE
+   =========================== */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-content-wrapper * {
+    background-color: #ffffff !important;
+    opacity: 1 !important;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: 8px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    padding: 0 !important;
+    border: 2px solid #dee2e6 !important;
+}
+
+.leaflet-popup-content {
+    margin: 15px !important;
+    font-family: inherit !important;
+    line-height: 1.5 !important;
+    background-color: #ffffff !important;
+    opacity: 1 !important;
+}
+
+.leaflet-popup-tip {
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.3) !important;
+    background-color: #ffffff !important;
+    opacity: 1 !important;
+    border: 2px solid #dee2e6 !important;
+}
+
+/* Forcer le fond blanc sur tous les éléments du popup */
+.leaflet-popup {
+    background-color: #ffffff !important;
+}
+
+.leaflet-popup-close-button {
+    background-color: #ffffff !important;
+}
+
+/* Titre du popup */
+.leaflet-popup-content h6 {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+/* Séparateurs dans le popup */
+.leaflet-popup-content hr {
+    margin: 0.5rem 0;
+    opacity: 0.1;
+}
+
+/* Liens dans le popup */
+.leaflet-popup-content a {
+    text-decoration: none;
+}
+
+.leaflet-popup-content a:hover {
+    text-decoration: none;
+    opacity: 0.9;
+}
+
+/* ===========================
+   MARQUEURS PERSONNALISÉS - BLEU ROND OPAQUE ET GRAND
+   =========================== */
+.custom-marker,
+.custom-marker-blue,
+.custom-marker-blue-large {
+    animation: markerBounce 0.5s ease-out !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+}
+
+.custom-marker-blue > div,
+.custom-marker-blue-large > div {
+    opacity: 1 !important;
+    background-color: #0d6efd !important;
+}
+
+/* Forcer l'affichage bleu opaque - TOUS les marqueurs Leaflet */
+.leaflet-marker-icon {
+    opacity: 1 !important;
+    background: none !important;
+}
+
+.leaflet-marker-icon div {
+    background: #0d6efd !important;
+    background-color: #0d6efd !important;
+    opacity: 1 !important;
+}
+
+/* Cibler spécifiquement les marqueurs personnalisés */
+.leaflet-marker-icon.custom-marker-blue-large,
+.leaflet-marker-icon.custom-marker-blue,
+.leaflet-marker-icon.custom-marker {
+    background: transparent !important;
+    border: none !important;
+}
+
+.leaflet-marker-icon.custom-marker-blue-large > div,
+.leaflet-marker-icon.custom-marker-blue > div,
+.leaflet-marker-icon.custom-marker > div {
+    background: #0d6efd !important;
+    background-color: #0d6efd !important;
+}
+
+/* Animation d'apparition des marqueurs */
+@keyframes markerBounce {
+    0% {
+        transform: translateY(-20px) scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(0) scale(1.1);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Effet hover sur les marqueurs */
+.custom-marker:hover {
+    z-index: 1000 !important;
+    filter: brightness(1.1);
+}
+
+/* ===========================
+   CONTRÔLES DE LA CARTE
+   =========================== */
+.leaflet-control-zoom {
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-control-zoom a {
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    font-size: 18px;
+}
+
+.leaflet-control-zoom a:hover {
+    background-color: #f8f9fa;
+}
+
+/* ===========================
+   BOUTONS DE CONTRÔLE PERSONNALISÉS
+   =========================== */
+.map-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+}
+
+.map-controls .btn-group {
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+}
+
+/* ===========================
+   RESPONSIVE
+   =========================== */
+@media (max-width: 767px) {
+    #map {
+        height: 400px;
+    }
+    
+    .leaflet-popup-content-wrapper {
+        width: 280px;
+    }
+    
+    .leaflet-popup-content {
+        margin: 10px;
+    }
+    
+    .map-controls {
+        top: 5px;
+        right: 5px;
+    }
+    
+    .map-controls .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 575px) {
+    #map {
+        height: 350px;
+    }
+    
+    .leaflet-popup-content-wrapper {
+        width: 260px;
+    }
+    
+    /* Stack les boutons de contrôle verticalement sur très petits écrans */
+    .map-controls .btn-group {
+        flex-direction: column;
+    }
+    
+    .map-controls .btn-group .btn {
+        border-radius: 0 !important;
+    }
+    
+    .map-controls .btn-group .btn:first-child {
+        border-radius: 4px 4px 0 0 !important;
+    }
+    
+    .map-controls .btn-group .btn:last-child {
+        border-radius: 0 0 4px 4px !important;
+    }
+}
+
+/* ===========================
+   CLUSTERS (si utilisés)
+   =========================== */
+.marker-cluster {
+    background-color: rgba(220, 53, 69, 0.6);
+    border: 3px solid rgba(220, 53, 69, 0.8);
+}
+
+.marker-cluster div {
+    background-color: rgba(220, 53, 69, 0.8);
+    color: white;
+    font-weight: bold;
+}
+
+/* ===========================
+   ÉTATS DE CHARGEMENT
+   =========================== */
+.map-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
+}
+
+.map-loading .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* ===========================
+   LÉGENDE
+   =========================== */
+.map-legend {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+    font-size: 0.875rem;
+}
+
+.map-legend .legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.map-legend .legend-item:last-child {
+    margin-bottom: 0;
+}
+
+.map-legend .legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 8px;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* ===========================
+   TOOLTIPS
+   =========================== */
+.leaflet-tooltip {
+    background-color: rgba(0, 0, 0, 0.8);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.leaflet-tooltip::before {
+    border-top-color: rgba(0, 0, 0, 0.8);
+}
+
+/* ===========================
+   ANIMATIONS SUPPLÉMENTAIRES
+   =========================== */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}
+
+.marker-pulse {
+    animation: pulse 2s infinite;
+}
+
+/* ===========================
+   ACCESSIBILITÉ
+   =========================== */
+.leaflet-container a:focus,
+.leaflet-container button:focus {
+    outline: 2px solid #dc3545;
+    outline-offset: 2px;
+}
+
+/* ===========================
+   IMPRESSION
+   =========================== */
+@media print {
+    #map {
+        height: 500px;
+        page-break-inside: avoid;
+    }
+    
+    .map-controls,
+    .leaflet-control-zoom {
+        display: none;
+    }
+}
+/* Version: 2025-12-01-014753 - BLUE MARKERS + WHITE POPUP */

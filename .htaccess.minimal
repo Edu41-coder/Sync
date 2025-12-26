@@ -1,0 +1,19 @@
+# ====================================================================
+# Synd_Gest - Configuration Apache .htaccess MINIMALE
+# ====================================================================
+# Si vous avez toujours l'erreur "Forbidden", renommez ce fichier
+# en .htaccess (remplacez l'ancien) pour tester
+# ====================================================================
+
+# Autoriser l'accès
+Options -Indexes
+
+# Activer le moteur de réécriture
+RewriteEngine On
+
+# Protéger uniquement les fichiers vraiment sensibles
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Fin du fichier minimal

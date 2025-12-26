@@ -1,0 +1,23 @@
+🌐 APPLICATION MVC - URLs D'ACCÈS
+=====================================
+
+
+🔐 PAGE DE CONNEXION (COMMENCER ICI) :
+http://localhost/Synd_Gest/public/auth/login
+
+Identifiants :
+Username: admin
+Password: admin123
+
+🏠 PAGE D'ACCUEIL (après connexion) :
+http://localhost/Synd_Gest/public/
+
+📋 AUTRES URLS DISPONIBLES :
+- Test MVC : http://localhost/Synd_Gest/public/home/test
+- Déconnexion : http://localhost/Synd_Gest/public/auth/logout
+- Dashboard : http://localhost/Synd_Gest/public/
+- Copropriétés : http://localhost/Synd_Gest/public/copropriete/index
+- Lots : http://localhost/Synd_Gest/public/lot/index
+
+⚠️ Ne PAS utiliser : http://localhost/Synd_Gest/ (ancien système)
+✅ TOUJOURS utiliser : http://localhost/Synd_Gest/public/ (nouveau MVC)

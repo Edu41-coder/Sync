@@ -1,0 +1,868 @@
+/**
+ * ====================================================================
+ * SYND_GEST - Thème ROUGE/ROSE
+ * ====================================================================
+ * Thème rouge/rose appliqué - Sauvegarde dans style.css.backup
+ */
+
+/* ====================================================================
+   VARIABLES CSS - THÈME ROUGE/ROSE
+   ==================================================================== */
+:root {
+    /* Couleurs principales - ROUGE */
+    --primary-color: #dc3545;        /* Rouge vif */
+    --primary-hover: #bb2d3b;        /* Rouge foncé */
+    --primary-rgb: 220, 53, 69;      /* Pour transparences */
+    
+    --secondary-color: #e83e8c;      /* Rose */
+    --success-color: #198754;        /* Vert (conservé) */
+    --danger-color: #ff6b6b;         /* Rouge clair */
+    --warning-color: #ffc107;        /* Jaune (conservé) */
+    --info-color: #ff80ab;           /* Rose clair */
+    
+    /* Couleurs de texte */
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-light: #fff5f5;           /* Rose très clair */
+    
+    /* Couleurs de fond */
+    --bg-light: #fff5f5;             /* Fond rose léger */
+    --bg-white: #ffffff;
+    --bg-dark: #212529;
+    
+    /* Bordures */
+    --border-color: #ffcdd2;         /* Bordures roses */
+    --border-radius: 0.375rem;
+    
+    /* Ombres avec teinte rouge */
+    --shadow-sm: 0 0.125rem 0.25rem rgba(220, 53, 69, 0.075);
+    --shadow: 0 0.5rem 1rem rgba(220, 53, 69, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(220, 53, 69, 0.175);
+    
+    /* Police */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ====================================================================
+   STYLES GÉNÉRAUX
+   ==================================================================== */
+body {
+    font-family: var(--font-family);
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    background-color: var(--bg-light);
+}
+
+/* ====================================================================
+   PAGE D'AUTHENTIFICATION
+   ==================================================================== */
+.auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+    padding: 2rem 0;
+}
+
+.auth-card {
+    background: var(--bg-white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    max-width: 450px;
+    width: 100%;
+}
+
+.auth-header {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+    color: var(--text-light);
+    padding: 2rem;
+    text-align: center;
+}
+
+.auth-header .logo {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.auth-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.auth-body {
+    padding: 2rem;
+}
+
+.auth-footer {
+    background-color: var(--bg-light);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+}
+
+/* ====================================================================
+   FORMULAIRES
+   ==================================================================== */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+.input-group-text {
+    background-color: var(--bg-light);
+    border-color: var(--border-color);
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+/* Icônes dans les labels de formulaires */
+.form-label i {
+    color: var(--primary-color);
+    margin-right: 0.25rem;
+}
+
+/* Input groups avec icônes */
+.input-group-text {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(232, 62, 140, 0.1) 100%);
+    border-color: var(--border-color);
+    color: var(--primary-color);
+}
+
+/* Champs requis - astérisque rouge */
+.text-danger {
+    color: var(--primary-color) !important;
+}
+
+/* Formulaires - Espacement standardisé */
+.card-body form .row {
+    margin-bottom: 1rem;
+}
+
+.card-body form .mb-3:last-of-type {
+    margin-bottom: 0 !important;
+}
+
+/* Titres de pages de formulaires - Icônes noires */
+.row.mb-4 h1.h3 i {
+    color: #212529 !important;
+    margin-right: 0.5rem;
+}
+
+/* Titres de pages de formulaires - Icônes jaunes pour édition */
+.row.mb-4 h1.h3 i.text-warning {
+    color: #ffc107 !important;
+}
+
+.row.mb-4 h1.h3 {
+    font-weight: 600;
+    color: #212529;
+}
+
+/* Boutons de formulaires - Zone de bas de page */
+.card-body form hr {
+    margin: 1.5rem 0;
+    border-color: var(--border-color);
+}
+
+.card-body form .d-flex.justify-content-between {
+    gap: 0.5rem;
+}
+
+/* Bouton Annuler standardisé */
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* ====================================================================
+   BOUTONS
+   ==================================================================== */
+.btn {
+    font-weight: 500;
+    border-radius: var(--border-radius);
+    padding: 0.5rem 1.25rem;
+    transition: all 0.3s ease;
+}
+
+/* Boutons principaux avec dégradé rouge/rose */
+.btn-primary,
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%) !important;
+    border: none !important;
+    box-shadow: 0 4px 6px rgba(220, 53, 69, 0.2);
+    color: white !important;
+}
+
+.btn-primary:hover,
+.btn-danger:hover {
+    background: linear-gradient(135deg, #bb2d3b 0%, #d63384 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(220, 53, 69, 0.3);
+    color: white !important;
+}
+
+.btn-primary:active,
+.btn-danger:active,
+.btn-primary:focus,
+.btn-danger:focus {
+    background: linear-gradient(135deg, #bb2d3b 0%, #d63384 100%) !important;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
+    color: white !important;
+}
+
+/* Boutons outline avec bordure dégradé */
+.btn-outline-danger {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    background: transparent;
+}
+
+.btn-outline-danger:hover {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+    border-color: transparent;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* ====================================================================
+   ALERTES
+   ==================================================================== */
+.alert {
+    border-radius: var(--border-radius);
+    border-left: 4px solid;
+    padding: 1rem 1.25rem;
+}
+
+.alert-primary {
+    background-color: rgba(220, 53, 69, 0.1);
+    border-left-color: var(--primary-color);
+}
+
+.alert i {
+    font-size: 1.1rem;
+}
+
+/* ====================================================================
+   LIENS
+   ==================================================================== */
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+a:hover {
+    color: var(--primary-hover);
+    border-bottom-color: var(--primary-color);
+}
+
+/* ====================================================================
+   CHECKBOX ET RADIO
+   ==================================================================== */
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* ====================================================================
+   NAVBAR (styles spécifiques)
+   ==================================================================== */
+.navbar.bg-primary {
+    background: linear-gradient(90deg, 
+        #dc3545 0%,           /* Rouge vif à gauche */
+        #e83e8c 25%,          /* Rose au quart */
+        #ffc107 50%,          /* Jaune au milieu */
+        #ffb300 75%,          /* Jaune moyen */
+        #ffa000 100%          /* Jaune foncé à droite */
+    ) !important;
+}
+
+/* Logo Domitys dans la navbar */
+.navbar-logo {
+    height: 35px;
+    transition: all 0.3s ease;
+}
+
+.navbar-logo:hover {
+    transform: scale(1.05);
+}
+
+/* Menus déroulants (dropdowns) - Adaptation automatique au contenu */
+.dropdown-menu {
+    min-width: max-content !important;
+    width: auto !important;
+    white-space: nowrap;
+    max-width: 350px;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1.25rem;
+    white-space: nowrap;
+}
+
+.dropdown-item i {
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+    margin-right: 0.5rem;
+}
+
+/* Assure que le texte ne se coupe jamais */
+.dropdown-item.text-nowrap {
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+/* Header des dropdowns */
+.dropdown-header {
+    padding: 0.5rem 1.25rem;
+    white-space: nowrap;
+}
+
+/* Texte dans les dropdowns */
+.dropdown-item-text.text-nowrap {
+    white-space: nowrap !important;
+    display: flex;
+    align-items: center;
+}
+
+/* Pour les menus alignés à droite */
+.dropdown-menu-end {
+    left: auto !important;
+    right: 0 !important;
+}
+
+/* Badge notification sur desktop - positionnement absolu au-dessus de la cloche */
+@media (min-width: 992px) {
+    .navbar-nav .nav-link .fa-bell + .badge.rounded-pill {
+        position: absolute !important;
+        top: 0 !important;
+        right: -8px !important;
+        transform: translate(0, 0) !important;
+        margin-left: 0 !important;
+    }
+    
+    .navbar-nav .nav-link:has(.fa-bell) {
+        position: relative;
+    }
+}
+
+/* Menu latéral (sidebar) - liens en gris foncé */
+aside .nav-link {
+    color: #495057 !important;
+    font-weight: 500;
+}
+
+aside .nav-link:hover {
+    color: #212529 !important;
+    background-color: rgba(73, 80, 87, 0.1);
+}
+
+aside .nav-link.active {
+    color: #212529 !important;
+    background-color: rgba(73, 80, 87, 0.15);
+    font-weight: 600;
+}
+
+aside .nav-link i {
+    color: #6c757d;
+}
+
+aside .nav-link:hover i,
+aside .nav-link.active i {
+    color: #495057;
+}
+
+/* Logo Domitys dans la page de login */
+.auth-header .logo img {
+    height: 80px;
+    margin-bottom: 1rem;
+    animation: logoFloat 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+/* ====================================================================
+   CARDS (styles spécifiques)
+   ==================================================================== */
+.card {
+    border-left: 3px solid var(--primary-color);
+}
+
+/* Headers de formulaires - Style unifié rouge/rose */
+.card-header.bg-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%) !important;
+}
+
+/* Headers de formulaires d'édition - Style jaune */
+.card-header.bg-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%) !important;
+    color: #212529 !important;
+}
+
+.card-header.bg-warning h5,
+.card-header.bg-warning h6 {
+    color: #212529 !important;
+}
+
+/* Headers secondaires - Fond clair avec bordure */
+.card-header.bg-light {
+    background-color: #f8f9fa !important;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.card-header.bg-light h6 {
+    color: #495057 !important;
+    font-weight: 600;
+}
+
+/* Cartes d'aide dans les formulaires (sidebar) */
+.card-body ul.small {
+    padding-left: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.card-body ul.small li {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.card-body .alert-info {
+    background-color: rgba(220, 53, 69, 0.05);
+    border-left: 3px solid var(--primary-color);
+    color: #495057;
+}
+
+/* Titres dans les cartes d'aide */
+.card-body h6.fw-bold {
+    color: #495057;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.card-body h6.fw-bold:first-child {
+    margin-top: 0;
+}
+
+/* ====================================================================
+   BADGES
+   ==================================================================== */
+.badge {
+    border-radius: 1rem;
+    padding: 0.35em 0.65em;
+}
+
+/* ====================================================================
+   PROGRESS BARS
+   ==================================================================== */
+.progress-bar {
+    background: linear-gradient(90deg, #dc3545, #e83e8c);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ====================================================================
+   TABLES
+   ==================================================================== */
+.table-hover tbody tr:hover {
+    background-color: rgba(220, 53, 69, 0.05);
+}
+
+/* ====================================================================
+   SPINNERS
+   ==================================================================== */
+.spinner-border,
+.spinner-grow {
+    color: var(--primary-color);
+}
+
+/* ====================================================================
+   ANIMATIONS
+   ==================================================================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease;
+}
+
+/* ====================================================================
+   UTILITAIRES SUPPLÉMENTAIRES
+   ==================================================================== */
+.text-muted {
+    color: var(--text-secondary) !important;
+}
+
+.text-small {
+    font-size: 0.875rem;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Classe pour texte gradient rouge-rose */
+.text-gradient-red {
+    background: linear-gradient(135deg, #dc3545, #e83e8c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Classe pour fond gradient */
+.bg-gradient-red {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+}
+
+/* Hover avec effet glow */
+.btn-glow:hover {
+    box-shadow: 0 0 20px rgba(220, 53, 69, 0.5);
+}
+
+/* ====================================================================
+   PROFIL UTILISATEUR (User Profile & Settings)
+   ==================================================================== */
+
+/* Bouton Paramètres avec bordure et texte rouge */
+.btn-settings-link {
+    color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    background-color: transparent;
+    text-decoration: none !important;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.btn-settings-link:hover,
+.btn-settings-link:focus,
+.btn-settings-link:active {
+    color: var(--primary-hover) !important;
+    background: rgba(220, 53, 69, 0.1) !important;
+    border-color: var(--primary-hover) !important;
+    text-decoration: none !important;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
+}
+
+/* Avatar circulaire */
+.avatar-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-circle span {
+    font-size: 48px;
+    font-weight: bold;
+}
+
+/* Avatar petit (tableaux) */
+.avatar-circle.avatar-sm {
+    width: 35px;
+    height: 35px;
+    font-size: 0.75rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: bold;
+}
+
+/* Timeline circles (activité) */
+.timeline-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Boutons de formulaire masqués par défaut */
+#formButtons {
+    display: none !important;
+}
+
+/* Cartes de sélection de thème (cliquables) */
+.theme-card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.theme-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Carte thème automatique avec gradient violet */
+.theme-card-auto .card-body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+/* ====================================================================
+   NAVIGATION LATÉRALE (Settings sidebar)
+   ==================================================================== */
+/* En-tête "Catégories" - Gris foncé sans soulignement */
+.settings-header {
+    background-color: #495057 !important;
+    border: none !important;
+}
+
+.settings-header h6 {
+    color: #f8f9fa !important;
+    font-weight: 600;
+}
+
+/* Menu catégories avec fond rouge/rose pour l'élément actif */
+.list-group-item.active {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%) !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+.list-group-item:hover:not(.active) {
+    background-color: rgba(220, 53, 69, 0.05);
+    border-bottom: 2px solid var(--primary-color) !important;
+}
+
+/* Textes des liens en gris foncé */
+.list-group-item:not(.active) {
+    color: #495057 !important;
+    font-weight: 500;
+}
+
+.list-group-item:not(.active):hover {
+    color: #212529 !important;
+}
+
+/* ====================================================================
+   THÈMES ET PRÉFÉRENCES UTILISATEUR
+   ==================================================================== */
+
+/* Note: Le mode dark est maintenant géré par Bootstrap 5.3 natif (data-bs-theme="dark")
+   Les ajustements spécifiques sont dans style_dark.css */
+
+/* Densité Compacte */
+body[data-density="compact"] .card-body {
+    padding: 0.75rem !important;
+}
+
+body[data-density="compact"] .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+body[data-density="compact"] h1,
+body[data-density="compact"] h2,
+body[data-density="compact"] h3,
+body[data-density="compact"] h4,
+body[data-density="compact"] h5,
+body[data-density="compact"] h6 {
+    margin-bottom: 0.5rem !important;
+}
+
+body[data-density="compact"] .mb-3 {
+    margin-bottom: 0.75rem !important;
+}
+
+/* Densité Spacieuse */
+body[data-density="spacious"] .card-body {
+    padding: 2rem !important;
+}
+
+body[data-density="spacious"] .btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.125rem;
+}
+
+body[data-density="spacious"] h1,
+body[data-density="spacious"] h2,
+body[data-density="spacious"] h3,
+body[data-density="spacious"] h4,
+body[data-density="spacious"] h5,
+body[data-density="spacious"] h6 {
+    margin-bottom: 1.5rem !important;
+}
+
+body[data-density="spacious"] .mb-3 {
+    margin-bottom: 1.5rem !important;
+}
+
+/* Désactiver animations si demandé */
+body.no-animations *,
+body.no-animations *::before,
+body.no-animations *::after {
+    transition: none !important;
+    animation: none !important;
+}
+
+/* ====================================================================
+   PAGE D'ACCUEIL (Home/Index)
+   ==================================================================== */
+
+.home-navbar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.home-navbar .navbar-brand {
+    font-weight: 600;
+    font-size: 1.5rem;
+}
+
+.welcome-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.content-wrapper {
+    padding: 2rem 0;
+}
+
+/* ====================================================================
+   DASHBOARD (Cartes Statistiques)
+   ==================================================================== */
+
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+
+.border-left-danger {
+    border-left: 0.25rem solid #e74a3b !important;
+}
+
+.border-left-secondary {
+    border-left: 0.25rem solid #858796 !important;
+}
+
+/* Classes de couleurs texte pour les cartes statistiques */
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+
+/* Dégradés horizontaux pour headers de dashboard */
+.card-header.bg-primary {
+    background: linear-gradient(90deg, #4e73df 0%, #6a8ee6 70%, #8fadef 100%) !important;
+}
+
+.card-header.bg-warning,
+.card-header.bg-warning.text-dark {
+    background: linear-gradient(90deg, #f6c23e 0%, #f9d166 70%, #fce08f 100%) !important;
+}
+
+/* ====================================================================
+   TABLEAUX - Styles triables et pagination
+   ==================================================================== */
+.table thead th.sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    position: relative;
+}
+
+.table thead th:not([data-no-sort]):hover {
+    background-color: #f8f9fa;
+}
+
+.table thead th.sortable:hover {
+    background-color: #e9ecef;
+}
+
+/* Icônes de tri dynamiques (ajoutées par JS) */
+.table thead th i.sort-icon {
+    font-size: 0.875rem;
+    margin-left: 5px;
+    color: #6c757d;
+}
+
+.table thead th.sort-asc i.sort-icon,
+.table thead th.sort-desc i.sort-icon {
+    color: #667eea;
+}
+
+.pagination .page-link {
+    border-radius: 0.25rem;
+    margin: 0 2px;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.pagination .page-link:hover {
+    background-color: #f0f0f0;
+    border-color: #dee2e6;
+}
+
+/* ====================================================================
+   FIN DU FICHIER - LES STYLES RESPONSIVE SONT DANS mobile.css
+   ==================================================================== */

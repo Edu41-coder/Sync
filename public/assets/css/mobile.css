@@ -1,0 +1,1525 @@
+/**
+ * ====================================================================
+ * SYND_GEST - RESPONSIVE MOBILE STYLES
+ * ====================================================================
+ * Tous les styles responsive et adaptations mobile/tablet/desktop
+ * Déplacé depuis style.css pour une meilleure organisation
+ */
+
+/* ====================================================================
+   RESPONSIVE DESIGN - MOBILE FIRST
+   ==================================================================== */
+
+/* ===== TABLETTES ET PETITS ÉCRANS (max 992px) ===== */
+@media (max-width: 991.98px) {
+    /* Tables responsive */
+    .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Cards plus compactes */
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* Navbar collapse amélioré */
+    .navbar-collapse {
+        background-color: rgba(220, 53, 69, 0.95);
+        padding: 1rem;
+        margin-top: 0.5rem;
+        border-radius: var(--border-radius, 0.375rem);
+    }
+    
+    /* Stats cards en colonne */
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+    
+    /* Boutons pleine largeur sur tablette */
+    .btn-group-mobile-full {
+        width: 100%;
+    }
+    
+    .btn-group-mobile-full .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* ===== MOBILE (max 768px) ===== */
+@media (max-width: 767.98px) {
+    /* Éliminer tout overlay ou backdrop qui pourrait bloquer */
+    body::before,
+    body::after {
+        display: none !important;
+    }
+    
+    /* CRITIQUE : Désactiver les overlays Bootstrap qui pourraient bloquer */
+    .modal-backdrop:not(.show),
+    .offcanvas-backdrop:not(.show) {
+        pointer-events: none !important;
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* Seuls les backdrops visibles peuvent bloquer */
+    .modal-backdrop.show,
+    .offcanvas-backdrop.show {
+        pointer-events: auto !important;
+    }
+    
+    /* CRITIQUE : Tous les modals cachés ne doivent PAS bloquer */
+    .modal:not(.show) {
+        pointer-events: none !important;
+        display: none !important;
+        visibility: hidden !important;
+        z-index: -1 !important;
+    }
+    
+    /* Seuls les modals affichés sont interactifs */
+    .modal.show {
+        pointer-events: auto !important;
+        z-index: 1060 !important;
+    }
+    
+    /* CRITIQUE : Empêcher body.modal-open de bloquer le scroll si aucun modal visible */
+    body.modal-open:not(:has(.modal.show)) {
+        overflow: auto !important;
+        padding-right: 0 !important;
+    }
+    
+    /* Forcer tous les éléments à accepter les événements sur mobile */
+    * {
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        -webkit-touch-callout: default;
+        -webkit-user-select: auto;
+        user-select: auto;
+    }
+    
+    /* Tous les boutons, liens et éléments interactifs */
+    button, a, input, select, textarea, [role="button"], .btn, .nav-link, .dropdown-item {
+        touch-action: manipulation !important;
+        pointer-events: auto !important;
+        cursor: pointer !important;
+    }
+    
+    /* Container fluid sur mobile */
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* Titres plus petits */
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    h3 {
+        font-size: 1.25rem;
+    }
+    
+    /* Cards adaptées mobile */
+    .card-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .card-title {
+        font-size: 1.1rem;
+    }
+    
+    /* Tables : forcer scroll horizontal */
+    .table {
+        font-size: 0.875rem;
+    }
+    
+    .table thead th {
+        white-space: nowrap;
+        padding: 0.5rem;
+    }
+    
+    .table tbody td {
+        padding: 0.5rem;
+    }
+    
+    /* Formulaires */
+    .form-label {
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .form-control {
+        font-size: 0.95rem;
+    }
+    
+    /* Boutons */
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.95rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.85rem;
+    }
+    
+    /* Badges */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.25em 0.6em;
+    }
+    
+    /* Modals plein écran sur mobile */
+    .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+    
+    .modal-fullscreen-md-down {
+        width: 100vw;
+        max-width: none;
+        height: 100%;
+        margin: 0;
+    }
+    
+    /* Dropdowns menu pleine largeur */
+    .dropdown-menu {
+        min-width: 200px;
+    }
+    
+    /* Navbar dropdowns - s'adapte au contenu */
+    .navbar-nav .dropdown-menu {
+        min-width: 220px;
+        width: auto;
+        white-space: nowrap;
+    }
+    
+    .navbar-nav .dropdown-item {
+        white-space: nowrap;
+        padding: 0.5rem 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .navbar-nav .dropdown-item i {
+        min-width: 24px;
+        margin-right: 0.5rem;
+    }
+    
+    /* Pagination compacte */
+    .pagination {
+        font-size: 0.875rem;
+    }
+    
+    .page-link {
+        padding: 0.375rem 0.75rem;
+    }
+    
+    /* Breadcrumb personnalisé */
+    .breadcrumb {
+        font-size: 0.9rem;
+        padding: 0.75rem 0;
+        background-color: transparent;
+        margin-bottom: 0;
+    }
+    
+    .breadcrumb-item {
+        color: #333;
+    }
+    
+    .breadcrumb-item a {
+        color: #333;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    
+    .breadcrumb-item a:hover {
+        color: #667eea;
+        text-decoration: none;
+    }
+    
+    .breadcrumb-item.active {
+        color: #333;
+        font-weight: 500;
+    }
+    
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "›";
+        color: #999;
+        font-size: 1.2rem;
+        padding-right: 0.5rem;
+    }
+    
+    .breadcrumb-item i {
+        font-size: 0.85rem;
+    }
+    
+    /* Espacements réduits */
+    .mb-4 {
+        margin-bottom: 1.5rem !important;
+    }
+    
+    .mt-4 {
+        margin-top: 1.5rem !important;
+    }
+}
+
+/* ===== PETIT MOBILE (max 576px) ===== */
+@media (max-width: 575.98px) {
+    /* Auth pages */
+    .auth-wrapper {
+        padding: 0.5rem;
+        min-height: 100vh;
+    }
+    
+    .auth-card {
+        border-radius: 0;
+        box-shadow: none;
+    }
+    
+    .auth-header {
+        padding: 1.5rem 1rem;
+    }
+    
+    .auth-header .logo {
+        font-size: 2.5rem;
+    }
+    
+    .auth-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .auth-body {
+        padding: 1.5rem 1rem;
+    }
+    
+    .auth-footer {
+        padding: 1rem;
+        font-size: 0.85rem;
+    }
+    
+    /* Navbar compact */
+    .navbar-brand {
+        font-size: 1rem;
+    }
+    
+    .navbar-brand img {
+        height: 28px !important;
+    }
+    
+    .nav-link {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    /* Container sans padding sur petit mobile */
+    .container-fluid {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    /* Titres encore plus petits */
+    h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    h2 {
+        font-size: 1.3rem;
+    }
+    
+    /* Cards sans bordure latérale */
+    .card {
+        border-left: 0;
+        border-right: 0;
+        border-radius: 0;
+        margin-bottom: 0.75rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    /* Stat cards simplifiées */
+    .stat-card .stat-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .stat-card .stat-label {
+        font-size: 0.85rem;
+    }
+    
+    /* Tables ultra compactes */
+    .table {
+        font-size: 0.8rem;
+    }
+    
+    .table thead th,
+    .table tbody td {
+        padding: 0.375rem;
+    }
+    
+    /* Formulaires compacts */
+    .row.g-3 {
+        --bs-gutter-x: 0.5rem;
+        --bs-gutter-y: 0.5rem;
+    }
+    
+    .mb-3 {
+        margin-bottom: 0.75rem !important;
+    }
+    
+    /* Boutons pleine largeur */
+    .btn-group .btn {
+        font-size: 0.875rem;
+    }
+    
+    .d-grid-mobile {
+        display: grid !important;
+        gap: 0.5rem;
+    }
+    
+    /* Actions en colonne */
+    .btn-action-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .btn-action-group .btn {
+        width: 100%;
+        margin: 0;
+    }
+    
+    /* Alerts compactes */
+    .alert {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Modals plein écran */
+    .modal-content {
+        border-radius: 0;
+        min-height: 100vh;
+    }
+    
+    .modal-header,
+    .modal-footer {
+        padding: 0.75rem 1rem;
+    }
+    
+    /* Listes compactes */
+    .list-group-item {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Dashboard stats en colonne */
+    [class*="col-"] {
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Texte responsive */
+    .text-truncate-mobile {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 150px;
+    }
+    
+    /* Cacher sur mobile */
+    .d-none-mobile {
+        display: none !important;
+    }
+    
+    /* Afficher seulement sur mobile */
+    .d-mobile-only {
+        display: block !important;
+    }
+}
+
+/* ===== TRÈS PETIT MOBILE (max 380px) ===== */
+@media (max-width: 379.98px) {
+    /* Auth ultra compact */
+    .auth-header .logo {
+        font-size: 2rem;
+    }
+    
+    .auth-header h1 {
+        font-size: 1.25rem;
+    }
+    
+    /* Titres très compacts */
+    h1 {
+        font-size: 1.25rem;
+    }
+    
+    h2 {
+        font-size: 1.1rem;
+    }
+    
+    /* Boutons et inputs */
+    .btn {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .form-control {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    /* Tables minimales */
+    .table {
+        font-size: 0.75rem;
+    }
+    
+    .table thead th,
+    .table tbody td {
+        padding: 0.25rem;
+    }
+    
+    /* Stats très compactes */
+    .stat-card .stat-value {
+        font-size: 1.25rem;
+    }
+}
+
+/* ===== UTILITIES RESPONSIVE ===== */
+/* Images responsive */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Éviter débordement */
+* {
+    max-width: 100%;
+}
+
+/* Scroll horizontal pour contenus larges */
+.overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Touch-friendly : boutons plus gros sur mobile */
+@media (hover: none) and (pointer: coarse) {
+    .btn,
+    .form-control,
+    .form-select,
+    a {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .btn-sm {
+        min-height: 38px;
+    }
+}
+
+/* Mode paysage mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .auth-wrapper {
+        padding: 0.5rem 0;
+    }
+    
+    .auth-header {
+        padding: 1rem;
+    }
+    
+    .auth-header .logo {
+        display: none;
+    }
+    
+    .modal-dialog {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}
+
+/* ====================================================================
+   UTILITAIRES RESPONSIVE COMPLÉMENTAIRES
+   ==================================================================== */
+
+/* Cache les éléments sur mobile */
+.hide-mobile {
+    display: none !important;
+}
+
+/* Affiche seulement sur mobile */
+.show-mobile {
+    display: block !important;
+}
+
+/* Tables responsives avec scroll horizontal */
+.table-container-mobile {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+}
+
+.table-container-mobile table {
+    font-size: 0.85rem;
+}
+
+/* Avatar plus petit sur mobile */
+.avatar-circle.avatar-sm {
+    width: 30px;
+    height: 30px;
+    font-size: 0.7rem;
+}
+
+/* Boutons plus petits sur mobile */
+.btn-group-sm .btn {
+    padding: 0.25rem 0.4rem;
+}
+
+/* Actions en boutons empilés sur mobile */
+.btn-stack-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.btn-stack-mobile .btn {
+    width: 100%;
+}
+
+/* Cards sans bordures latérales sur mobile */
+.card-borderless-mobile {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+}
+
+/* ====================================================================
+   AFFICHAGE TABLETTES (768px - 991px)
+   ==================================================================== */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .hide-tablet {
+        display: none !important;
+    }
+    
+    .show-tablet {
+        display: block !important;
+    }
+}
+
+/* ====================================================================
+   AFFICHAGE DESKTOP (992px et +)
+   ==================================================================== */
+@media (min-width: 992px) {
+    .hide-desktop {
+        display: none !important;
+    }
+    
+    .show-desktop {
+        display: block !important;
+    }
+    
+    .hide-mobile,
+    .show-mobile {
+        display: none !important;
+    }
+    
+    .btn-stack-mobile {
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+    
+    .btn-stack-mobile .btn {
+        width: auto;
+    }
+}
+
+/* ====================================================================
+   COMPOSANTS SPÉCIFIQUES MOBILE
+   ==================================================================== */
+
+/* Stat cards responsive */
+@media (max-width: 767.98px) {
+    .stat-cards-mobile .col-md-3,
+    .stat-cards-mobile .col-lg-3 {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+}
+
+/* Dashboard mobile optimisé */
+@media (max-width: 575.98px) {
+    /* Dashboard title */
+    .dashboard-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Quick actions en grille */
+    .quick-actions-mobile {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .quick-actions-mobile .btn {
+        padding: 1rem 0.5rem;
+        font-size: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .quick-actions-mobile .btn i {
+        font-size: 1.5rem;
+    }
+}
+
+/* ====================================================================
+   FORMULAIRES MOBILE
+   ==================================================================== */
+@media (max-width: 767.98px) {
+    /* Labels au-dessus des inputs */
+    .form-horizontal-mobile .form-label {
+        text-align: left;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Inputs pleine largeur */
+    .form-horizontal-mobile .form-control,
+    .form-horizontal-mobile .form-select {
+        width: 100%;
+    }
+    
+    /* Boutons de formulaire empilés */
+    .form-actions-mobile {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+    }
+    
+    .form-actions-mobile .btn {
+        width: 100%;
+    }
+}
+
+/* ====================================================================
+   NAVIGATION MOBILE
+   ==================================================================== */
+
+/* FIX: Nest Hub et petits écrans horizontaux (1024x600, etc.) */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    /* Réduire drastiquement la taille du logo et du nom d'app */
+    .navbar-brand {
+        font-size: 0.75rem !important;
+        padding-right: 0.25rem !important;
+    }
+    
+    .navbar-logo {
+        height: 24px !important;
+        margin-right: 0.25rem !important;
+    }
+    
+    /* Réduire l'espacement des nav-items */
+    .navbar-nav .nav-link {
+        padding-left: 0.4rem !important;
+        padding-right: 0.4rem !important;
+        font-size: 0.8rem !important;
+    }
+    
+    /* Réduire la taille des icônes */
+    .navbar-nav .nav-link i {
+        font-size: 0.75rem !important;
+        margin-right: 0.25rem !important;
+    }
+    
+    /* Compacter les dropdowns */
+    .navbar-nav .dropdown-toggle {
+        padding-left: 0.4rem !important;
+        padding-right: 0.4rem !important;
+    }
+    
+    /* Réduire l'espacement du container */
+    .navbar .container-fluid {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+}
+
+/* FIX: Pour les écrans encore plus serrés comme Nest Hub (1024px pile) */
+@media (min-width: 992px) and (max-width: 1100px) {
+    /* Cacher le texte "SYND_GEST" et garder seulement le logo */
+    .navbar-brand strong {
+        display: none !important;
+    }
+    
+    /* Agrandir un peu le logo puisqu'il est seul */
+    .navbar-logo {
+        height: 30px !important;
+        margin-right: 0 !important;
+    }
+    
+    /* Réduire encore plus les nav-links */
+    .navbar-nav .nav-link {
+        padding-left: 0.3rem !important;
+        padding-right: 0.3rem !important;
+        font-size: 0.75rem !important;
+    }
+}
+
+/* FIX: Nest Hub Max (1280x800) et écrans similaires jusqu'à 1300px */
+@media (min-width: 1101px) and (max-width: 1300px) {
+    /* Cacher le texte "SYND_GEST" pour gagner de l'espace */
+    .navbar-brand strong {
+        display: none !important;
+    }
+    
+    /* Logo seul, taille standard */
+    .navbar-logo {
+        height: 32px !important;
+        margin-right: 0 !important;
+    }
+    
+    /* Réduire légèrement les nav-links */
+    .navbar-nav .nav-link {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        font-size: 0.875rem !important;
+    }
+}
+
+@media (max-width: 991.98px) {
+    /* Navbar sticky sur mobile */
+    .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 1030;
+        pointer-events: auto !important;
+        isolation: isolate;
+    }
+    
+    /* Container de la navbar - CRITIQUE pour éviter les overlays */
+    .navbar .container-fluid {
+        position: relative;
+        z-index: 1031;
+        pointer-events: auto !important;
+    }
+    
+    /* S'assurer que tous les éléments cliquables sont accessibles */
+    .navbar * {
+        pointer-events: auto !important;
+    }
+    
+    /* Bouton hamburger - zone cliquable corrigée */
+    .navbar-toggler {
+        pointer-events: auto !important;
+        cursor: pointer !important;
+        z-index: 1032 !important;
+        position: relative;
+        display: block !important;
+        width: auto !important;
+        height: auto !important;
+        padding: 0.25rem 0.75rem !important;
+        margin: 0 !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Icône hamburger */
+    .navbar-toggler-icon {
+        pointer-events: none !important;
+        display: inline-block !important;
+        width: 1.5em !important;
+        height: 1.5em !important;
+    }
+    
+    /* Menu mobile amélioré - FOND JAUNE #ffa000 */
+    .navbar-collapse {
+        max-height: calc(100vh - 60px);
+        overflow-y: auto;
+        pointer-events: auto !important;
+        background-color: #ffa000 !important;
+        position: relative;
+        z-index: 1031;
+    }
+    
+    /* S'assurer que le collapse fonctionne */
+    .navbar-collapse.collapsing {
+        transition: height 0.35s ease;
+        pointer-events: auto !important;
+        background-color: #ffa000 !important;
+    }
+    
+    .navbar-collapse.show {
+        display: block !important;
+        pointer-events: auto !important;
+        background-color: #ffa000 !important;
+    }
+    
+    /* Tous les liens de navigation - zone cliquable complète */
+    .navbar-nav .nav-link {
+        pointer-events: auto !important;
+        cursor: pointer !important;
+        position: relative;
+        z-index: 1;
+        display: block !important;
+        width: 100% !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    /* Highlight blanc brillant au survol des nav-links */
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link:focus,
+    .navbar-nav .nav-link:active {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+        color: #ffffff !important;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.3) !important;
+    }
+    
+    .navbar-nav .nav-link:hover i,
+    .navbar-nav .nav-link:focus i,
+    .navbar-nav .nav-link:active i {
+        color: #ffffff !important;
+    }
+    
+    /* Dropdown toggle - zone cliquable complète */
+    .navbar-nav .dropdown-toggle {
+        pointer-events: auto !important;
+        cursor: pointer !important;
+        display: block !important;
+        width: 100% !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    /* Highlight blanc brillant au survol des dropdown toggles */
+    .navbar-nav .dropdown-toggle:hover,
+    .navbar-nav .dropdown-toggle:focus,
+    .navbar-nav .dropdown-toggle:active {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+        color: #ffffff !important;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.3) !important;
+    }
+    
+    /* Dropdown items plus espacés sur mobile - FOND JAUNE LÉGÈREMENT TRANSPARENT */
+    .navbar-nav .dropdown-menu {
+        border: none;
+        box-shadow: none;
+        background-color: rgba(255, 160, 0, 0.8) !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        position: static !important;
+        pointer-events: auto !important;
+        z-index: 1;
+    }
+    
+    .navbar-nav .dropdown-item {
+        padding: 0.75rem 1.5rem;
+        white-space: normal;
+        word-wrap: break-word;
+        pointer-events: auto !important;
+        cursor: pointer !important;
+        display: block !important;
+        width: 100% !important;
+        position: relative;
+        z-index: 1;
+        transition: all 0.2s ease !important;
+    }
+    
+    /* Highlight blanc brillant au survol des dropdown items */
+    .navbar-nav .dropdown-item:hover,
+    .navbar-nav .dropdown-item:focus,
+    .navbar-nav .dropdown-item:active {
+        background-color: rgba(255, 255, 255, 0.3) !important;
+        color: #ffffff !important;
+        box-shadow: 0 0 12px rgba(255, 255, 255, 0.4) !important;
+    }
+    
+    .navbar-nav .dropdown-item:hover i,
+    .navbar-nav .dropdown-item:focus i,
+    .navbar-nav .dropdown-item:active i {
+        color: #ffffff !important;
+    }
+    
+    .navbar-nav .dropdown-item i {
+        min-width: 20px;
+        text-align: center;
+        pointer-events: none;
+        transition: color 0.2s ease;
+    }
+    
+    /* ===== CORRECTIONS NAVBAR MOBILE ===== */
+    
+    /* Espacement vertical uniforme entre Documents, Cloche et Admin */
+    .navbar-nav {
+        gap: 0 !important;
+    }
+    
+    .navbar-nav > .nav-item {
+        margin-bottom: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .navbar-nav .nav-link {
+        padding: 0.75rem 1rem !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    
+    /* Badge de notification - positionné à droite de la cloche au même niveau */
+    .navbar-nav .nav-link.position-relative {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+    }
+    
+    .navbar-nav .nav-link .badge.rounded-pill {
+        position: relative !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: none !important;
+        margin-left: 0.5rem !important;
+        margin-top: 0 !important;
+    }
+    
+    /* Icône cloche et badge alignés horizontalement */
+    .navbar-nav .nav-link .fa-bell {
+        margin-right: 0 !important;
+    }
+    
+    /* Menu déroulant utilisateur - textes et icônes en BLANC PÂLE */
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item {
+        color: rgba(255, 255, 255, 0.7) !important;
+        background-color: transparent !important;
+        transition: all 0.2s ease;
+    }
+    
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item i {
+        color: rgba(255, 255, 255, 0.7) !important;
+        transition: color 0.2s ease;
+    }
+    
+    /* Hover avec highlight blanc BRILLANT + glow + soulignement */
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item:hover,
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item:focus,
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item:active {
+        color: #ffffff !important;
+        background-color: rgba(255, 255, 255, 0.3) !important;
+        box-shadow: 0 0 12px rgba(255, 255, 255, 0.4) !important;
+        text-decoration: underline !important;
+        text-decoration-color: #ffffff !important;
+        text-decoration-thickness: 2px !important;
+        text-underline-offset: 3px !important;
+    }
+    
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item:hover i,
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item:focus i,
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item:active i {
+        color: #ffffff !important;
+    }
+    
+    /* Exception pour le bouton Déconnexion (garder rouge) */
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item.text-danger {
+        color: #ff4444 !important;
+        font-weight: 600;
+    }
+    
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item.text-danger:hover {
+        color: #ff6666 !important;
+        background-color: rgba(255, 68, 68, 0.15) !important;
+    }
+    
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item.text-danger i {
+        color: #ff4444 !important;
+    }
+    
+    /* Header "Superin Admin administrateur" - GARDER BLANC (pas pâle) */
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-header {
+        color: #ffffff !important;
+        font-weight: 600;
+    }
+    
+    /* Texte du rôle en blanc pâle */
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item-text {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+    
+    .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item-text i {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+    
+    /* Menu notifications - garder les couleurs d'origine des icônes */
+    .navbar-nav .dropdown-menu.dropdown-notifications .dropdown-item {
+        color: white !important;
+        transition: all 0.2s ease;
+    }
+    
+    /* Highlight blanc brillant au survol des notifications */
+    .navbar-nav .dropdown-menu.dropdown-notifications .dropdown-item:hover,
+    .navbar-nav .dropdown-menu.dropdown-notifications .dropdown-item:focus,
+    .navbar-nav .dropdown-menu.dropdown-notifications .dropdown-item:active {
+        background-color: rgba(255, 255, 255, 0.3) !important;
+        box-shadow: 0 0 12px rgba(255, 255, 255, 0.4) !important;
+        color: #ffffff !important;
+    }
+    
+    .navbar-nav .dropdown-menu.dropdown-notifications .dropdown-header {
+        color: white !important;
+    }
+}
+
+/* ====================================================================
+   MODALS MOBILE
+   ==================================================================== */
+@media (max-width: 575.98px) {
+    /* Modals plein écran sur petit mobile */
+    .modal-fullscreen-sm {
+        width: 100vw;
+        max-width: none;
+        height: 100vh;
+        margin: 0;
+        border-radius: 0;
+    }
+    
+    .modal-fullscreen-sm .modal-content {
+        height: 100vh;
+        border: 0;
+        border-radius: 0;
+    }
+    
+    .modal-fullscreen-sm .modal-body {
+        overflow-y: auto;
+    }
+    
+    /* Modal de déconnexion - Un tiers de l'écran sur mobile */
+    #logoutModal.modal {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        z-index: 1060 !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
+    
+    #logoutModal.modal.show {
+        display: flex !important;
+        pointer-events: auto !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* S'assurer que le backdrop ne bloque JAMAIS quand pas affiché */
+    .modal-backdrop {
+        pointer-events: none !important;
+        z-index: 1040 !important;
+    }
+    
+    .modal-backdrop.show {
+        pointer-events: auto !important;
+    }
+    
+    /* Forcer le modal caché à ne pas bloquer */
+    .modal:not(.show) {
+        pointer-events: none !important;
+        visibility: hidden !important;
+        display: none !important;
+    }
+    
+    #logoutModal .modal-dialog {
+        max-width: 90%;
+        width: 90%;
+        margin: 0 !important;
+        position: relative;
+        transform: none !important;
+        z-index: 1061;
+        pointer-events: auto !important;
+    }
+    
+    #logoutModal .modal-content {
+        max-height: 50vh;
+        height: auto;
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+    
+    #logoutModal .modal-body {
+        padding: 0.5rem 0.75rem;
+        max-height: calc(50vh - 120px);
+        overflow-y: auto;
+        font-size: 0.875rem;
+    }
+    
+    /* Réduire le texte et l'icône sur petit mobile */
+    #logoutModal .modal-body .fa-power-off {
+        font-size: 2rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    #logoutModal .modal-body h5 {
+        font-size: 1rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    #logoutModal .modal-body .alert {
+        padding: 0.5rem !important;
+        font-size: 0.8rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    #logoutModal .modal-body p {
+        font-size: 0.8rem !important;
+        margin-bottom: 0 !important;
+    }
+    
+    #logoutModal .modal-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    #logoutModal .modal-footer {
+        padding: 0.75rem 1rem;
+        display: flex !important;
+        justify-content: center !important;
+        gap: 0.5rem;
+    }
+    
+    #logoutModal .modal-footer .btn {
+        flex: 0 1 auto;
+        min-width: 120px;
+    }
+    
+    #logoutModal .modal-header h5 {
+        font-size: 1rem;
+    }
+    
+    #logoutModal .modal-body .fa-power-off {
+        font-size: 1.75rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    #logoutModal .modal-body h5 {
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    #logoutModal .modal-body .alert {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    #logoutModal .modal-body p {
+        font-size: 0.8rem;
+    }
+    
+    #logoutModal .btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+}
+
+/* Tablettes - Modal compact aussi */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    #logoutModal .modal-dialog {
+        max-width: 450px;
+        width: 450px;
+        margin: 0 auto !important;
+    }
+    
+    #logoutModal .modal-content {
+        height: auto;
+    }
+}
+
+/* ====================================================================
+   TABLES MOBILE
+   ==================================================================== */
+@media (max-width: 767.98px) {
+    /* Table cards : transformer les lignes en cards */
+    .table-mobile-cards {
+        display: none;
+    }
+    
+    .table-mobile-cards + .mobile-cards-view {
+        display: block;
+    }
+    
+    .mobile-card-item {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .mobile-card-item .card-header-mobile {
+        font-weight: 600;
+        font-size: 1.05rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--primary-color, #dc3545);
+    }
+    
+    .mobile-card-item .card-field {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .mobile-card-item .card-field:last-child {
+        border-bottom: none;
+    }
+    
+    .mobile-card-item .field-label {
+        font-weight: 500;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .mobile-card-item .field-value {
+        font-weight: 400;
+        text-align: right;
+    }
+    
+    .mobile-card-item .card-actions {
+        margin-top: 1rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        gap: 0.5rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .mobile-cards-view {
+        display: none;
+    }
+    
+    .table-mobile-cards {
+        display: table;
+    }
+}
+
+/* ====================================================================
+   PAGINATION MOBILE
+   ==================================================================== */
+@media (max-width: 575.98px) {
+    .pagination {
+        justify-content: center;
+    }
+    
+    .pagination .page-item:not(.active):not(.disabled) .page-link {
+        display: none;
+    }
+    
+    .pagination .page-item.active .page-link,
+    .pagination .page-item:first-child .page-link,
+    .pagination .page-item:last-child .page-link {
+        display: block;
+    }
+    
+    .pagination .page-item:nth-child(2) .page-link,
+    .pagination .page-item:nth-last-child(2) .page-link {
+        display: block;
+    }
+}
+
+/* ====================================================================
+   BREADCRUMB MOBILE
+   ==================================================================== */
+@media (max-width: 575.98px) {
+    .breadcrumb {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.75rem;
+        white-space: nowrap;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+    
+    .breadcrumb-item + .breadcrumb-item::before {
+        padding-right: 0.25rem;
+        padding-left: 0.25rem;
+    }
+}
+
+/* ====================================================================
+   ALERTS MOBILE
+   ==================================================================== */
+@media (max-width: 575.98px) {
+    .alert {
+        border-left: 0;
+        border-right: 0;
+        border-radius: 0;
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+    }
+}
+
+/* ====================================================================
+   TOOLTIPS ET POPOVERS MOBILE
+   ==================================================================== */
+@media (hover: none) and (pointer: coarse) {
+    /* Désactiver les tooltips sur mobile (touch) */
+    .tooltip {
+        display: none !important;
+    }
+    
+    /* Convertir les popovers en click sur mobile */
+    [data-bs-toggle="popover"] {
+        cursor: pointer;
+    }
+}
+
+/* ====================================================================
+   PRINT STYLES (pour impression depuis mobile)
+   ==================================================================== */
+@media print {
+    .navbar,
+    .btn,
+    .no-print {
+        display: none !important;
+    }
+    
+    .container,
+    .container-fluid {
+        width: 100%;
+        max-width: none;
+        padding: 0;
+    }
+    
+    .card {
+        border: 1px solid #000;
+        page-break-inside: avoid;
+    }
+}
+
+/* ====================================================================
+   ORIENTATION PAYSAGE MOBILE
+   ==================================================================== */
+@media (max-height: 500px) and (orientation: landscape) {
+    .navbar {
+        min-height: 50px;
+    }
+    
+    .navbar-brand img {
+        height: 30px !important;
+    }
+    
+    .auth-header .logo {
+        display: none;
+    }
+    
+    .stat-card {
+        padding: 0.75rem;
+    }
+}
+
+/* ====================================================================
+   MODAL DÉCONNEXION - ÉCRANS COURTS EN HAUTEUR
+   ==================================================================== */
+@media (max-height: 700px) {
+    /* Augmenter la hauteur max du modal sur écrans courts */
+    #logoutModal .modal-content {
+        max-height: 70vh !important;
+    }
+    
+    #logoutModal .modal-body {
+        max-height: calc(70vh - 120px) !important;
+    }
+}
+
+@media (max-height: 600px) {
+    /* Encore plus grand sur écrans très courts */
+    #logoutModal .modal-content {
+        max-height: 80vh !important;
+    }
+    
+    #logoutModal .modal-body {
+        max-height: calc(80vh - 120px) !important;
+        padding: 0.5rem !important;
+    }
+    
+    /* Réduire encore plus les espacements */
+    #logoutModal .modal-body .fa-power-off {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    #logoutModal .modal-body h5 {
+        font-size: 0.9rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    #logoutModal .modal-body .alert {
+        padding: 0.4rem !important;
+        font-size: 0.75rem !important;
+        margin-bottom: 0.4rem !important;
+    }
+    
+    #logoutModal .modal-body p {
+        font-size: 0.75rem !important;
+    }
+}
+
+/* ====================================================================
+   ACCESSIBILITY - TOUCH TARGETS
+   ==================================================================== */
+@media (hover: none) and (pointer: coarse) {
+    /* Augmenter la taille des zones tactiles sur mobile */
+    a, button, .btn, input, select, textarea {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .btn-sm {
+        min-height: 38px;
+        min-width: 38px;
+    }
+    
+    .form-check-input {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+    
+    .form-switch .form-check-input {
+        width: 3rem;
+        height: 1.5rem;
+    }
+}
+
+/* ====================================================================
+   DARK MODE MOBILE (si activé)
+   ==================================================================== */
+@media (prefers-color-scheme: dark) {
+    body.auto-theme {
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+    }
+    
+    body.auto-theme .card {
+        background-color: #2a2a2a;
+        border-color: #3a3a3a;
+    }
+    
+    body.auto-theme .navbar {
+        background-color: #2a2a2a !important;
+    }
+}

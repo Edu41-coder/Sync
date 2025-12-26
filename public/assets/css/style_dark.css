@@ -1,0 +1,522 @@
+/**
+ * ====================================================================
+ * SYND_GEST - Mode Dark (Complément Bootstrap 5.3)
+ * ====================================================================
+ * Ce fichier complète le mode dark natif de Bootstrap 5.3
+ * avec des ajustements spécifiques pour notre application.
+ * Bootstrap gère automatiquement la majorité des composants.
+ */
+
+/* ====================================================================
+   FOND GÉNÉRAL EN MODE DARK
+   ==================================================================== */
+
+/* Fond de la page - Noir profond */
+[data-bs-theme="dark"] html,
+[data-bs-theme="dark"] body {
+    background-color: #0a0a0a !important;
+}
+
+/* Wallpaper avec pattern subtil */
+[data-bs-theme="dark"] body {
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px) !important;
+    background-size: 50px 50px !important;
+    background-attachment: fixed !important;
+    color: #f5f5f5 !important;
+}
+
+/* Container fluide - fond transparent */
+[data-bs-theme="dark"] .container-fluid,
+[data-bs-theme="dark"] .container,
+[data-bs-theme="dark"] .row,
+[data-bs-theme="dark"] .col,
+[data-bs-theme="dark"] [class*="col-"] {
+    background-color: transparent !important;
+}
+
+/* Cartes - Noir plus clair pour contraste */
+[data-bs-theme="dark"] .card {
+    background-color: #1a1a1a !important;
+    border-color: #333333 !important;
+}
+
+[data-bs-theme="dark"] .card-body {
+    background-color: #1a1a1a !important;
+}
+
+/* ====================================================================
+   AJUSTEMENTS SPÉCIFIQUES AU THÈME ROUGE/ROSE EN MODE DARK
+   ==================================================================== */
+
+/* Navbar avec dégradé rouge/rose (conservé en dark) */
+[data-bs-theme="dark"] .navbar.bg-primary {
+    background: linear-gradient(90deg, 
+        #dc3545 0%,
+        #e83e8c 25%,
+        #ffc107 50%,
+        #ffb300 75%,
+        #ffa000 100%
+    ) !important;
+}
+
+/* Headers de cartes avec dégradés (dashboard et formulaires) */
+[data-bs-theme="dark"] .card-header.bg-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%) !important;
+    color: white !important;
+}
+
+[data-bs-theme="dark"] .card-header.bg-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%) !important;
+    color: #212529 !important;
+}
+
+[data-bs-theme="dark"] .card-header.bg-primary {
+    background: linear-gradient(90deg, #4e73df 0%, #6a8ee6 70%, #8fadef 100%) !important;
+    color: white !important;
+}
+
+/* Titres dans les headers avec dégradés */
+[data-bs-theme="dark"] .card-header.bg-warning h5,
+[data-bs-theme="dark"] .card-header.bg-warning h6 {
+    color: #212529 !important;
+}
+
+/* ====================================================================
+   CARTES STATISTIQUES DASHBOARD
+   ==================================================================== */
+
+/* Icônes et numéros dans les cartes stats */
+[data-bs-theme="dark"] .card-body h2,
+[data-bs-theme="dark"] .card-body h3,
+[data-bs-theme="dark"] .text-gray-800,
+[data-bs-theme="dark"] .card-body .text-dark {
+    color: #f5f5f5 !important;
+}
+
+/* Icônes avec opacité */
+[data-bs-theme="dark"] .text-gray-300,
+[data-bs-theme="dark"] .card-body .opacity-25 {
+    color: #d0d0d0 !important;
+}
+
+/* Footer des cartes stats avec liens */
+[data-bs-theme="dark"] .card-footer {
+    background-color: #1a1a1a !important;
+    border-top-color: #404040;
+}
+
+[data-bs-theme="dark"] .card-footer a {
+    color: #6ea8fe !important;
+}
+
+[data-bs-theme="dark"] .card-footer a:hover {
+    color: #9ec5fe !important;
+}
+
+/* ====================================================================
+   TITRES DE PAGE ET BREADCRUMB
+   ==================================================================== */
+
+/* Breadcrumb - Fond transparent et textes blancs */
+[data-bs-theme="dark"] .breadcrumb {
+    background-color: transparent !important;
+}
+
+[data-bs-theme="dark"] .breadcrumb-item,
+[data-bs-theme="dark"] .breadcrumb-item a {
+    color: #f5f5f5 !important;
+}
+
+[data-bs-theme="dark"] .breadcrumb-item.active {
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+[data-bs-theme="dark"] .breadcrumb-item + .breadcrumb-item::before {
+    color: #d0d0d0 !important;
+}
+
+/* Titres de page - Blanc pur avec icônes */
+[data-bs-theme="dark"] .container-fluid h1,
+[data-bs-theme="dark"] .container-fluid h2,
+[data-bs-theme="dark"] .row h1,
+[data-bs-theme="dark"] .row h2,
+[data-bs-theme="dark"] h1.h3,
+[data-bs-theme="dark"] h1,
+[data-bs-theme="dark"] h2 {
+    color: #ffffff !important;
+}
+
+/* Icônes dans les titres */
+[data-bs-theme="dark"] h1 i,
+[data-bs-theme="dark"] h2 i,
+[data-bs-theme="dark"] h3 i,
+[data-bs-theme="dark"] .h3 i {
+    color: #ffffff !important;
+}
+
+/* Sous-titres et compteurs */
+[data-bs-theme="dark"] .text-muted,
+[data-bs-theme="dark"] p.text-muted {
+    color: #d0d0d0 !important;
+}
+
+/* ====================================================================
+   FORMULAIRES
+   ==================================================================== */
+
+/* Textes d'aide et suggestions */
+[data-bs-theme="dark"] .form-text,
+[data-bs-theme="dark"] small,
+[data-bs-theme="dark"] .small,
+[data-bs-theme="dark"] .card-body small,
+[data-bs-theme="dark"] .card-body strong,
+[data-bs-theme="dark"] .text-secondary {
+    color: #d0d0d0 !important;
+}
+
+/* Input groups avec icônes */
+[data-bs-theme="dark"] .input-group-text {
+    background-color: #2d2d2d;
+    color: #f5f5f5 !important;
+    border-color: #495057;
+}
+
+/* Placeholders */
+[data-bs-theme="dark"] .form-control::placeholder,
+[data-bs-theme="dark"] .form-select::placeholder {
+    color: #888888 !important;
+}
+
+/* ====================================================================
+   PROFIL UTILISATEUR
+   ==================================================================== */
+
+/* Avatar circulaire */
+[data-bs-theme="dark"] .avatar-circle {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Liste de statistiques */
+[data-bs-theme="dark"] .list-group-item {
+    background-color: #212529;
+    border-color: #404040;
+}
+
+[data-bs-theme="dark"] .list-group-item span,
+[data-bs-theme="dark"] .list-group-item i {
+    color: #f5f5f5 !important;
+}
+
+/* Textes dans les cartes de profil */
+[data-bs-theme="dark"] .card-body h4,
+[data-bs-theme="dark"] .card-body h6,
+[data-bs-theme="dark"] .card-body p {
+    color: #f5f5f5 !important;
+}
+
+/* Alertes dans les formulaires */
+[data-bs-theme="dark"] .alert ul,
+[data-bs-theme="dark"] .alert li,
+[data-bs-theme="dark"] .alert strong {
+    color: inherit !important;
+}
+
+/* ====================================================================
+   TABLEAUX
+   ==================================================================== */
+
+/* Sections de filtres et recherche */
+[data-bs-theme="dark"] .card-header.bg-light,
+[data-bs-theme="dark"] .card-header:not(.bg-danger):not(.bg-warning):not(.bg-primary) {
+    background-color: #2d2d2d !important;
+    color: #f5f5f5 !important;
+    border-bottom-color: #404040;
+}
+
+[data-bs-theme="dark"] .card-header.bg-light h5,
+[data-bs-theme="dark"] .card-header.bg-light h6,
+[data-bs-theme="dark"] .card-header h5,
+[data-bs-theme="dark"] .card-header h6 {
+    color: #ffffff !important;
+}
+
+/* Icônes dans les headers de filtres */
+[data-bs-theme="dark"] .card-header i,
+[data-bs-theme="dark"] .card-header.bg-light i {
+    color: #ffffff !important;
+}
+
+/* Headers de tableaux et sections */
+[data-bs-theme="dark"] .table thead {
+    background-color: #2d2d2d !important;
+}
+
+[data-bs-theme="dark"] .table thead th {
+    color: #ffffff !important;
+    background-color: #2d2d2d !important;
+    border-color: #404040;
+}
+
+/* Texte au-dessus des tableaux (compteurs) */
+[data-bs-theme="dark"] .mb-3 h5,
+[data-bs-theme="dark"] .d-flex h5,
+[data-bs-theme="dark"] h4,
+[data-bs-theme="dark"] h5,
+[data-bs-theme="dark"] h6 {
+    color: #ffffff !important;
+}
+
+/* Bordures et hover */
+[data-bs-theme="dark"] .table {
+    border-color: #404040;
+}
+
+[data-bs-theme="dark"] .table-hover tbody tr:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Headers triables */
+[data-bs-theme="dark"] .table thead th.sortable:hover {
+    background-color: #3d3d3d;
+}
+
+/* Pagination */
+[data-bs-theme="dark"] .pagination .page-link {
+    background-color: #212529;
+    border-color: #404040;
+    color: #f5f5f5;
+}
+
+[data-bs-theme="dark"] .pagination .page-item.active .page-link {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+[data-bs-theme="dark"] .pagination .page-link:hover {
+    background-color: #2d2d2d;
+    color: #f5f5f5;
+}
+
+/* ====================================================================
+   NAVIGATION LATÉRALE (Settings)
+   ==================================================================== */
+
+/* Header de catégories */
+[data-bs-theme="dark"] .settings-header {
+    background-color: #2d2d2d !important;
+}
+
+[data-bs-theme="dark"] .settings-header h6 {
+    color: #ffffff !important;
+}
+
+/* Items de menu - texte blanc */
+[data-bs-theme="dark"] .list-group-item {
+    color: #ffffff !important;
+    background-color: #1a1a1a !important;
+    border-color: #404040 !important;
+}
+
+/* Item actif avec dégradé rouge/rose */
+[data-bs-theme="dark"] .list-group-item.active {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%) !important;
+    border-color: #e83e8c !important;
+    border-left: 4px solid #ffffff !important;
+    color: #ffffff !important;
+}
+
+/* Hover sur items non-actifs - fond plus clair avec bordure brillante */
+[data-bs-theme="dark"] .list-group-item:hover:not(.active) {
+    background-color: #2d2d2d !important;
+    border-left: 4px solid #6ea8fe !important;
+    color: #ffffff !important;
+}
+
+/* Icônes dans les items de menu */
+[data-bs-theme="dark"] .list-group-item i {
+    color: #ffffff !important;
+}
+
+/* ====================================================================
+   BOUTONS
+   ==================================================================== */
+
+/* Bouton Paramètres avec bordure rouge */
+[data-bs-theme="dark"] .btn-outline-primary {
+    color: #6ea8fe !important;
+    border-color: #6ea8fe !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-primary:hover {
+    background-color: #6ea8fe !important;
+    color: white !important;
+}
+
+/* Bouton de collapse dans les cartes (Activités récentes) */
+[data-bs-theme="dark"] .card-header .btn-light {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    border: none !important;
+    color: white !important;
+}
+
+[data-bs-theme="dark"] .card-header .btn-light:hover {
+    background-color: rgba(0, 0, 0, 0.4) !important;
+    color: white !important;
+}
+
+/* ====================================================================
+   MODALS
+   ==================================================================== */
+
+[data-bs-theme="dark"] .modal-header {
+    border-bottom-color: #404040;
+}
+
+[data-bs-theme="dark"] .modal-footer {
+    border-top-color: #404040;
+}
+
+/* ====================================================================
+   BADGES ET STATUTS
+   ==================================================================== */
+
+[data-bs-theme="dark"] .badge {
+    /* Bootstrap gère déjà les badges en dark mode */
+}
+
+/* ====================================================================
+   DROPDOWNS
+   ==================================================================== */
+
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: #212529;
+    border-color: #404040;
+}
+
+[data-bs-theme="dark"] .dropdown-item {
+    color: #f5f5f5;
+}
+
+[data-bs-theme="dark"] .dropdown-item:hover {
+    background-color: #2d2d2d;
+    color: #f5f5f5;
+}
+
+[data-bs-theme="dark"] .dropdown-divider {
+    border-top-color: #404040;
+}
+
+/* ====================================================================
+   AUTHENTIFICATION
+   ==================================================================== */
+
+[data-bs-theme="dark"] .auth-card {
+    background-color: #212529;
+}
+
+[data-bs-theme="dark"] .auth-footer {
+    background-color: #1a1a1a;
+    border-top-color: #404040;
+}
+
+/* ====================================================================
+   NAVIGATION MOBILE (max 991px)
+   ==================================================================== */
+
+@media (max-width: 991.98px) {
+    /* Menu mobile principal - Fond NOIR au lieu de jaune (spécificité augmentée) */
+    [data-bs-theme="dark"] body .navbar .navbar-collapse {
+        background-color: #1a1a1a !important;
+        border: 1px solid #404040 !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    /* Collapse en animation */
+    [data-bs-theme="dark"] body .navbar .navbar-collapse.collapsing {
+        background-color: #1a1a1a !important;
+    }
+    
+    /* Collapse visible */
+    [data-bs-theme="dark"] body .navbar .navbar-collapse.show {
+        background-color: #1a1a1a !important;
+    }
+    
+    /* Liens de navigation mobile - texte blanc */
+    [data-bs-theme="dark"] body .navbar-nav .nav-link {
+        color: #ffffff !important;
+    }
+    
+    /* Hover sur les liens */
+    [data-bs-theme="dark"] body .navbar-nav .nav-link:hover,
+    [data-bs-theme="dark"] body .navbar-nav .nav-link:focus,
+    [data-bs-theme="dark"] body .navbar-nav .nav-link:active {
+        background-color: rgba(220, 53, 69, 0.2) !important;
+        color: #ffffff !important;
+    }
+    
+    /* Dropdown toggle (bouton Admin) */
+    [data-bs-theme="dark"] body .navbar-nav .dropdown-toggle {
+        color: #ffffff !important;
+    }
+    
+    [data-bs-theme="dark"] body .navbar-nav .dropdown-toggle:hover,
+    [data-bs-theme="dark"] body .navbar-nav .dropdown-toggle:focus {
+        background-color: rgba(220, 53, 69, 0.2) !important;
+        color: #ffffff !important;
+    }
+    
+    /* Menu déroulant Admin - Fond NOIR légèrement transparent (spécificité augmentée) */
+    [data-bs-theme="dark"] body .navbar-nav .dropdown-menu {
+        background-color: rgba(26, 26, 26, 0.98) !important;
+        border: 1px solid #404040 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+        backdrop-filter: blur(10px) !important;
+    }
+    
+    /* Items du dropdown Admin */
+    [data-bs-theme="dark"] body .navbar-nav .dropdown-item {
+        color: #f5f5f5 !important;
+        background-color: transparent !important;
+    }
+    
+    /* Hover sur les items du dropdown */
+    [data-bs-theme="dark"] body .navbar-nav .dropdown-item:hover,
+    [data-bs-theme="dark"] body .navbar-nav .dropdown-item:focus,
+    [data-bs-theme="dark"] body .navbar-nav .dropdown-item:active {
+        background-color: rgba(220, 53, 69, 0.2) !important;
+        color: #ffffff !important;
+    }
+    
+    /* Icônes blanches dans les menus */
+    [data-bs-theme="dark"] body .navbar-nav .nav-link i,
+    [data-bs-theme="dark"] body .navbar-nav .dropdown-item i {
+        color: #ffffff !important;
+    }
+    
+    /* Menu utilisateur - header blanc */
+    [data-bs-theme="dark"] body .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-header {
+        color: #ffffff !important;
+    }
+    
+    /* Texte du rôle */
+    [data-bs-theme="dark"] body .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item-text {
+        color: #f5f5f5 !important;
+    }
+    
+    /* Bouton Déconnexion (garder rouge) */
+    [data-bs-theme="dark"] body .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item.text-danger {
+        color: #dc3545 !important;
+    }
+    
+    [data-bs-theme="dark"] body .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item.text-danger:hover {
+        background-color: rgba(220, 53, 69, 0.2) !important;
+        color: #ff6b7a !important;
+    }
+}
+
+/* ====================================================================
+   FIN DU FICHIER
+   ==================================================================== */

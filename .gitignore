@@ -1,0 +1,62 @@
+# ====================================================================
+# Synd_Gest - Git Ignore
+# ====================================================================
+
+# Fichiers de configuration avec mots de passe
+config/database.php
+config/config.local.php
+
+# Variables d'environnement (IMPORTANT: Ne JAMAIS commiter .env !)
+.env
+.env.local
+.env.*.local
+
+# Fichiers uploadés
+uploads/*
+!uploads/.gitkeep
+uploads/documents/*
+!uploads/documents/.gitkeep
+uploads/photos/*
+!uploads/photos/.gitkeep
+uploads/temp/*
+!uploads/temp/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Cache
+cache/
+tmp/
+temp/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Composer
+vendor/
+composer.lock
+
+# Node modules
+node_modules/
+package-lock.json
+
+# Backups
+*.sql.backup
+*.bak
+backup/
+
+# Documentation générée
+docs/api/
+
+# Tests
+coverage/
+.phpunit.result.cache
