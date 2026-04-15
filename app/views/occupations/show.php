@@ -44,7 +44,7 @@
                 </p>
             </div>
             <div>
-                <?php if (in_array($userRole, ['admin', 'gestionnaire', 'exploitant'])): ?>
+                <?php if (in_array($userRole, ['admin', 'directeur_residence', 'exploitant'])): ?>
                 <a href="<?= BASE_URL ?>/occupation/edit/<?= $occupation['id'] ?>" class="btn btn-warning">
                     <i class="fas fa-edit"></i> Modifier
                 </a>
@@ -213,85 +213,42 @@
                         <?php endif; ?>
                     </div>
                     
-                    <?php if (!empty($occupation['services_inclus'])): ?>
+                    <?php
+                    $svcInclus = array_filter($services ?? [], fn($s) => $s['categorie'] === 'inclus' && !empty($s['souscrit']));
+                    $svcSup = array_filter($services ?? [], fn($s) => $s['categorie'] === 'supplementaire' && !empty($s['souscrit']));
+                    ?>
+                    <?php if (!empty($svcInclus)): ?>
                     <hr class="my-3">
                     <div>
                         <label class="text-muted small mb-2">Services inclus</label>
-                        <?php
-                        $servicesInclus = json_decode($occupation['services_inclus'], true);
-                        if ($servicesInclus && is_array($servicesInclus)):
-                            $servicesLabels = [
-                                'wifi' => 'Wi-Fi',
-                                'telephone' => 'Téléphone',
-                                'animations' => 'Animations',
-                                'assistance_24h' => 'Assistance 24h/24',
-                                'entretien_espaces_communs' => 'Entretien des espaces communs',
-                                'restaurant_midi' => 'Restaurant midi',
-                                'restaurant_soir' => 'Restaurant soir',
-                                'menage_hebdomadaire' => 'Ménage hebdomadaire',
-                                'blanchisserie' => 'Blanchisserie',
-                                'coiffeur' => 'Coiffeur',
-                                'podologue' => 'Podologue',
-                                'kine' => 'Kinésithérapeute'
-                            ];
-                        ?>
                         <div class="row g-2">
-                            <?php foreach ($servicesInclus as $key => $value): ?>
-                                <?php if ($value): ?>
-                                <div class="col-12 col-md-6">
-                                    <span class="badge bg-info">
-                                        <i class="fas fa-check-circle me-1"></i>
-                                        <?= htmlspecialchars($servicesLabels[$key] ?? ucfirst(str_replace('_', ' ', $key))) ?>
-                                    </span>
-                                </div>
-                                <?php endif; ?>
+                            <?php foreach ($svcInclus as $svc): ?>
+                            <div class="col-12 col-md-6">
+                                <span class="badge bg-info">
+                                    <i class="<?= htmlspecialchars($svc['icone']) ?> me-1"></i>
+                                    <?= htmlspecialchars($svc['nom']) ?>
+                                </span>
+                            </div>
                             <?php endforeach; ?>
                         </div>
-                        <?php else: ?>
-                        <div class="alert alert-info mb-0">
-                            <i class="fas fa-check-circle me-2"></i>
-                            <?= nl2br(htmlspecialchars($occupation['services_inclus'])) ?>
-                        </div>
-                        <?php endif; ?>
                     </div>
                     <?php endif; ?>
-                    
-                    <?php if (!empty($occupation['services_supplementaires'])): ?>
+
+                    <?php if (!empty($svcSup)): ?>
                     <hr class="my-3">
                     <div>
                         <label class="text-muted small mb-2">Services supplémentaires</label>
-                        <?php
-                        $servicesSup = json_decode($occupation['services_supplementaires'], true);
-                        if ($servicesSup && is_array($servicesSup)):
-                            $servicesLabels = [
-                                'coiffure' => 'Coiffure',
-                                'podologie' => 'Podologie',
-                                'kinesitherapie' => 'Kinésithérapie',
-                                'menage_supplementaire' => 'Ménage supplémentaire',
-                                'blanchisserie_sup' => 'Blanchisserie supplémentaire',
-                                'repas_supplementaires' => 'Repas supplémentaires',
-                                'sorties' => 'Sorties et excursions',
-                                'accompagnement_medical' => 'Accompagnement médical'
-                            ];
-                        ?>
                         <div class="row g-2">
-                            <?php foreach ($servicesSup as $key => $value): ?>
-                                <?php if ($value): ?>
-                                <div class="col-12 col-md-6">
-                                    <span class="badge bg-warning text-dark">
-                                        <i class="fas fa-plus-circle me-1"></i>
-                                        <?= htmlspecialchars($servicesLabels[$key] ?? ucfirst(str_replace('_', ' ', $key))) ?>
-                                    </span>
-                                </div>
-                                <?php endif; ?>
+                            <?php foreach ($svcSup as $svc): ?>
+                            <div class="col-12 col-md-6">
+                                <span class="badge bg-warning text-dark">
+                                    <i class="<?= htmlspecialchars($svc['icone']) ?> me-1"></i>
+                                    <?= htmlspecialchars($svc['nom']) ?>
+                                    <span class="ms-1">(<?= number_format($svc['prix_applique'], 2) ?> €)</span>
+                                </span>
+                            </div>
                             <?php endforeach; ?>
                         </div>
-                        <?php else: ?>
-                        <div class="alert alert-warning mb-0">
-                            <i class="fas fa-plus-circle me-2"></i>
-                            <?= nl2br(htmlspecialchars($occupation['services_supplementaires'])) ?>
-                        </div>
-                        <?php endif; ?>
                     </div>
                     <?php endif; ?>
                 </div>

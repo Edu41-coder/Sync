@@ -12,7 +12,7 @@ class CoproprieteController extends Controller {
      */
     public function index() {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         // TODO: Charger le modèle Copropriete et récupérer les données
         
@@ -30,7 +30,7 @@ class CoproprieteController extends Controller {
      */
     public function show($id) {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         // TODO: Charger la copropriété depuis le modèle
         
@@ -48,7 +48,7 @@ class CoproprieteController extends Controller {
      */
     public function create() {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         $data = [
             'title' => 'Nouvelle Copropriété - ' . APP_NAME,
@@ -63,7 +63,7 @@ class CoproprieteController extends Controller {
      */
     public function store() {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // TODO: Validation et insertion en BDD
@@ -78,7 +78,7 @@ class CoproprieteController extends Controller {
      */
     public function edit($id) {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         // TODO: Charger la copropriété
         
@@ -96,7 +96,7 @@ class CoproprieteController extends Controller {
      */
     public function update($id) {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // TODO: Validation et mise à jour en BDD

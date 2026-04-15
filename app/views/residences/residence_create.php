@@ -42,11 +42,11 @@
                             <label for="nom" class="form-label">
                                 <i class="fas fa-tag me-1"></i>Nom de la résidence <span class="text-danger">*</span>
                             </label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="nom" 
-                                   name="nom" 
-                                   placeholder="Ex: Domitys - Les Jardins de Lumière"
+                            <input type="text"
+                                   class="form-control"
+                                   id="nom"
+                                   name="nom"
+                                   value="Domitys - "
                                    required>
                         </div>
                         
@@ -69,45 +69,69 @@
                                 <label for="code_postal" class="form-label">
                                     <i class="fas fa-hashtag me-1"></i>Code postal <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="code_postal" 
-                                       name="code_postal" 
+                                <input type="text"
+                                       class="form-control"
+                                       id="code_postal"
+                                       name="code_postal"
                                        placeholder="69001"
                                        maxlength="10"
                                        required>
                             </div>
-                            
+
                             <div class="col-12 col-md-8 mb-3">
                                 <label for="ville" class="form-label">
                                     <i class="fas fa-city me-1"></i>Ville <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="ville" 
-                                       name="ville" 
+                                <input type="text"
+                                       class="form-control"
+                                       id="ville"
+                                       name="ville"
                                        placeholder="Lyon"
                                        required>
                             </div>
                         </div>
+
+                        <input type="hidden" id="latitude" name="latitude" value="">
+                        <input type="hidden" id="longitude" name="longitude" value="">
                         
-                        <!-- Exploitant -->
+                        <!-- Exploitants avec pourcentages -->
                         <div class="mb-3">
-                            <label for="exploitant_id" class="form-label">
-                                <i class="fas fa-building me-1"></i>Exploitant
+                            <label class="form-label">
+                                <i class="fas fa-briefcase me-1"></i>Exploitants &amp; Pourcentages de gestion
                             </label>
-                            <select class="form-select" id="exploitant_id" name="exploitant_id">
-                                <option value="">-- Aucun exploitant --</option>
-                                <?php foreach ($exploitants as $exp): ?>
-                                    <option value="<?= $exp['id'] ?>">
-                                        <?= htmlspecialchars($exp['raison_sociale']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <div class="form-text">
-                                <i class="fas fa-info-circle"></i>
-                                L'exploitant qui gère cette résidence (ex: Domitys)
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered mb-1" id="exploitants-table">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Société</th>
+                                            <th style="width:130px">% de gestion</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($exploitants as $exp): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($exp['raison_sociale']) ?></td>
+                                            <td>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" class="form-control pct-input"
+                                                           name="exploitant_pourcentages[<?= $exp['id'] ?>]"
+                                                           value="<?= $exp['id'] == 1 ? '100' : '0' ?>"
+                                                           min="0" max="100" step="0.01"
+                                                           placeholder="0">
+                                                    <span class="input-group-text">%</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
                             </div>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <small class="text-muted">Total :</small>
+                                <span id="pct-total" class="fw-bold">100%</span>
+                                <small id="pct-warning" class="text-danger d-none"><i class="fas fa-exclamation-triangle"></i> Le total ne doit pas dépasser 100%</small>
+                            </div>
+                            <div class="form-text">Par défaut Domitys = 100%. Modifiez si cette résidence est gérée partiellement par plusieurs exploitants.</div>
                         </div>
                         
                         <!-- Description -->
@@ -146,11 +170,6 @@
                     <h5 class="card-title">
                         <i class="fas fa-info-circle text-danger"></i> Informations
                     </h5>
-                    <p class="card-text">
-                        <strong>Type :</strong> Cette résidence sera automatiquement créée comme 
-                        <span class="badge bg-danger">Résidence Seniors</span>
-                    </p>
-                    <hr>
                     <h6><i class="fas fa-check-circle text-success"></i> Après la création :</h6>
                     <ul class="small">
                         <li>Vous pourrez ajouter des lots (appartements)</li>
@@ -163,3 +182,30 @@
     </div>
 
 </div>
+
+<script>
+function updatePctTotal() {
+    const inputs = document.querySelectorAll('.pct-input');
+    let total = 0;
+    inputs.forEach(i => total += parseFloat(i.value) || 0);
+    total = Math.round(total * 100) / 100;
+    const el = document.getElementById('pct-total');
+    const warn = document.getElementById('pct-warning');
+    el.textContent = total + '%';
+    el.className = 'fw-bold ' + (total > 100 ? 'text-danger' : total === 100 ? 'text-success' : 'text-warning');
+    warn.classList.toggle('d-none', total <= 100);
+}
+document.querySelectorAll('.pct-input').forEach(i => i.addEventListener('input', updatePctTotal));
+updatePctTotal();
+
+// Validation pourcentages au submit
+document.querySelector('form').addEventListener('submit', function(e) {
+        const pctInputs = document.querySelectorAll('.pct-input');
+        let total = 0;
+        pctInputs.forEach(i => total += parseFloat(i.value) || 0);
+        if (total > 100) {
+            e.preventDefault();
+            alert('Le total des pourcentages exploitants dépasse 100% (' + Math.round(total*100)/100 + '%). Veuillez corriger.');
+        }
+});
+</script>

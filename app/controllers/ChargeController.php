@@ -9,7 +9,7 @@ class ChargeController extends Controller {
     
     public function index() {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         $data = [
             'title' => 'Appels de Fonds - ' . APP_NAME,
@@ -22,7 +22,7 @@ class ChargeController extends Controller {
     
     public function generer() {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         $data = ['title' => 'Générer Appel de Fonds - ' . APP_NAME, 'showNavbar' => true];
         $this->view('charges/generer', $data, true);
     }

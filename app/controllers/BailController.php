@@ -9,7 +9,7 @@ class BailController extends Controller {
     
     public function index() {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         $data = [
             'title' => 'Baux - ' . APP_NAME,
@@ -28,7 +28,7 @@ class BailController extends Controller {
     
     public function create() {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         $data = ['title' => 'Nouveau Bail - ' . APP_NAME, 'showNavbar' => true];
         $this->view('baux/create', $data, true);
     }

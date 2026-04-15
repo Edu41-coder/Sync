@@ -9,7 +9,7 @@ class ComptabiliteController extends Controller {
     
     public function index() {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         $data = [
             'title' => 'Comptabilité - ' . APP_NAME,

@@ -187,10 +187,10 @@ class Lot extends Model {
         try {
             $sql = "INSERT INTO lots (
                         copropriete_id, numero_lot, type, etage,
-                        surface, nombre_pieces, description,
+                        surface, nombre_pieces, terrasse, description,
                         tantiemes_generaux, tantiemes_chauffage, tantiemes_ascenseur
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
                 $data['copropriete_id'],
@@ -199,6 +199,7 @@ class Lot extends Model {
                 $data['etage'] ?? null,
                 $data['surface'] ?? null,
                 $data['nombre_pieces'] ?? null,
+                $data['terrasse'] ?? 'non',
                 $data['description'] ?? null,
                 $data['tantiemes_generaux'] ?? 0,
                 $data['tantiemes_chauffage'] ?? 0,
@@ -221,12 +222,13 @@ class Lot extends Model {
                         etage = ?,
                         surface = ?,
                         nombre_pieces = ?,
+                        terrasse = ?,
                         description = ?,
                         tantiemes_generaux = ?,
                         tantiemes_chauffage = ?,
                         tantiemes_ascenseur = ?
                     WHERE id = ?";
-            
+
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
                 $data['numero_lot'],
@@ -234,6 +236,7 @@ class Lot extends Model {
                 $data['etage'] ?? null,
                 $data['surface'] ?? null,
                 $data['nombre_pieces'] ?? null,
+                $data['terrasse'] ?? 'non',
                 $data['description'] ?? null,
                 $data['tantiemes_generaux'] ?? 0,
                 $data['tantiemes_chauffage'] ?? 0,
@@ -260,20 +263,42 @@ class Lot extends Model {
     }
     
     /**
-     * Vérifier si un lot est occupé
+     * Vérifier si un lot est occupé par un résident permanent
      */
     public function isOccupied($lotId) {
         try {
-            $sql = "SELECT COUNT(*) as count 
-                    FROM occupations_residents 
+            $sql = "SELECT COUNT(*) as count
+                    FROM occupations_residents
                     WHERE lot_id = ? AND statut = 'actif'";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$lotId]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             return $result['count'] > 0;
         } catch (PDOException $e) {
             $this->logError("Erreur isOccupied: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Vérifier si un lot est réservé par un hôte temporaire sur une période donnée
+     */
+    public function isReservedByHote($lotId, string $dateArrivee, string $dateDepart, int $excludeHoteId = 0) {
+        try {
+            $sql = "SELECT COUNT(*) as count FROM hotes_temporaires
+                    WHERE lot_id = ? AND statut IN ('reserve','en_cours')
+                    AND date_arrivee < ? AND date_depart_prevue > ?";
+            $params = [$lotId, $dateDepart, $dateArrivee];
+            if ($excludeHoteId > 0) {
+                $sql .= " AND id != ?";
+                $params[] = $excludeHoteId;
+            }
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetch(PDO::FETCH_ASSOC)['count'] > 0;
+        } catch (PDOException $e) {
+            $this->logError("Erreur isReservedByHote: " . $e->getMessage());
             return false;
         }
     }
@@ -285,12 +310,12 @@ class Lot extends Model {
         try {
             $sql = "SELECT 
                         COUNT(DISTINCT l.id) as total_lots,
-                        COUNT(DISTINCT CASE WHEN l.type = 'appartement' THEN l.id END) as total_appartements,
+                        COUNT(DISTINCT CASE WHEN l.type IN ('studio','t2','t2_bis','t3') THEN l.id END) as total_studios,
                         COUNT(DISTINCT CASE WHEN o.statut = 'actif' THEN o.id END) as occupations_actives,
                         COALESCE(SUM(CASE WHEN o.statut = 'actif' THEN o.loyer_mensuel_resident END), 0) as revenus_mensuels,
                         COALESCE(SUM(CASE WHEN cg.statut = 'actif' THEN cg.loyer_mensuel_garanti END), 0) as charges_mensuelles,
-                        COUNT(DISTINCT CASE WHEN o.statut = 'actif' AND l.type = 'appartement' THEN o.id END) * 100.0 / 
-                            NULLIF(COUNT(DISTINCT CASE WHEN l.type = 'appartement' THEN l.id END), 0) as taux_occupation
+                        COUNT(DISTINCT CASE WHEN o.statut = 'actif' AND l.type IN ('studio','t2','t2_bis','t3') THEN o.id END) * 100.0 / 
+                            NULLIF(COUNT(DISTINCT CASE WHEN l.type IN ('studio','t2','t2_bis','t3') THEN l.id END), 0) as taux_occupation
                     FROM lots l
                     LEFT JOIN occupations_residents o ON l.id = o.lot_id
                     LEFT JOIN contrats_gestion cg ON l.id = cg.lot_id
@@ -303,5 +328,46 @@ class Lot extends Model {
             $this->logError("Erreur getResidenceStats: " . $e->getMessage());
             return null;
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  LISTES POUR CONTRÔLEURS
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Tous les lots avec occupation/résident (pour LotController::index)
+     */
+    public function getAllWithOccupation(): array {
+        $sql = "SELECT l.*, c.id as residence_id, c.nom as residence_nom, c.ville as residence_ville,
+                   o.id as occupation_id, o.statut as occupation_statut, o.loyer_mensuel_resident,
+                   CONCAT(rs.prenom, ' ', rs.nom) as resident_nom, rs.id as resident_id
+                FROM lots l
+                JOIN coproprietees c ON l.copropriete_id = c.id
+                LEFT JOIN occupations_residents o ON l.id = o.lot_id AND o.statut = 'actif'
+                LEFT JOIN residents_seniors rs ON o.resident_id = rs.id
+                WHERE c.actif = 1
+                ORDER BY c.nom, l.numero_lot";
+        try { return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC); }
+        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
+    }
+
+    /**
+     * Résidences pour filtre dropdown
+     */
+    public function getResidencesForFilter(): array {
+        $sql = "SELECT id, nom FROM coproprietees WHERE actif=1 ORDER BY nom";
+        try { return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC); }
+        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
+    }
+
+    /**
+     * Tous les lots groupés par résidence (pour formulaire création user)
+     */
+    public function getAllGroupedByResidence(): array {
+        $sql = "SELECT l.id, l.numero_lot, l.type, c.id as residence_id, c.nom as residence_nom
+                FROM lots l JOIN coproprietees c ON l.copropriete_id = c.id
+                ORDER BY c.nom, l.numero_lot";
+        try { return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC); }
+        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
     }
 }

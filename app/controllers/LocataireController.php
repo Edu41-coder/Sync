@@ -9,7 +9,7 @@ class LocataireController extends Controller {
     
     public function index() {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         $data = [
             'title' => 'Locataires - ' . APP_NAME,
@@ -22,7 +22,7 @@ class LocataireController extends Controller {
     
     public function show($id) {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         $data = [
             'title' => 'Détails Locataire - ' . APP_NAME,
@@ -35,7 +35,7 @@ class LocataireController extends Controller {
     
     public function create() {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         $data = [
             'title' => 'Nouveau Locataire - ' . APP_NAME,
@@ -47,7 +47,7 @@ class LocataireController extends Controller {
     
     public function store() {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $this->setFlash('success', 'Locataire créé avec succès');
@@ -57,7 +57,7 @@ class LocataireController extends Controller {
     
     public function edit($id) {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         $data = [
             'title' => 'Modifier Locataire - ' . APP_NAME,
@@ -70,7 +70,7 @@ class LocataireController extends Controller {
     
     public function update($id) {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $this->setFlash('success', 'Locataire mis à jour avec succès');

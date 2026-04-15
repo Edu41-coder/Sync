@@ -440,7 +440,7 @@ include __DIR__ . '/../partials/breadcrumb.php';
                             </label>
                         </div>
                         <small class="text-muted">
-                            Décochez pour désactiver le résident
+                            (Dé)cochez pour (dés)activer le résident
                         </small>
                     </div>
                 </div>

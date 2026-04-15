@@ -87,11 +87,12 @@
                                     </span>
                                     <select class="form-select" id="type" name="type" required>
                                         <option value="">-- Sélectionner --</option>
-                                        <option value="appartement" <?= (isset($lot['type']) && $lot['type'] === 'appartement') ? 'selected' : '' ?>>Appartement</option>
+                                        <option value="studio" <?= (isset($lot['type']) && $lot['type'] === 'studio') ? 'selected' : '' ?>>Studio</option>
+                                        <option value="t2" <?= (isset($lot['type']) && $lot['type'] === 't2') ? 'selected' : '' ?>>T2</option>
+                                        <option value="t2_bis" <?= (isset($lot['type']) && $lot['type'] === 't2_bis') ? 'selected' : '' ?>>T2 Bis</option>
+                                        <option value="t3" <?= (isset($lot['type']) && $lot['type'] === 't3') ? 'selected' : '' ?>>T3</option>
                                         <option value="parking" <?= (isset($lot['type']) && $lot['type'] === 'parking') ? 'selected' : '' ?>>Parking</option>
                                         <option value="cave" <?= (isset($lot['type']) && $lot['type'] === 'cave') ? 'selected' : '' ?>>Cave</option>
-                                        <option value="commerce" <?= (isset($lot['type']) && $lot['type'] === 'commerce') ? 'selected' : '' ?>>Commerce</option>
-                                        <option value="autre" <?= (isset($lot['type']) && $lot['type'] === 'autre') ? 'selected' : '' ?>>Autre</option>
                                     </select>
                                 </div>
                             </div>
@@ -126,16 +127,29 @@
                                     <span class="input-group-text">
                                         <i class="fas fa-door-closed"></i>
                                     </span>
-                                    <input type="number" 
-                                           class="form-control" 
-                                           id="nombre_pieces" 
-                                           name="nombre_pieces" 
+                                    <input type="number"
+                                           class="form-control"
+                                           id="nombre_pieces"
+                                           name="nombre_pieces"
                                            min="0"
                                            value="<?= $lot['nombre_pieces'] ?? '' ?>"
                                            placeholder="Ex: 2">
                                 </div>
                             </div>
-                            
+
+                            <!-- Terrasse -->
+                            <div class="col-12 col-md-4">
+                                <label for="terrasse" class="form-label">Terrasse / Loggia</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-sun"></i></span>
+                                    <select class="form-select" id="terrasse" name="terrasse">
+                                        <option value="non" <?= ($lot['terrasse'] ?? '') === 'non' ? 'selected' : '' ?>>Non</option>
+                                        <option value="oui" <?= ($lot['terrasse'] ?? '') === 'oui' ? 'selected' : '' ?>>Oui</option>
+                                        <option value="loggia" <?= ($lot['terrasse'] ?? '') === 'loggia' ? 'selected' : '' ?>>Loggia</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <!-- Étage -->
                             <div class="col-12 col-md-4">
                                 <label for="etage" class="form-label">
@@ -283,7 +297,7 @@
                     <h6 class="fw-bold">Informations requises</h6>
                     <ul class="small">
                         <li><strong>Numéro de lot :</strong> Identifiant unique du lot</li>
-                        <li><strong>Type :</strong> Nature du bien (appartement, parking, etc.)</li>
+                        <li><strong>Type :</strong> Nature du bien (studio, T2, T2 Bis, T3, parking, cave)</li>
                     </ul>
                     
                     <h6 class="fw-bold mt-3">Informations optionnelles</h6>

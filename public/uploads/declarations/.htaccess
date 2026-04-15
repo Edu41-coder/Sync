@@ -1,0 +1,8 @@
+# Empêcher l'exécution de scripts
+php_flag engine off
+Options -ExecCGI
+
+# Restreindre les types de fichiers
+<FilesMatch '\.(php|phtml|php3|php4|php5|phps|pl|py|cgi)$'>
+    Require all denied
+</FilesMatch>

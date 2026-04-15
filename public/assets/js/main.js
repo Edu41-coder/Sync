@@ -7,13 +7,19 @@
 // Attendre que le DOM soit chargé
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Auto-fermeture des alertes après 5 secondes
+    // Auto-fermeture des alertes selon leur durée flash
     const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
     alerts.forEach(alert => {
+        const duration = parseInt(alert.getAttribute('data-flash-duration') || '5000', 10);
+
+        if (!Number.isFinite(duration) || duration <= 0) {
+            return;
+        }
+
         setTimeout(() => {
             const bsAlert = new bootstrap.Alert(alert);
             bsAlert.close();
-        }, 5000);
+        }, duration);
     });
     
     // Toggle password visibility

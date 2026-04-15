@@ -9,7 +9,7 @@ class ReportController extends Controller {
     
     public function index() {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         
         $data = [
             'title' => 'Rapports - ' . APP_NAME,

@@ -21,9 +21,53 @@
                         <i class="fas fa-home me-1 text-white"></i> Tableau de bord
                     </a>
                 </li>
-                
-                <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin', 'gestionnaire'])): ?>
-                
+
+                <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'proprietaire'): ?>
+                <!-- Propriétaire : menus spécifiques -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navPropResidences" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-building me-1"></i> Résidences
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navPropResidences">
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/coproprietaire/mesLots">
+                            <i class="fas fa-door-open me-2 text-primary"></i> Mes lots
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/coproprietaire/mesResidences">
+                            <i class="fas fa-star me-2 text-warning"></i> Mes résidences
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/residences">
+                            <i class="fas fa-list me-2"></i> Toutes les résidences
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/carteResidences">
+                            <i class="fas fa-map-marked-alt me-2"></i> Carte
+                        </a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<?php echo BASE_URL; ?>/coproprietaire/calendrier">
+                        <i class="fas fa-calendar-alt me-1"></i> Calendrier
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navPropCompta" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-calculator me-1"></i> Comptabilité
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navPropCompta">
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/coproprietaire/comptabilite">
+                            <i class="fas fa-chart-line me-2"></i> Vue d'ensemble
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/coproprietaire/declarationFiscale">
+                            <i class="fas fa-file-invoice me-2 text-primary"></i> Déclaration fiscale
+                        </a></li>
+                    </ul>
+                </li>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin', 'directeur_residence'])): ?>
+
                 <!-- Menu Copropriétés -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navCoproprietes" role="button" 
@@ -31,12 +75,14 @@
                         <i class="fas fa-building me-1"></i> Copropriétés
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="navCoproprietes">
-                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/copropriete/index">
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/residences">
                             <i class="fas fa-list me-2"></i> Liste
                         </a></li>
-                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/copropriete/create">
+                        <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/createResidence">
                             <i class="fas fa-plus me-2"></i> Nouvelle copropriété
                         </a></li>
+                        <?php endif; ?>
                     </ul>
                 </li>
                 
@@ -56,18 +102,18 @@
                     </ul>
                 </li>
                 
-                <!-- Menu Copropriétaires -->
+                <!-- Menu Propriétaires -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navCoproprietaires" role="button" 
+                    <a class="nav-link dropdown-toggle" href="#" id="navCoproprietaires" role="button"
                        data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-users me-1"></i> Copropriétaires
+                        <i class="fas fa-home me-1"></i> Propriétaires
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="navCoproprietaires">
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/coproprietaire/index">
                             <i class="fas fa-list me-2"></i> Liste
                         </a></li>
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/coproprietaire/create">
-                            <i class="fas fa-user-plus me-2"></i> Nouveau copropriétaire
+                            <i class="fas fa-user-plus me-2"></i> Nouveau propriétaire
                         </a></li>
                     </ul>
                 </li>
@@ -107,41 +153,103 @@
                 </li>
                 
                 <?php endif; ?>
+
+                <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin', 'directeur_residence', 'employe_residence'])): ?>
+                <!-- Menu Hôtes Temporaires -->
+                <li class="nav-item">
+                    <a class="nav-link" href="<?php echo BASE_URL; ?>/hote/index">
+                        <i class="fas fa-calendar-check me-1"></i> Hôtes
+                    </a>
+                </li>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin', 'directeur_residence', 'comptable'])): ?>
+                <!-- Planning Staff -->
+                <li class="nav-item">
+                    <a class="nav-link" href="<?php echo BASE_URL; ?>/planning/index">
+                        <i class="fas fa-calendar-alt me-1"></i> Planning
+                    </a>
+                </li>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
+                <!-- Menu Administration -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navAdmin" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-cogs me-1"></i> Administration
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navAdmin">
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/users">
+                            <i class="fas fa-users me-2"></i> Utilisateurs
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/services">
+                            <i class="fas fa-concierge-bell me-2"></i> Services
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/contrats">
+                            <i class="fas fa-file-contract me-2"></i> Contrats de gestion
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/carteResidences">
+                            <i class="fas fa-map-marked-alt me-2"></i> Carte des résidences
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/logs">
+                            <i class="fas fa-shield-alt me-2 text-danger"></i> Logs de sécurité
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/migrate">
+                            <i class="fas fa-database me-2 text-info"></i> Migrations DB
+                        </a></li>
+                    </ul>
+                </li>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'exploitant'): ?>
+                <li class="nav-item">
+                    <a class="nav-link" href="<?php echo BASE_URL; ?>/admin/residences">
+                        <i class="fas fa-building me-1"></i> Mes résidences
+                    </a>
+                </li>
+                <?php endif; ?>
             </ul>
             
             <!-- Menu utilisateur (droite) -->
             <ul class="navbar-nav ms-auto">
-                <!-- Notifications -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link d-flex align-items-center" href="#" id="navNotifications" role="button" 
-                       data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge rounded-pill bg-danger ms-2" style="font-size: 0.65rem;">
-                            3
-                            <span class="visually-hidden">notifications non lues</span>
-                        </span>
+                <!-- Messagerie -->
+                <li class="nav-item">
+                    <a class="nav-link position-relative" href="<?php echo BASE_URL; ?>/message/index" title="Messagerie">
+                        <i class="fas fa-envelope"></i>
+                        <span class="badge rounded-pill bg-danger d-none" id="msgBadge" style="font-size:0.55rem;position:absolute;top:2px;right:0px"></span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end dropdown-notifications" aria-labelledby="navNotifications">
-                        <li><h6 class="dropdown-header">Notifications</h6></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item small text-nowrap" href="#">
-                            <i class="fas fa-info-circle me-2" style="color: #0dcaf0;"></i>
-                            Nouvelle AG planifiée
-                        </a></li>
-                        <li><a class="dropdown-item small text-nowrap" href="#">
-                            <i class="fas fa-exclamation-triangle me-2" style="color: #ffc107;"></i>
-                            Paiement en retard
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-center small" href="#" style="color: #dc3545;">Voir toutes</a></li>
-                    </ul>
                 </li>
-                
+
+                <!-- Notifications (futur) -->
+                <li class="nav-item">
+                    <a class="nav-link position-relative" href="#" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge rounded-pill bg-danger d-none" id="notifBadge" style="font-size:0.55rem;position:absolute;top:2px;right:0px"></span>
+                    </a>
+                </li>
+
                 <!-- Profil utilisateur -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navUser" role="button" 
                        data-bs-toggle="dropdown" aria-expanded="false">
+                        <?php
+                        $navPhoto = null;
+                        if (isset($_SESSION['user_id'])) {
+                            try {
+                                $navPdo = new PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASS);
+                                $navStmt = $navPdo->prepare("SELECT photo_profil FROM users WHERE id=?");
+                                $navStmt->execute([$_SESSION['user_id']]);
+                                $navPhoto = $navStmt->fetchColumn() ?: null;
+                            } catch (Exception $e) {}
+                        }
+                        ?>
+                        <?php if ($navPhoto): ?>
+                        <img src="<?= BASE_URL . '/' . $navPhoto ?>" alt="" class="rounded-circle me-2" style="width:24px;height:24px;object-fit:cover">
+                        <?php else: ?>
                         <i class="fas fa-user-circle me-2"></i>
+                        <?php endif; ?>
                         <span><?php echo $_SESSION['user_username'] ?? 'Utilisateur'; ?></span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navUser">
@@ -155,9 +263,10 @@
                             $role = $_SESSION['user_role'] ?? 'user';
                             $roleNames = [
                                 'admin' => 'Administrateur',
-                                'gestionnaire' => 'Gestionnaire',
-                                'coproprietaire' => 'Copropriétaire',
-                                'locataire' => 'Locataire'
+                                'directeur_residence' => 'Directeur de résidence',
+                                'proprietaire' => 'Propriétaire',
+                                'exploitant' => 'Exploitant',
+                                'comptable' => 'Comptable',
                             ];
                             echo $roleNames[$role] ?? $role;
                             ?>

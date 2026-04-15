@@ -162,7 +162,7 @@ class ResidenceMap {
      */
     fitBounds() {
         if (this.markersGroup.getLayers().length > 0) {
-            this.map.fitBounds(this.markersGroup.getBounds(), { padding: [50, 50] });
+            this.map.fitBounds(this.markersGroup.getBounds(), { padding: [50, 50], maxZoom: 15 });
         }
     }
     

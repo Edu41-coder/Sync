@@ -12,19 +12,25 @@ class ContratGestion extends Model {
      * Récupérer tous les contrats
      */
     public function getAll() {
-        $sql = "SELECT 
+        $sql = "SELECT
                     cg.*,
                     e.raison_sociale as exploitant,
+                    l.numero_lot,
                     c.nom as residence,
                     c.ville,
-                    CONCAT(cp.prenom, ' ', cp.nom) as proprietaire
+                    CONCAT(cp.prenom, ' ', cp.nom) as proprietaire,
+                    cp.email as proprietaire_email,
+                    o.loyer_mensuel_resident,
+                    (o.loyer_mensuel_resident - cg.loyer_mensuel_garanti) as marge_mensuelle
                 FROM contrats_gestion cg
-                INNER JOIN exploitants e ON cg.exploitant_id = e.id
-                INNER JOIN coproprietees c ON cg.copropriete_id = c.id
-                LEFT JOIN coproprietaires cp ON cg.proprietaire_id = cp.id
-                ORDER BY cg.date_debut DESC";
-        
-        return $this->db->query($sql)->fetchAll(PDO::FETCH_OBJ);
+                LEFT JOIN exploitants e ON cg.exploitant_id = e.id
+                LEFT JOIN lots l ON cg.lot_id = l.id
+                LEFT JOIN coproprietees c ON l.copropriete_id = c.id
+                LEFT JOIN coproprietaires cp ON cg.coproprietaire_id = cp.id
+                LEFT JOIN occupations_residents o ON o.lot_id = cg.lot_id AND o.statut = 'actif'
+                ORDER BY cg.statut, c.nom, l.numero_lot";
+
+        return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
     
     /**
@@ -319,5 +325,14 @@ class ContratGestion extends Model {
             $this->logError("Erreur getRecent: " . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * Liste des propriétaires pour formulaire création contrat
+     */
+    public function getProprietairesList(): array {
+        $sql = "SELECT cp.*, CONCAT(cp.prenom, ' ', cp.nom) as nom_complet FROM coproprietaires cp ORDER BY cp.nom, cp.prenom";
+        try { return $this->db->query($sql)->fetchAll(PDO::FETCH_OBJ); }
+        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
     }
 }

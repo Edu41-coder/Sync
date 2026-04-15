@@ -183,7 +183,7 @@
                 <table id="residentsTable" class="table table-hover mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th class="sortable" data-column="id" data-type="number">#</th>
+                            <th class="sortable" data-column="id" data-type="number">ID</th>
                             <th class="sortable" data-column="nom">Nom complet</th>
                             <th class="sortable" data-column="age" data-type="number">Âge</th>
                             <th class="sortable" data-column="autonomie">Autonomie</th>
@@ -331,62 +331,39 @@ document.addEventListener('DOMContentLoaded', function() {
         ]
     });
     
-    // Fonction pour appliquer tous les filtres
-    function applyCustomFilters() {
+    // Sauvegarder la méthode applyFilters originale et l'étendre
+    const originalApplyFilters = table.applyFilters.bind(table);
+    table.applyFilters = function() {
+        // Appliquer d'abord les filtres standard (recherche + filtres colonne)
+        originalApplyFilters();
+
+        // Puis appliquer les filtres custom sur data-attributes
         const filterStatutValue = document.getElementById('filterStatut').value;
         const filterOccupationValue = document.getElementById('filterOccupation').value;
-        const tbody = document.querySelector('#residentsTable tbody');
-        const rows = tbody.querySelectorAll('tr');
-        
-        rows.forEach(row => {
-            // Ignorer la ligne "aucun résident"
-            if (row.cells.length === 1 && row.cells[0].colSpan > 1) {
-                return;
-            }
-            
-            let showRow = true;
-            
-            // Filtre Statut (actif/inactif)
-            if (filterStatutValue !== '') {
-                const rowStatut = row.getAttribute('data-filter-statut');
-                if (filterStatutValue === '1' && rowStatut !== '1') {
-                    showRow = false;
-                } else if (filterStatutValue === '0' && rowStatut !== '0') {
-                    showRow = false;
+
+        if (filterStatutValue !== '' || filterOccupationValue !== '') {
+            this.filteredRows = this.filteredRows.filter(row => {
+                if (filterStatutValue !== '') {
+                    const rowStatut = row.getAttribute('data-filter-statut');
+                    if (filterStatutValue === '1' && rowStatut !== '1') return false;
+                    if (filterStatutValue === '0' && rowStatut !== '0') return false;
                 }
-            }
-            
-            // Filtre Occupation (avec/sans résidence)
-            if (showRow && filterOccupationValue !== '') {
-                const rowOccupation = row.getAttribute('data-filter-occupation');
-                if (filterOccupationValue === 'avec' && rowOccupation !== 'avec') {
-                    showRow = false;
-                } else if (filterOccupationValue === 'sans' && rowOccupation !== 'sans') {
-                    showRow = false;
+                if (filterOccupationValue !== '') {
+                    const rowOccupation = row.getAttribute('data-filter-occupation');
+                    if (filterOccupationValue !== rowOccupation) return false;
                 }
-            }
-            
-            // Afficher ou cacher la ligne
-            row.style.display = showRow ? '' : 'none';
-        });
-        
-        // Mettre à jour la pagination après filtrage
-        table.updatePagination();
-    }
-    
-    // Écouter les changements sur les deux filtres
-    const filterStatut = document.getElementById('filterStatut');
-    const filterOccupation = document.getElementById('filterOccupation');
-    
-    if (filterStatut) {
-        filterStatut.addEventListener('change', applyCustomFilters);
-    }
-    
-    if (filterOccupation) {
-        filterOccupation.addEventListener('change', applyCustomFilters);
-    }
-    
-    // Appliquer les filtres par défaut (actifs uniquement)
-    applyCustomFilters();
+                return true;
+            });
+            this.pagination.currentPage = 1;
+            this.renderTable();
+        }
+    };
+
+    // Écouter les changements sur les filtres custom
+    document.getElementById('filterStatut').addEventListener('change', () => table.applyFilters());
+    document.getElementById('filterOccupation').addEventListener('change', () => table.applyFilters());
+
+    // Appliquer les filtres par défaut (actifs uniquement sélectionné)
+    table.applyFilters();
 });
 </script>

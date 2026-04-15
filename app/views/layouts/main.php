@@ -73,8 +73,10 @@ document.documentElement.setAttribute('data-bs-theme', '<?php echo $theme; ?>');
     
     <!-- Messages Flash -->
     <?php if (isset($flash) && $flash): ?>
+        <?php $flashDuration = isset($flash['duration']) ? (int)$flash['duration'] : 5000; ?>
+        <?php $flashPermanentClass = $flashDuration <= 0 ? ' alert-permanent' : ''; ?>
         <div class="container-fluid mt-3">
-            <div class="alert alert-<?php echo $flash['type']; ?> alert-dismissible fade show" role="alert">
+            <div class="alert alert-<?php echo $flash['type']; ?> alert-dismissible fade show<?php echo $flashPermanentClass; ?>" role="alert" data-flash-duration="<?php echo $flashDuration; ?>">
                 <?php if ($flash['type'] === 'success'): ?>
                     <i class="fas fa-check-circle me-2"></i>
                 <?php elseif ($flash['type'] === 'error' || $flash['type'] === 'danger'): ?>
@@ -110,7 +112,28 @@ document.documentElement.setAttribute('data-bs-theme', '<?php echo $theme; ?>');
         const IS_LOGGED_IN = true;
         const BASE_URL = '<?php echo BASE_URL; ?>';
     </script>
-    <script src="<?php echo BASE_URL; ?>/assets/js/session-timeout.js"></script>
+    <script src="<?php echo BASE_URL; ?>/assets/js/session-timeout.js?v=<?= time() ?>"></script>
+    <script>
+    // Badge messages non lus
+    (function() {
+        function checkUnread() {
+            fetch(BASE_URL + '/message/unreadCount')
+                .then(r => r.json())
+                .then(data => {
+                    const badge = document.getElementById('msgBadge');
+                    if (badge && data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.classList.remove('d-none');
+                    } else if (badge) {
+                        badge.classList.add('d-none');
+                    }
+                })
+                .catch(() => {});
+        }
+        checkUnread();
+        setInterval(checkUnread, 60000); // Vérifier toutes les minutes
+    })();
+    </script>
     <?php endif; ?>
     
     <?php if (isset($additionalJS)): ?>

@@ -335,10 +335,9 @@ class Occupation extends Model {
     public function updateOccupation($id, $data) {
         try {
             $sql = "UPDATE occupations_residents SET
+                        resident_id = COALESCE(?, resident_id),
                         loyer_mensuel_resident = ?,
                         charges_mensuelles_resident = ?,
-                        services_inclus = ?,
-                        services_supplementaires = ?,
                         montant_services_sup = ?,
                         forfait_type = ?,
                         mode_paiement = ?,
@@ -351,13 +350,12 @@ class Occupation extends Model {
                         notes = ?,
                         updated_at = NOW()
                     WHERE id = ?";
-            
+
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([
+                $data['resident_id'] ?? null,
                 $data['loyer_mensuel_resident'],
                 $data['charges_mensuelles_resident'] ?? 0,
-                $data['services_inclus'] ?? null,
-                $data['services_supplementaires'] ?? null,
                 $data['montant_services_sup'] ?? 0,
                 $data['forfait_type'] ?? 'essentiel',
                 $data['mode_paiement'] ?? 'prelevement',
@@ -438,11 +436,11 @@ class Occupation extends Model {
     public function getTauxOccupation($residenceId) {
         try {
             $sql = "SELECT 
-                        COUNT(DISTINCT CASE WHEN l.type = 'appartement' THEN l.id END) as total_appartements,
-                        COUNT(DISTINCT CASE WHEN l.type = 'appartement' AND o.statut = 'actif' THEN o.id END) as appartements_occupes,
+                        COUNT(DISTINCT CASE WHEN l.type IN ('studio','t2','t2_bis','t3') THEN l.id END) as total_studios,
+                        COUNT(DISTINCT CASE WHEN l.type IN ('studio','t2','t2_bis','t3') AND o.statut = 'actif' THEN o.id END) as studios_occupes,
                         ROUND(
-                            COUNT(DISTINCT CASE WHEN l.type = 'appartement' AND o.statut = 'actif' THEN o.id END) * 100.0 / 
-                            NULLIF(COUNT(DISTINCT CASE WHEN l.type = 'appartement' THEN l.id END), 0),
+                            COUNT(DISTINCT CASE WHEN l.type IN ('studio','t2','t2_bis','t3') AND o.statut = 'actif' THEN o.id END) * 100.0 / 
+                            NULLIF(COUNT(DISTINCT CASE WHEN l.type IN ('studio','t2','t2_bis','t3') THEN l.id END), 0),
                             2
                         ) as taux_occupation
                     FROM lots l
@@ -494,6 +492,165 @@ class Occupation extends Model {
             return $result['count'] > 0;
         } catch (PDOException $e) {
             $this->logError("Erreur isLotOccupied: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  FORMULAIRES — RÉSIDENTS DISPONIBLES & LOTS LIBRES
+    // ─────────────────────────────────────────────────────────────
+
+    private const TYPES_LOGEMENT = ['studio','t2','t2_bis','t3'];
+
+    /**
+     * Résidents disponibles selon le type de lot
+     * Pour un logement : résidents sans logement actif
+     * Pour cave/parking : tous les résidents actifs
+     */
+    public function getResidentsDisponibles(?string $lotType, ?int $excludeOccupationId = null): array {
+        try {
+            $isLogement = $lotType && in_array($lotType, self::TYPES_LOGEMENT);
+
+            if ($isLogement) {
+                $excludeClause = $excludeOccupationId ? " AND o.id != $excludeOccupationId" : "";
+                $sql = "SELECT rs.id, rs.civilite, rs.nom, rs.prenom,
+                           CONCAT(rs.civilite, ' ', rs.prenom, ' ', rs.nom) as nom_complet
+                        FROM residents_seniors rs
+                        WHERE rs.actif = 1 AND rs.id NOT IN (
+                            SELECT o.resident_id FROM occupations_residents o
+                            JOIN lots l ON o.lot_id = l.id
+                            WHERE o.statut = 'actif' AND l.type IN ('studio','t2','t2_bis','t3')$excludeClause
+                        )
+                        ORDER BY rs.nom, rs.prenom";
+            } else {
+                $sql = "SELECT rs.id, rs.civilite, rs.nom, rs.prenom,
+                           CONCAT(rs.civilite, ' ', rs.prenom, ' ', rs.nom) as nom_complet
+                        FROM residents_seniors rs
+                        WHERE rs.actif = 1
+                        ORDER BY rs.nom, rs.prenom";
+            }
+
+            return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $this->logError("Erreur getResidentsDisponibles: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Lots libres (non occupés) groupés par résidence
+     */
+    public function getLotsLibres(): array {
+        $sql = "SELECT l.id, l.numero_lot, l.type, l.surface, l.etage, l.terrasse,
+                   c.id as residence_id, c.nom as residence_nom
+                FROM lots l
+                JOIN coproprietees c ON l.copropriete_id = c.id
+                LEFT JOIN occupations_residents o ON l.id = o.lot_id AND o.statut = 'actif'
+                WHERE o.id IS NULL
+                ORDER BY c.nom, l.numero_lot";
+        try {
+            return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $this->logError("Erreur getLotsLibres: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  VALIDATION — RÈGLES MÉTIER
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Type d'un lot par ID
+     */
+    public function getLotType(int $lotId): ?string {
+        try {
+            $stmt = $this->db->prepare("SELECT type FROM lots WHERE id=?");
+            $stmt->execute([$lotId]);
+            return $stmt->fetchColumn() ?: null;
+        } catch (PDOException $e) {
+            $this->logError("Erreur getLotType: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Type de lot d'une occupation existante
+     */
+    public function getOccupationLotType(int $occupationId): ?string {
+        try {
+            $stmt = $this->db->prepare("SELECT l.type FROM lots l JOIN occupations_residents o ON o.lot_id=l.id WHERE o.id=?");
+            $stmt->execute([$occupationId]);
+            return $stmt->fetchColumn() ?: null;
+        } catch (PDOException $e) {
+            $this->logError("Erreur getOccupationLotType: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Vérifie si un résident a déjà un logement actif
+     */
+    public function residentHasLogement(int $residentId, ?int $excludeOccupationId = null): bool {
+        try {
+            $sql = "SELECT COUNT(*) FROM occupations_residents o
+                    JOIN lots l ON o.lot_id = l.id
+                    WHERE o.resident_id=? AND o.statut='actif' AND l.type IN ('studio','t2','t2_bis','t3')";
+            if ($excludeOccupationId) $sql .= " AND o.id != $excludeOccupationId";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$residentId]);
+            return $stmt->fetchColumn() > 0;
+        } catch (PDOException $e) {
+            $this->logError("Erreur residentHasLogement: " . $e->getMessage());
+            return true;
+        }
+    }
+
+    /**
+     * Vérifie si un résident a déjà une annexe du même type (cave/parking)
+     */
+    public function residentHasAnnexe(int $residentId, string $lotType, ?int $excludeOccupationId = null): bool {
+        try {
+            $sql = "SELECT COUNT(*) FROM occupations_residents o
+                    JOIN lots l ON o.lot_id = l.id
+                    WHERE o.resident_id=? AND o.statut='actif' AND l.type=?";
+            if ($excludeOccupationId) $sql .= " AND o.id != $excludeOccupationId";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$residentId, $lotType]);
+            return $stmt->fetchColumn() > 0;
+        } catch (PDOException $e) {
+            $this->logError("Erreur residentHasAnnexe: " . $e->getMessage());
+            return true;
+        }
+    }
+
+    /**
+     * Exploitant principal d'un lot (via exploitant_residences)
+     */
+    public function getLotExploitant(int $lotId): int {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT er.exploitant_id FROM lots l
+                JOIN exploitant_residences er ON er.residence_id = l.copropriete_id AND er.statut = 'actif'
+                WHERE l.id = ? ORDER BY er.pourcentage_gestion DESC LIMIT 1
+            ");
+            $stmt->execute([$lotId]);
+            return (int)($stmt->fetchColumn() ?: 1);
+        } catch (PDOException $e) {
+            $this->logError("Erreur getLotExploitant: " . $e->getMessage());
+            return 1;
+        }
+    }
+
+    /**
+     * Terminer une occupation (avec date_fin et motif)
+     */
+    public function terminerOccupation(int $id, string $dateFin, ?string $motif): bool {
+        try {
+            $sql = "UPDATE occupations_residents SET statut='termine', date_fin=?, motif_fin=? WHERE id=?";
+            return $this->db->prepare($sql)->execute([$dateFin, $motif, $id]);
+        } catch (PDOException $e) {
+            $this->logError("Erreur terminerOccupation: " . $e->getMessage());
             return false;
         }
     }

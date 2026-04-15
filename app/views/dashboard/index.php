@@ -17,8 +17,10 @@
                 <?php
                 $roleLabels = [
                     'admin' => 'Administrateur - Vue globale',
-                    'exploitant' => 'Exploitant Domitys - Mes résidences',
-                    'gestionnaire' => 'Gestionnaire - Mes copropriétés'
+                    'directeur_residence' => 'Directeur de résidence - Vue globale',
+                    'exploitant' => 'Exploitant Domitys - Vue globale',
+                    'proprietaire' => 'Propriétaire - Mon espace',
+                    'comptable' => 'Comptable - Vue globale',
                 ];
                 echo $roleLabels[$role] ?? '';
                 ?>
@@ -201,92 +203,322 @@
                 </div>
             </div>
 
-        <?php elseif ($role === 'gestionnaire'): ?>
-            <!-- Stats Gestionnaire -->
+        <?php endif; ?>
+
+        <?php if ($role === 'proprietaire'): ?>
+        <!-- Stats propriétaire -->
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="card border shadow-sm">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="text-muted mb-1">Mes Copropriétés</h6>
-                                <h2 class="mb-0 text-dark"><?= $stats['mes_coproprietees'] ?></h2>
+                                <h6 class="text-muted mb-1">Mes lots</h6>
+                                <h2 class="mb-0 text-dark"><?= $stats['total_lots'] ?? 0 ?></h2>
                             </div>
-                            <div>
-                                <i class="fas fa-building fa-3x text-dark opacity-25"></i>
-                            </div>
+                            <i class="fas fa-door-open fa-3x text-dark opacity-25"></i>
                         </div>
                     </div>
                     <div class="card-footer bg-light border-top">
-                        <a href="<?= BASE_URL ?>/copropriete" class="text-primary text-decoration-none small">
-                            Voir toutes <i class="fas fa-arrow-right"></i>
+                        <a href="<?= BASE_URL ?>/coproprietaire/mesLots" class="text-primary text-decoration-none small">
+                            Voir mes lots <i class="fas fa-arrow-right"></i>
                         </a>
                     </div>
                 </div>
             </div>
-
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="card border shadow-sm">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="text-muted mb-1">Copropriétaires</h6>
-                                <h2 class="mb-0 text-dark"><?= $stats['mes_coproprietaires'] ?></h2>
+                                <h6 class="text-muted mb-1">Contrats actifs</h6>
+                                <h2 class="mb-0 text-dark"><?= $stats['contrats_actifs'] ?? 0 ?></h2>
                             </div>
-                            <div>
-                                <i class="fas fa-users fa-3x text-dark opacity-25"></i>
-                            </div>
+                            <i class="fas fa-file-contract fa-3x text-dark opacity-25"></i>
                         </div>
                     </div>
                     <div class="card-footer bg-light border-top">
-                        <a href="<?= BASE_URL ?>/coproprietaire" class="text-primary text-decoration-none small">
-                            Liste <i class="fas fa-arrow-right"></i>
+                        <a href="<?= BASE_URL ?>/admin/contrats" class="text-primary text-decoration-none small">
+                            Voir contrats <i class="fas fa-arrow-right"></i>
                         </a>
                     </div>
                 </div>
             </div>
-
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="card border shadow-sm">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="text-muted mb-1">Appels en cours</h6>
-                                <h2 class="mb-0 text-dark"><?= $stats['appels_en_cours'] ?></h2>
+                                <h6 class="text-muted mb-1">Revenus / mois</h6>
+                                <h2 class="mb-0 text-success"><?= number_format($stats['revenus_mensuels'] ?? 0, 0, ',', ' ') ?> €</h2>
                             </div>
-                            <div>
-                                <i class="fas fa-file-invoice-dollar fa-3x text-dark opacity-25"></i>
-                            </div>
+                            <i class="fas fa-euro-sign fa-3x text-dark opacity-25"></i>
                         </div>
-                    </div>
-                    <div class="card-footer bg-light border-top">
-                        <a href="<?= BASE_URL ?>/appel-fonds" class="text-primary text-decoration-none small">
-                            Gérer <i class="fas fa-arrow-right"></i>
-                        </a>
                     </div>
                 </div>
             </div>
-
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="card border shadow-sm">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="text-muted mb-1">Impayés</h6>
-                                <h2 class="mb-0 text-dark"><?= number_format($stats['total_impayes'], 0, ',', ' ') ?>€</h2>
+                                <h6 class="text-muted mb-1">Revenus / an</h6>
+                                <h2 class="mb-0 text-primary"><?= number_format($stats['revenus_annuels'] ?? 0, 0, ',', ' ') ?> €</h2>
                             </div>
-                            <div>
-                                <i class="fas fa-exclamation-triangle fa-3x text-dark opacity-25"></i>
-                            </div>
+                            <i class="fas fa-chart-line fa-3x text-dark opacity-25"></i>
                         </div>
-                    </div>
-                    <div class="card-footer bg-light border-top">
-                        <a href="<?= BASE_URL ?>/appel-fonds?statut=impaye" class="text-primary text-decoration-none small">
-                            Relancer <i class="fas fa-arrow-right"></i>
-                        </a>
                     </div>
                 </div>
             </div>
         <?php endif; ?>
+    </div>
+
+    <?php if ($role === 'proprietaire' && !empty($propResidences)): ?>
+    <!-- Mes Résidences (propriétaire) -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0"><i class="fas fa-building me-2"></i>Mes Résidences</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Résidence</th>
+                            <th>Ville</th>
+                            <th>Exploitant</th>
+                            <th class="text-center">Mes lots</th>
+                            <th class="text-center">Carte</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($propResidences as $r): ?>
+                        <tr>
+                            <td><strong><?= htmlspecialchars($r['nom']) ?></strong></td>
+                            <td><?= htmlspecialchars($r['ville'] ?? '-') ?></td>
+                            <td><?= htmlspecialchars($r['exploitant'] ?? 'Domitys') ?></td>
+                            <td class="text-center"><span class="badge bg-primary"><?= $r['mes_lots'] ?></span></td>
+                            <td class="text-center">
+                                <?php if (!empty($r['latitude'])): ?>
+                                <a href="<?= BASE_URL ?>/admin/carteResidence/<?= $r['id'] ?>" class="btn btn-sm btn-outline-success"><i class="fas fa-map-marker-alt"></i></a>
+                                <?php else: ?>-<?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($role === 'proprietaire' && !empty($propContrats)): ?>
+    <!-- Mes Lots & Contrats (propriétaire) -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="fas fa-file-contract me-2"></i>Mes Lots & Contrats</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Contrat</th>
+                            <th>Résidence / Lot</th>
+                            <th class="text-end">Loyer garanti</th>
+                            <th class="text-center">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($propContrats as $c):
+                            $sc = ['actif'=>'success','resilie'=>'danger','termine'=>'secondary','suspendu'=>'warning','projet'=>'info'];
+                        ?>
+                        <tr class="<?= $c['statut'] !== 'actif' ? 'table-secondary' : '' ?>">
+                            <td><strong><?= htmlspecialchars($c['numero_contrat'] ?? '-') ?></strong></td>
+                            <td>
+                                <?= htmlspecialchars($c['residence_nom'] ?? '-') ?>
+                                <br><small class="text-muted">Lot <?= htmlspecialchars($c['numero_lot'] ?? '-') ?> (<?= $c['lot_type'] ?? '' ?><?= $c['surface'] ? ', ' . $c['surface'] . ' m²' : '' ?>)</small>
+                            </td>
+                            <td class="text-end fw-bold text-success"><?= number_format($c['loyer_mensuel_garanti'] ?? 0, 2, ',', ' ') ?> €</td>
+                            <td class="text-center"><span class="badge bg-<?= $sc[$c['statut']] ?? 'secondary' ?>"><?= ucfirst($c['statut']) ?></span></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Accès rapides -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-bolt text-warning me-2"></i>Accès rapides</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+
+                        <?php if ($role === 'admin'): ?>
+                        <!-- ADMIN -->
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/admin/users/create" class="btn btn-outline-primary w-100 py-3">
+                                <i class="fas fa-user-plus fa-2x mb-2 d-block"></i>
+                                <small>Nouvel utilisateur</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/admin/createResidence" class="btn btn-outline-danger w-100 py-3">
+                                <i class="fas fa-building fa-2x mb-2 d-block"></i>
+                                <small>Nouvelle résidence</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/hote/create" class="btn btn-outline-warning w-100 py-3">
+                                <i class="fas fa-calendar-plus fa-2x mb-2 d-block"></i>
+                                <small>Nouvelle réservation</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/planning/index" class="btn btn-outline-dark w-100 py-3">
+                                <i class="fas fa-calendar-alt fa-2x mb-2 d-block"></i>
+                                <small>Planning staff</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/resident/index" class="btn btn-outline-success w-100 py-3">
+                                <i class="fas fa-users fa-2x mb-2 d-block"></i>
+                                <small>Résidents seniors</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/admin/residences" class="btn btn-outline-secondary w-100 py-3">
+                                <i class="fas fa-building fa-2x mb-2 d-block"></i>
+                                <small>Résidences</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/admin/contrats" class="btn btn-outline-dark w-100 py-3">
+                                <i class="fas fa-file-contract fa-2x mb-2 d-block"></i>
+                                <small>Contrats</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/admin/services" class="btn btn-outline-primary w-100 py-3">
+                                <i class="fas fa-concierge-bell fa-2x mb-2 d-block"></i>
+                                <small>Services</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/admin/migrate" class="btn btn-outline-info w-100 py-3">
+                                <i class="fas fa-database fa-2x mb-2 d-block"></i>
+                                <small>Migrations DB</small>
+                            </a>
+                        </div>
+
+                        <?php elseif (in_array($role, ['directeur_residence', 'employe_residence'])): ?>
+                        <!-- STAFF RÉSIDENCE -->
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/hote/create" class="btn btn-outline-warning w-100 py-3">
+                                <i class="fas fa-calendar-plus fa-2x mb-2 d-block"></i>
+                                <small>Nouvelle réservation</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/hote/index" class="btn btn-outline-info w-100 py-3">
+                                <i class="fas fa-calendar-check fa-2x mb-2 d-block"></i>
+                                <small>Hôtes temporaires</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/resident/index" class="btn btn-outline-success w-100 py-3">
+                                <i class="fas fa-users fa-2x mb-2 d-block"></i>
+                                <small>Résidents seniors</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/admin/residences" class="btn btn-outline-secondary w-100 py-3">
+                                <i class="fas fa-building fa-2x mb-2 d-block"></i>
+                                <small>Résidences</small>
+                            </a>
+                        </div>
+
+                        <?php elseif ($role === 'comptable'): ?>
+                        <!-- COMPTABLE -->
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/admin/contrats" class="btn btn-outline-dark w-100 py-3">
+                                <i class="fas fa-file-contract fa-2x mb-2 d-block"></i>
+                                <small>Contrats</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/planning/index" class="btn btn-outline-info w-100 py-3">
+                                <i class="fas fa-calendar-alt fa-2x mb-2 d-block"></i>
+                                <small>Planning staff</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/coproprietaire/index" class="btn btn-outline-warning w-100 py-3">
+                                <i class="fas fa-home fa-2x mb-2 d-block"></i>
+                                <small>Propriétaires</small>
+                            </a>
+                        </div>
+
+                        <?php elseif ($role === 'proprietaire'): ?>
+                        <!-- PROPRIÉTAIRE -->
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/coproprietaire/monEspace" class="btn btn-outline-warning w-100 py-3">
+                                <i class="fas fa-id-card fa-2x mb-2 d-block"></i>
+                                <small>Mon Profil</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/coproprietaire/mesLots" class="btn btn-outline-primary w-100 py-3">
+                                <i class="fas fa-door-open fa-2x mb-2 d-block"></i>
+                                <small>Mes Lots</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/coproprietaire/mesResidences" class="btn btn-outline-danger w-100 py-3">
+                                <i class="fas fa-building fa-2x mb-2 d-block"></i>
+                                <small>Mes Résidences</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/admin/residences" class="btn btn-outline-secondary w-100 py-3">
+                                <i class="fas fa-list fa-2x mb-2 d-block"></i>
+                                <small>Toutes les résidences</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/coproprietaire/comptabilite" class="btn btn-outline-success w-100 py-3">
+                                <i class="fas fa-calculator fa-2x mb-2 d-block"></i>
+                                <small>Comptabilité</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/coproprietaire/declarationFiscale" class="btn btn-outline-primary w-100 py-3">
+                                <i class="fas fa-file-invoice fa-2x mb-2 d-block"></i>
+                                <small>Déclaration fiscale</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/coproprietaire/calendrier" class="btn btn-outline-warning w-100 py-3">
+                                <i class="fas fa-calendar-alt fa-2x mb-2 d-block"></i>
+                                <small>Mon Calendrier</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="<?= BASE_URL ?>/admin/carteResidences" class="btn btn-outline-info w-100 py-3">
+                                <i class="fas fa-map-marked-alt fa-2x mb-2 d-block"></i>
+                                <small>Carte résidences</small>
+                            </a>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Graphiques et activités récentes -->
@@ -352,32 +584,6 @@
                                             <strong class="text-success"><?= number_format($occupation['loyer_mensuel_resident'], 0, ',', ' ') ?>€/mois</strong>
                                             <br>
                                             <small class="text-muted">Depuis le <?= date('d/m/Y', strtotime($occupation['date_entree'])) ?></small>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    
-                    <?php elseif ($role === 'gestionnaire' && !empty($recentActivities['appels_fonds'])): ?>
-                        <h6 class="text-muted mb-3">Derniers appels de fonds</h6>
-                        <div class="list-group list-group-flush">
-                            <?php foreach ($recentActivities['appels_fonds'] as $appel): ?>
-                                <div class="list-group-item px-0">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <strong><?= htmlspecialchars($appel['copropriete']) ?></strong>
-                                            <br>
-                                            <small class="text-muted">
-                                                <?= ucfirst($appel['type']) ?> - 
-                                                Échéance: <?= date('d/m/Y', strtotime($appel['date_echeance'])) ?>
-                                            </small>
-                                        </div>
-                                        <div class="text-end">
-                                            <strong class="text-primary"><?= number_format($appel['montant_total'], 2, ',', ' ') ?>€</strong>
-                                            <br>
-                                            <span class="badge bg-<?= $appel['statut'] === 'emis' ? 'warning' : 'success' ?>">
-                                                <?= ucfirst($appel['statut']) ?>
-                                            </span>
                                         </div>
                                     </div>
                                 </div>

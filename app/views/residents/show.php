@@ -63,8 +63,16 @@
                     <i class="fas fa-edit"></i> Modifier
                 </a>
                 <?php endif; ?>
-                <a href="<?= BASE_URL ?>/resident/index" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-1"></i>Retour
+                <?php
+                $backUrl = BASE_URL . '/resident/index';
+                $backLabel = 'Retour';
+                if (isset($_GET['from']) && $_GET['from'] === 'users' && isset($resident->user_id)) {
+                    $backUrl = BASE_URL . '/admin/users/show/' . $resident->user_id;
+                    $backLabel = 'Retour à l\'utilisateur';
+                }
+                ?>
+                <a href="<?= $backUrl ?>" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i><?= $backLabel ?>
                 </a>
             </div>
         </div>
@@ -462,9 +470,15 @@
                     
                     <?php if (in_array($userRole, ['admin', 'exploitant'])): ?>
                     <div class="d-grid gap-2 mt-3">
-                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal">
-                            <i class="fas fa-trash me-1"></i>Supprimer
+                        <?php if ($resident->actif): ?>
+                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#statusModal">
+                            <i class="fas fa-user-slash me-1"></i>Désactiver
                         </button>
+                        <?php else: ?>
+                        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#statusModal">
+                            <i class="fas fa-user-check me-1"></i>Activer
+                        </button>
+                        <?php endif; ?>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -475,30 +489,42 @@
 </div>
 
 <!-- Modal de suppression -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
+<div class="modal fade" id="statusModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-danger text-white border-0">
+            <div class="modal-header <?= $resident->actif ? 'bg-danger text-white' : 'bg-success text-white' ?> border-0">
                 <h5 class="modal-title">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    Confirmation de suppression
+                    Confirmation
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center p-4">
-                <i class="fas fa-user-times fa-3x text-danger mb-3"></i>
-                <h5>Êtes-vous sûr de vouloir supprimer ce résident ?</h5>
-                <p class="text-muted mb-0">Cette action est irréversible.</p>
+                <?php if ($resident->actif): ?>
+                    <i class="fas fa-user-times fa-3x text-danger mb-3"></i>
+                    <h5>Êtes-vous sûr de vouloir désactiver ce résident ?</h5>
+                    <p class="text-muted mb-0">Le résident et son compte utilisateur lié passeront en statut inactif.</p>
+                <?php else: ?>
+                    <i class="fas fa-user-check fa-3x text-success mb-3"></i>
+                    <h5>Êtes-vous sûr de vouloir réactiver ce résident ?</h5>
+                    <p class="text-muted mb-0">Le résident et son compte utilisateur lié repasseront en statut actif.</p>
+                <?php endif; ?>
             </div>
             <div class="modal-footer border-0 bg-light">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times me-1"></i>Annuler
                 </button>
-                <form action="<?= BASE_URL ?>/resident/delete/<?= $resident->id ?>" method="POST">
+                <form action="<?= BASE_URL ?>/resident/<?= $resident->actif ? 'delete' : 'activate' ?>/<?= $resident->id ?>" method="POST">
                     <input type="hidden" name="csrf_token" value="<?= Security::getToken() ?>">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash me-1"></i>Supprimer définitivement
-                    </button>
+                    <?php if ($resident->actif): ?>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-user-slash me-1"></i>Désactiver
+                        </button>
+                    <?php else: ?>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-user-check me-1"></i>Activer
+                        </button>
+                    <?php endif; ?>
                 </form>
             </div>
         </div>

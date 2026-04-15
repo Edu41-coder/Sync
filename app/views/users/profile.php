@@ -35,13 +35,35 @@ if (!isset($user) || !is_object($user)) {
         <div class="col-md-4">
             <div class="card shadow-sm mb-4">
                 <div class="card-body text-center">
-                    <!-- Avatar -->
-                    <div class="mb-3">
+                    <!-- Photo de profil -->
+                    <div class="mb-3 position-relative d-inline-block">
+                        <?php if (!empty($user->photo_profil)): ?>
+                        <img src="<?= BASE_URL . '/' . $user->photo_profil ?>" alt="Photo"
+                             class="rounded-circle" style="width:100px;height:100px;object-fit:cover;border:3px solid #dee2e6">
+                        <?php else: ?>
                         <div class="avatar-circle bg-primary text-white mx-auto">
-                            <span>
-                                <?= strtoupper(substr($user->prenom ?? 'U', 0, 1)) ?>
-                            </span>
+                            <span><?= strtoupper(substr($user->prenom ?? 'U', 0, 1)) ?></span>
                         </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Upload / Changer photo -->
+                    <div class="mb-3">
+                        <form method="POST" action="<?= BASE_URL ?>/user/uploadPhoto" enctype="multipart/form-data" class="d-inline">
+                            <?= csrf_field() ?>
+                            <label class="btn btn-sm btn-outline-primary" style="cursor:pointer">
+                                <i class="fas fa-camera me-1"></i><?= !empty($user->photo_profil) ? 'Changer' : 'Ajouter une photo' ?>
+                                <input type="file" name="photo" accept=".jpg,.jpeg,.png,.webp" class="d-none"
+                                       onchange="this.form.submit()">
+                            </label>
+                        </form>
+                        <?php if (!empty($user->photo_profil)): ?>
+                        <a href="<?= BASE_URL ?>/user/deletePhoto" class="btn btn-sm btn-outline-danger ms-1"
+                           onclick="return confirm('Supprimer la photo ?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                        <?php endif; ?>
+                        <br><small class="text-muted">JPG, PNG, WEBP — max 2 Mo</small>
                     </div>
                     
                     <!-- Nom complet -->
@@ -49,8 +71,8 @@ if (!isset($user) || !is_object($user)) {
                     <p class="text-muted mb-2">@<?= htmlspecialchars($user->username) ?></p>
                     
                     <!-- Badge de rôle -->
-                    <span class="badge bg-<?= $user->role == 'admin' ? 'danger' : ($user->role == 'gestionnaire' ? 'primary' : 'secondary') ?> mb-3">
-                        <i class="fas fa-<?= $user->role == 'admin' ? 'crown' : ($user->role == 'gestionnaire' ? 'user-tie' : 'user') ?> me-1"></i>
+                    <span class="badge bg-<?= $user->role == 'admin' ? 'danger' : ($user->role == 'directeur_residence' ? 'primary' : 'secondary') ?> mb-3">
+                        <i class="fas fa-<?= $user->role == 'admin' ? 'crown' : ($user->role == 'directeur_residence' ? 'user-tie' : 'user') ?> me-1"></i>
                         <?= ucfirst($user->role) ?>
                     </span>
                     
@@ -128,9 +150,11 @@ if (!isset($user) || !is_object($user)) {
                     <div class="card shadow-sm">
                         <div class="card-header bg-light d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i>Mes informations</h5>
+                            <?php if (($_SESSION['user_role'] ?? '') !== 'proprietaire'): ?>
                             <button type="button" class="btn btn-primary btn-sm" id="editBtn" onclick="enableEdit()">
                                 <i class="fas fa-edit me-1"></i> Modifier
                             </button>
+                            <?php endif; ?>
                         </div>
                         <div class="card-body">
                             <form method="POST" action="<?= BASE_URL ?>/user/updateProfile" id="profileForm">
@@ -170,6 +194,7 @@ if (!isset($user) || !is_object($user)) {
 
                                 <hr>
 
+                                <?php if (($_SESSION['user_role'] ?? '') !== 'proprietaire'): ?>
                                 <div class="d-flex justify-content-between" id="formButtons">
                                     <button type="button" class="btn btn-outline-secondary" onclick="cancelEdit()">
                                         <i class="fas fa-times me-1"></i> Annuler
@@ -178,6 +203,12 @@ if (!isset($user) || !is_object($user)) {
                                         <i class="fas fa-save me-1"></i> Enregistrer les modifications
                                     </button>
                                 </div>
+                                <?php else: ?>
+                                <div class="alert alert-info alert-permanent small mb-0">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Pour modifier vos informations, contactez l'administration Domitys.
+                                </div>
+                                <?php endif; ?>
                             </form>
                         </div>
                     </div>
@@ -193,13 +224,16 @@ if (!isset($user) || !is_object($user)) {
                             <form method="POST" action="<?= BASE_URL ?>/user/changePassword" id="passwordForm">
                                 <?= csrf_field() ?>
                                 <div class="mb-3">
-                                    <label for="current_password" class="form-label">Mot de passe actuel <span class="text-danger">*</span></label>
+                                    <label class="form-label">Mot de passe actuel</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                        <input type="password" class="form-control" id="current_password" name="current_password" required>
-                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('current_password')">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
+                                        <input type="password" class="form-control" id="profileCurrentPwd"
+                                               value="<?= htmlspecialchars($user->password_plain ?? '') ?>" readonly>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="
+                                            const f=document.getElementById('profileCurrentPwd'), i=this.querySelector('i');
+                                            if(f.type==='password'){f.type='text';i.classList.replace('fa-eye','fa-eye-slash');}
+                                            else{f.type='password';i.classList.replace('fa-eye-slash','fa-eye');}
+                                        "><i class="fas fa-eye"></i></button>
                                     </div>
                                 </div>
 

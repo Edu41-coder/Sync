@@ -121,7 +121,7 @@ class AuthController extends Controller {
                 'password_confirm' => $_POST['password_confirm'] ?? '',
                 'nom' => trim($_POST['nom'] ?? ''),
                 'prenom' => trim($_POST['prenom'] ?? ''),
-                'role' => $_POST['role'] ?? 'gestionnaire',
+                'role' => $_POST['role'] ?? 'employe_residence',
                 'telephone' => trim($_POST['telephone'] ?? ''),
                 'actif' => isset($_POST['actif']) ? 1 : 0
             ];

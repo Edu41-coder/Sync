@@ -9,6 +9,8 @@ Identifiants :
 Username: admin
 Password: admin123
 
+TempResident123!
+
 🏠 PAGE D'ACCUEIL (après connexion) :
 http://localhost/Synd_Gest/public/
 
@@ -21,3 +23,8 @@ http://localhost/Synd_Gest/public/
 
 ⚠️ Ne PAS utiliser : http://localhost/Synd_Gest/ (ancien système)
 ✅ TOUJOURS utiliser : http://localhost/Synd_Gest/public/ (nouveau MVC)
+
+
+Pour ouvrir un nouveau chat dans Claude Code :
+
+Raccourci clavier : Ctrl + Shift + P puis tape Claude: New Chat

@@ -38,6 +38,59 @@
         
         <div class="row">
             <div class="col-12 col-lg-8">
+                <!-- Résident occupant -->
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user-circle me-2"></i>
+                            Résident occupant
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="avatar-circle avatar-sm bg-primary text-white me-2">
+                                <?= strtoupper(substr($occupation['resident_nom'] ?? '?', 0, 2)) ?>
+                            </div>
+                            <div>
+                                <strong><?= htmlspecialchars($occupation['resident_nom'] ?? '') ?></strong>
+                                <br><small class="text-muted">Résident actuel (ID: <?= $occupation['resident_id'] ?>)</small>
+                            </div>
+                        </div>
+                        <label class="form-label small">Changer le résident</label>
+                        <div class="input-group input-group-sm mb-2">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="searchResidentEdit" placeholder="Rechercher un résident disponible..." autocomplete="off">
+                        </div>
+                        <div class="border rounded" style="max-height:180px;overflow-y:auto" id="residentEditContainer">
+                            <!-- Résident actuel (toujours en option) -->
+                            <div class="form-check px-3 py-1 resident-edit-item"
+                                 data-search="<?= htmlspecialchars(strtolower($occupation['resident_nom'] ?? '')) ?>">
+                                <input class="form-check-input" type="radio" name="resident_id"
+                                       value="<?= $occupation['resident_id'] ?>" id="res_current" checked>
+                                <label class="form-check-label small w-100" for="res_current">
+                                    <?= htmlspecialchars($occupation['resident_nom'] ?? '') ?> <span class="badge bg-primary ms-1">actuel</span>
+                                </label>
+                            </div>
+                            <?php foreach ($availableResidents ?? [] as $res): ?>
+                            <div class="form-check px-3 py-1 resident-edit-item"
+                                 data-search="<?= htmlspecialchars(strtolower($res['nom'] . ' ' . $res['prenom'])) ?>">
+                                <input class="form-check-input" type="radio" name="resident_id"
+                                       value="<?= $res['id'] ?>" id="res_<?= $res['id'] ?>">
+                                <label class="form-check-label small w-100" for="res_<?= $res['id'] ?>">
+                                    <?= htmlspecialchars($res['civilite'] . ' ' . $res['prenom'] . ' ' . $res['nom']) ?>
+                                </label>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php if (empty($availableResidents)): ?>
+                            <div class="text-muted small text-center py-2">Aucun autre résident disponible</div>
+                            <?php endif; ?>
+                        </div>
+                        <small class="text-muted mt-1 d-block">
+                            Seuls les résidents actifs sans occupation sont proposés.
+                        </small>
+                    </div>
+                </div>
+
                 <!-- Informations financières -->
                 <div class="card shadow mb-4">
                     <div class="card-header bg-warning text-dark">
@@ -147,75 +200,57 @@
                                     <i class="fas fa-check-circle text-dark me-1"></i>
                                     Services inclus
                                 </label>
-                                <?php
-                                $servicesInclus = json_decode($occupation['services_inclus'] ?? '{}', true) ?: [];
-                                $servicesOptions = [
-                                    'wifi' => 'Wi-Fi',
-                                    'telephone' => 'Téléphone',
-                                    'animations' => 'Animations',
-                                    'assistance_24h' => 'Assistance 24h/24',
-                                    'entretien_espaces_communs' => 'Entretien des espaces communs',
-                                    'restaurant_midi' => 'Restaurant midi',
-                                    'restaurant_soir' => 'Restaurant soir',
-                                    'menage_hebdomadaire' => 'Ménage hebdomadaire',
-                                    'blanchisserie' => 'Blanchisserie',
-                                    'coiffeur' => 'Coiffeur',
-                                    'podologue' => 'Podologue',
-                                    'kine' => 'Kinésithérapeute'
-                                ];
-                                ?>
                                 <div class="row g-2">
-                                    <?php foreach ($servicesOptions as $key => $label): ?>
+                                    <?php foreach ($services as $svc): ?>
+                                    <?php if ($svc['categorie'] !== 'inclus') continue; ?>
                                     <div class="col-12 col-md-6">
                                         <div class="form-check">
-                                            <input class="form-check-input" 
-                                                   type="checkbox" 
-                                                   name="services_inclus[<?= $key ?>]" 
-                                                   id="service_<?= $key ?>" 
-                                                   <?= !empty($servicesInclus[$key]) ? 'checked' : '' ?>>
-                                            <label class="form-check-label" for="service_<?= $key ?>">
-                                                <?= htmlspecialchars($label) ?>
+                                            <input class="form-check-input svc-checkbox" type="checkbox"
+                                                   name="services[<?= $svc['id'] ?>]"
+                                                   value="<?= $svc['prix_defaut'] ?>"
+                                                   id="svc_<?= $svc['id'] ?>"
+                                                   data-prix="<?= $svc['prix_defaut'] ?>"
+                                                   <?= !empty($svc['souscrit']) ? 'checked' : '' ?>>
+                                            <label class="form-check-label" for="svc_<?= $svc['id'] ?>">
+                                                <i class="<?= htmlspecialchars($svc['icone']) ?> me-1 text-muted"></i>
+                                                <?= htmlspecialchars($svc['nom']) ?>
                                             </label>
                                         </div>
                                     </div>
                                     <?php endforeach; ?>
                                 </div>
                             </div>
-                            
+
                             <!-- Services supplémentaires -->
                             <div class="col-12">
                                 <label class="form-label">
                                     <i class="fas fa-plus-circle text-dark me-1"></i>
                                     Services supplémentaires
                                 </label>
-                                <?php
-                                $servicesSup = json_decode($occupation['services_supplementaires'] ?? '{}', true) ?: [];
-                                $servicesSupOptions = [
-                                    'coiffure' => 'Coiffure',
-                                    'podologie' => 'Podologie',
-                                    'kinesitherapie' => 'Kinésithérapie',
-                                    'menage_supplementaire' => 'Ménage supplémentaire',
-                                    'blanchisserie_sup' => 'Blanchisserie supplémentaire',
-                                    'repas_supplementaires' => 'Repas supplémentaires',
-                                    'sorties' => 'Sorties et excursions',
-                                    'accompagnement_medical' => 'Accompagnement médical'
-                                ];
-                                ?>
                                 <div class="row g-2">
-                                    <?php foreach ($servicesSupOptions as $key => $label): ?>
+                                    <?php foreach ($services as $svc): ?>
+                                    <?php if ($svc['categorie'] !== 'supplementaire') continue; ?>
                                     <div class="col-12 col-md-6">
-                                        <div class="form-check">
-                                            <input class="form-check-input" 
-                                                   type="checkbox" 
-                                                   name="services_supplementaires[<?= $key ?>]" 
-                                                   id="service_sup_<?= $key ?>" 
-                                                   <?= !empty($servicesSup[$key]) ? 'checked' : '' ?>>
-                                            <label class="form-check-label" for="service_sup_<?= $key ?>">
-                                                <?= htmlspecialchars($label) ?>
-                                            </label>
+                                        <div class="d-flex align-items-center">
+                                            <div class="form-check flex-grow-1">
+                                                <input class="form-check-input svc-checkbox svc-sup" type="checkbox"
+                                                       name="services[<?= $svc['id'] ?>]"
+                                                       value="<?= !empty($svc['souscrit']) ? $svc['prix_applique'] : $svc['prix_defaut'] ?>"
+                                                       id="svc_<?= $svc['id'] ?>"
+                                                       data-prix="<?= $svc['prix_defaut'] ?>"
+                                                       <?= !empty($svc['souscrit']) ? 'checked' : '' ?>>
+                                                <label class="form-check-label" for="svc_<?= $svc['id'] ?>">
+                                                    <i class="<?= htmlspecialchars($svc['icone']) ?> me-1 text-muted"></i>
+                                                    <?= htmlspecialchars($svc['nom']) ?>
+                                                </label>
+                                            </div>
+                                            <span class="badge bg-light text-dark ms-1"><?= number_format($svc['prix_defaut'], 2) ?> €</span>
                                         </div>
                                     </div>
                                     <?php endforeach; ?>
+                                </div>
+                                <div class="mt-2 small text-end">
+                                    <strong>Total supplémentaires : <span id="totalSup">0.00</span> €/mois</strong>
                                 </div>
                             </div>
                         </div>
@@ -367,3 +402,30 @@
         </div>
     </form>
 </div>
+
+<script>
+// Calcul total services supplémentaires
+function calcTotalSup() {
+    let total = 0;
+    document.querySelectorAll('.svc-sup:checked').forEach(cb => {
+        total += parseFloat(cb.value) || 0;
+    });
+    document.getElementById('totalSup').textContent = total.toFixed(2);
+    const montantField = document.getElementById('montant_services_sup');
+    if (montantField) montantField.value = total.toFixed(2);
+}
+document.querySelectorAll('.svc-checkbox').forEach(cb => cb.addEventListener('change', calcTotalSup));
+calcTotalSup();
+
+(function() {
+    const search = document.getElementById('searchResidentEdit');
+    if (!search) return;
+    search.addEventListener('input', function() {
+        const q = this.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        document.querySelectorAll('.resident-edit-item').forEach(item => {
+            const text = item.getAttribute('data-search').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+            item.style.display = !q || text.includes(q) ? '' : 'none';
+        });
+    });
+})();
+</script>

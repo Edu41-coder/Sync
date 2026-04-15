@@ -5,6 +5,14 @@
 ?>
 
 <div class="container-fluid py-4">
+    <?php
+    $currentRole = $currentRole ?? ($_SESSION['user_role'] ?? null);
+    $canManageResidences = $canManageResidences ?? false;
+    $canExportResidences = $canExportResidences ?? false;
+    $isProprietaire = ($currentRole === 'proprietaire');
+    $canCreateResidence = $canCreateResidence ?? false;
+    $canSeeMap = $canSeeMap ?? false;
+    ?>
     
     <!-- Fil d'Ariane -->
     <?php
@@ -29,15 +37,21 @@
                     </p>
                 </div>
                 <div class="btn-stack-mobile">
+                    <?php if ($canSeeMap): ?>
                     <a href="<?= BASE_URL ?>/admin/carteResidences" class="btn btn-secondary">
                         <i class="fas fa-map-marked-alt"></i> Vue Carte
                     </a>
+                    <?php endif; ?>
+                    <?php if ($canExportResidences): ?>
                     <button class="btn btn-success" onclick="exportExcel()">
                         <i class="fas fa-file-excel"></i> Export Excel
                     </button>
+                    <?php endif; ?>
+                    <?php if ($canCreateResidence): ?>
                     <a href="<?= BASE_URL ?>/admin/createResidence" class="btn btn-danger">
                         <i class="fas fa-plus"></i> Nouvelle résidence
                     </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -73,6 +87,7 @@
                 </div>
                 
                 <!-- Filtre Exploitant -->
+                <?php if ($currentRole !== 'exploitant'): ?>
                 <div class="col-12 col-md-3">
                     <label class="form-label"><i class="fas fa-building me-1"></i>Exploitant</label>
                     <select name="exploitant" class="form-select">
@@ -85,7 +100,11 @@
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <?php else: ?>
+                <input type="hidden" name="exploitant" value="<?= htmlspecialchars((string)$exploitant) ?>">
+                <?php endif; ?>
                 
+                <?php if (!$isProprietaire): ?>
                 <!-- Filtre Taux -->
                 <div class="col-12 col-md-2">
                     <label class="form-label"><i class="fas fa-percent me-1"></i>Taux min.</label>
@@ -96,6 +115,7 @@
                         <option value="80" <?= $taux_min === '80' ? 'selected' : '' ?>>80%</option>
                     </select>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Boutons -->
                 <div class="col-12 col-md-1">
@@ -119,17 +139,19 @@
                             <th class="sortable" data-column="ville">Ville</th>
                             <th class="sortable" data-column="exploitant">Exploitant</th>
                             <th class="sortable text-center" data-column="lots" data-type="number">Lots</th>
+                            <?php if (!$isProprietaire): ?>
                             <th class="sortable text-center" data-column="occupations" data-type="number">Occupations</th>
                             <th class="sortable text-center" data-column="taux" data-type="number">Taux</th>
                             <th class="sortable text-end" data-column="revenus" data-type="number">Revenus/mois</th>
                             <th class="text-center" data-no-sort>Statut</th>
+                            <?php endif; ?>
                             <th class="text-center" data-no-sort>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($residences)): ?>
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-4">
+                                <td colspan="<?= $isProprietaire ? 5 : 9 ?>" class="text-center text-muted py-4">
                                     <i class="fas fa-search fa-3x mb-3 d-block"></i>
                                     Aucune résidence trouvée
                                 </td>
@@ -139,6 +161,9 @@
                                 <tr>
                                     <td data-sort="<?= htmlspecialchars($residence['nom']) ?>">
                                         <strong><?= htmlspecialchars($residence['nom']) ?></strong>
+                                        <?php if (isset($residence['actif']) && !$residence['actif']): ?>
+                                            <span class="badge bg-secondary ms-1">Inactive</span>
+                                        <?php endif; ?>
                                         <br>
                                         <small class="text-muted">
                                             <?= htmlspecialchars($residence['adresse']) ?>
@@ -155,6 +180,7 @@
                                     <td class="text-center" data-sort="<?= $residence['nb_lots'] ?>">
                                         <span class="badge bg-secondary"><?= $residence['nb_lots'] ?></span>
                                     </td>
+                                    <?php if (!$isProprietaire): ?>
                                     <td class="text-center" data-sort="<?= $residence['nb_occupations'] ?>">
                                         <span class="badge bg-info"><?= $residence['nb_occupations'] ?></span>
                                     </td>
@@ -177,24 +203,43 @@
                                             <span class="badge bg-secondary">Inactif</span>
                                         <?php endif; ?>
                                     </td>
+                                    <?php endif; ?>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="<?= BASE_URL ?>/admin/viewResidence/<?= $residence['id'] ?>" 
-                                               class="btn btn-outline-primary" 
+                                            <a href="<?= BASE_URL ?>/admin/viewResidence/<?= $residence['id'] ?>"
+                                               class="btn btn-outline-primary"
                                                title="Voir détails">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="<?= BASE_URL ?>/admin/editResidence/<?= $residence['id'] ?>" 
-                                               class="btn btn-outline-secondary" 
+                                            <?php if (!empty($residence['latitude']) && !empty($residence['longitude'])): ?>
+                                            <a href="<?= BASE_URL ?>/admin/carteResidence/<?= $residence['id'] ?>"
+                                               class="btn btn-outline-success"
+                                               title="Vue carte">
+                                                <i class="fas fa-map-marker-alt"></i>
+                                            </a>
+                                            <?php endif; ?>
+                                            <?php if ($canManageResidences): ?>
+                                            <a href="<?= BASE_URL ?>/admin/editResidence/<?= $residence['id'] ?>"
+                                               class="btn btn-outline-secondary"
                                                title="Modifier">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <button type="button" 
-                                                    class="btn btn-outline-danger" 
-                                                    onclick="confirmDelete(<?= $residence['id'] ?>)" 
+                                            <?php if (isset($residence['actif']) && !$residence['actif']): ?>
+                                            <a href="<?= BASE_URL ?>/admin/restoreResidence/<?= $residence['id'] ?>"
+                                               class="btn btn-outline-success"
+                                               title="Réactiver"
+                                               onclick="return confirm('Réactiver cette résidence ?')">
+                                                <i class="fas fa-undo"></i>
+                                            </a>
+                                            <?php else: ?>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger"
+                                                    onclick="confirmDelete(<?= $residence['id'] ?>)"
                                                     title="Supprimer">
                                                 <i class="fas fa-trash"></i>
                                             </button>
+                                            <?php endif; ?>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -217,6 +262,7 @@
 </div>
 
 <!-- Modal de confirmation de suppression -->
+<?php if ($canManageResidences): ?>
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
@@ -251,6 +297,7 @@
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- Scripts -->
 <script src="<?= BASE_URL ?>/assets/js/datatable.js"></script>
@@ -259,20 +306,28 @@ let residenceIdToDelete = null;
 
 // Ouvrir le modal de confirmation
 function confirmDelete(id) {
+    <?php if (!$canManageResidences): ?>
+    return;
+    <?php endif; ?>
     residenceIdToDelete = id;
     const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
     modal.show();
 }
 
 // Confirmer la suppression
+<?php if ($canManageResidences): ?>
 document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
     if (residenceIdToDelete) {
         window.location.href = '<?= BASE_URL ?>/admin/deleteResidence/' + residenceIdToDelete;
     }
 });
+<?php endif; ?>
 
 // Export Excel
 function exportExcel() {
+    <?php if (!$canExportResidences): ?>
+    return;
+    <?php endif; ?>
     // Récupérer les filtres actuels
     const urlParams = new URLSearchParams(window.location.search);
     const exportUrl = '<?= BASE_URL ?>/admin/exportResidencesExcel?' + urlParams.toString();

@@ -4,7 +4,6 @@
  * Gestion des paramètres système et configurations
  */
 
-require_once __DIR__ . '/../core/Model.php';
 
 class Parametre extends Model {
     
@@ -60,8 +59,8 @@ class Parametre extends Model {
                 return $stmt->execute([$value, $key]);
             } else {
                 // Insertion
-                $sql = "INSERT INTO parametres (cle, valeur, description, type, created_at) 
-                        VALUES (?, ?, ?, ?, NOW())";
+                $sql = "INSERT INTO parametres (cle, valeur, description, type)
+                        VALUES (?, ?, ?, ?)";
                 $stmt = $this->db->prepare($sql);
                 return $stmt->execute([$key, $value, $description, $type]);
             }

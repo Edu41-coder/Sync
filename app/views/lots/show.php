@@ -43,12 +43,23 @@
                     <?= htmlspecialchars($lot['ville']) ?>
                 </p>
             </div>
+            <?php $isProprietaire = ($_SESSION['user_role'] ?? '') === 'proprietaire'; ?>
             <div>
+                <?php if (!$isProprietaire): ?>
                 <a href="<?= BASE_URL ?>/lot/edit/<?= $lot['id'] ?>" class="btn btn-warning">
                     <i class="fas fa-edit"></i> Modifier
                 </a>
-                <a href="<?= BASE_URL ?>/admin/viewResidence/<?= $lot['copropriete_id'] ?>" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-1"></i>Retour
+                <?php endif; ?>
+                <?php
+                $backUrl = BASE_URL . '/admin/viewResidence/' . $lot['copropriete_id'];
+                $backLabel = 'Retour';
+                if (isset($_GET['from']) && $_GET['from'] === 'mesLots') {
+                    $backUrl = BASE_URL . '/coproprietaire/mesLots';
+                    $backLabel = 'Retour à mes lots';
+                }
+                ?>
+                <a href="<?= $backUrl ?>" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i><?= $backLabel ?>
                 </a>
             </div>
         </div>
@@ -121,6 +132,7 @@
                             </div>
                         </div>
                         
+                        <?php if (!$isProprietaire): ?>
                         <!-- Tantièmes généraux -->
                         <div class="col-12 col-md-4">
                             <label class="text-muted small mb-1">Tantièmes généraux</label>
@@ -129,7 +141,7 @@
                                 <?= number_format($lot['tantiemes_generaux'] ?? 0, 0, ',', ' ') ?>
                             </div>
                         </div>
-                        
+
                         <!-- Tantièmes chauffage -->
                         <div class="col-12 col-md-4">
                             <label class="text-muted small mb-1">Tantièmes chauffage</label>
@@ -138,7 +150,7 @@
                                 <?= number_format($lot['tantiemes_chauffage'] ?? 0, 0, ',', ' ') ?>
                             </div>
                         </div>
-                        
+
                         <!-- Tantièmes ascenseur -->
                         <div class="col-12 col-md-4">
                             <label class="text-muted small mb-1">Tantièmes ascenseur</label>
@@ -147,6 +159,7 @@
                                 <?= number_format($lot['tantiemes_ascenseur'] ?? 0, 0, ',', ' ') ?>
                             </div>
                         </div>
+                        <?php endif; ?>
                         
                         <!-- Description -->
                         <?php if (!empty($lot['description'])): ?>
@@ -162,8 +175,8 @@
                 </div>
             </div>
             
-            <!-- Occupation actuelle -->
-            <?php if (!empty($lot['occupation_id'])): ?>
+            <!-- Occupation actuelle (pas pour propriétaire) -->
+            <?php if (!$isProprietaire && !empty($lot['occupation_id'])): ?>
             <div class="card shadow mb-4">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0">
@@ -187,7 +200,11 @@
                             <label class="text-muted small mb-1">Téléphone</label>
                             <div class="fw-bold">
                                 <i class="fas fa-phone text-dark me-2"></i>
+                                <?php if (!empty($lot['resident_telephone'])): ?>
                                 <a href="tel:<?= $lot['resident_telephone'] ?>"><?= htmlspecialchars($lot['resident_telephone']) ?></a>
+                                <?php else: ?>
+                                <span class="text-muted">Non renseigné</span>
+                                <?php endif; ?>
                             </div>
                         </div>
                         
@@ -251,7 +268,7 @@
                     </div>
                 </div>
             </div>
-            <?php else: ?>
+            <?php elseif (!$isProprietaire): ?>
             <div class="card shadow mb-4 border-warning">
                 <div class="card-body text-center py-5">
                     <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
@@ -265,7 +282,8 @@
             <?php endif; ?>
         </div>
         
-        <!-- Sidebar -->
+        <!-- Sidebar (pas pour propriétaire) -->
+        <?php if (!$isProprietaire): ?>
         <div class="col-12 col-lg-4">
             <!-- Carte résidence -->
             <div class="card shadow mb-4">
@@ -326,5 +344,6 @@
                 </div>
             </div>
         </div>
+        <?php endif; ?>
     </div>
 </div>

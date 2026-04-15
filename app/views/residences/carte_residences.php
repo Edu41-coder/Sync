@@ -27,23 +27,49 @@
         <div>
             <h1 class="h2 mb-2">
                 <i class="fas fa-map-marked-alt text-danger me-2"></i>
-                Carte des Résidences
+                <?php if (!empty($singleMode)): ?>
+                    <?= htmlspecialchars($residences[0]['nom']) ?>
+                <?php else: ?>
+                    Carte des Résidences
+                <?php endif; ?>
             </h1>
             <p class="text-muted mb-0">
-                Visualisation géographique des <?= count($residences) ?> résidences seniors
+                <?php if (!empty($singleMode)): ?>
+                    <?= htmlspecialchars($residences[0]['adresse'] . ', ' . $residences[0]['code_postal'] . ' ' . $residences[0]['ville']) ?>
+                <?php else: ?>
+                    Visualisation géographique des <?= count($residences) ?> résidences seniors
+                <?php endif; ?>
             </p>
         </div>
         <div>
+            <?php if (isset($_GET['from']) && $_GET['from'] === 'mesResidences'): ?>
+            <a href="<?= BASE_URL ?>/coproprietaire/mesResidences" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left me-2"></i> Mes résidences
+            </a>
+            <?php else: ?>
             <a href="<?= BASE_URL ?>/admin/residences" class="btn btn-secondary me-2">
                 <i class="fas fa-list me-2"></i> Vue Liste
             </a>
-            <a href="<?= BASE_URL ?>/admin/createResidence" class="btn btn-danger">
-                <i class="fas fa-plus me-2"></i> Nouvelle résidence
-            </a>
+            <?php endif; ?>
+            <?php if (!empty($singleMode)): ?>
+                <a href="<?= BASE_URL ?>/admin/viewResidence/<?= $residences[0]['id'] ?>" class="btn btn-primary me-2">
+                    <i class="fas fa-eye me-2"></i> Détails
+                </a>
+                <a href="<?= BASE_URL ?>/admin/carteResidences" class="btn btn-outline-danger">
+                    <i class="fas fa-map me-2"></i> Toutes les résidences
+                </a>
+            <?php else: ?>
+                <?php if (($_SESSION['user_role'] ?? '') === 'admin'): ?>
+                <a href="<?= BASE_URL ?>/admin/createResidence" class="btn btn-danger">
+                    <i class="fas fa-plus me-2"></i> Nouvelle résidence
+                </a>
+                <?php endif; ?>
+            <?php endif; ?>
         </div>
     </div>
 
-    <!-- Cartes statistiques -->
+    <!-- Cartes statistiques (pas pour propriétaire) -->
+    <?php if (($_SESSION['user_role'] ?? '') !== 'proprietaire'): ?>
     <div class="row">
         <div class="col-12 col-md-6 col-lg-3 mb-3">
             <div class="card border-left-primary shadow h-100">
@@ -114,6 +140,7 @@
             </div>
         </div>
     </div>
+    <?php endif; ?>
 
     <!-- Carte -->
     <div class="card shadow mb-4">
@@ -131,9 +158,11 @@
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="btnResetView">
                     <i class="fas fa-redo"></i> Réinitialiser
                 </button>
+                <?php if (in_array($_SESSION['user_role'] ?? '', ['admin', 'directeur_residence', 'exploitant'])): ?>
                 <button type="button" class="btn btn-sm btn-outline-primary" id="btnToggleColors">
                     <i class="fas fa-palette"></i> Code couleur
                 </button>
+                <?php endif; ?>
             </div>
         </div>
         <div class="card-body p-0">
@@ -149,7 +178,8 @@
         </div>
     </div>
 
-    <!-- Légende -->
+    <!-- Légende (admin/gestionnaire/exploitant uniquement) -->
+    <?php if (in_array($_SESSION['user_role'] ?? '', ['admin', 'directeur_residence', 'exploitant'])): ?>
     <div class="card shadow">
         <div class="card-header">
             <h5 class="mb-0">
@@ -179,6 +209,7 @@
             </div>
         </div>
     </div>
+    <?php endif; ?>
 
 </div>
 

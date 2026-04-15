@@ -77,11 +77,12 @@
                                     </span>
                                     <select class="form-select" id="type" name="type" required>
                                         <option value="">-- Sélectionner --</option>
-                                        <option value="appartement">Appartement</option>
+                                        <option value="studio">Studio</option>
+                                        <option value="t2">T2</option>
+                                        <option value="t2_bis">T2 Bis</option>
+                                        <option value="t3">T3</option>
                                         <option value="parking">Parking</option>
                                         <option value="cave">Cave</option>
-                                        <option value="commerce">Commerce</option>
-                                        <option value="autre">Autre</option>
                                     </select>
                                 </div>
                             </div>
@@ -115,15 +116,28 @@
                                     <span class="input-group-text">
                                         <i class="fas fa-door-closed"></i>
                                     </span>
-                                    <input type="number" 
-                                           class="form-control" 
-                                           id="nombre_pieces" 
-                                           name="nombre_pieces" 
+                                    <input type="number"
+                                           class="form-control"
+                                           id="nombre_pieces"
+                                           name="nombre_pieces"
                                            min="0"
                                            placeholder="Ex: 2">
                                 </div>
                             </div>
-                            
+
+                            <!-- Terrasse -->
+                            <div class="col-12 col-md-4">
+                                <label for="terrasse" class="form-label">Terrasse / Loggia</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-sun"></i></span>
+                                    <select class="form-select" id="terrasse" name="terrasse">
+                                        <option value="non">Non</option>
+                                        <option value="oui" selected>Oui</option>
+                                        <option value="loggia">Loggia</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <!-- Étage -->
                             <div class="col-12 col-md-4">
                                 <label for="etage" class="form-label">
@@ -244,7 +258,7 @@
                     <h6 class="fw-bold">Informations requises</h6>
                     <ul class="small">
                         <li><strong>Numéro de lot :</strong> Identifiant unique du lot</li>
-                        <li><strong>Type :</strong> Nature du bien (appartement, parking, etc.)</li>
+                        <li><strong>Type :</strong> Nature du bien (studio, T2, T2 Bis, T3, parking, cave)</li>
                     </ul>
                     
                     <h6 class="fw-bold mt-3">Informations optionnelles</h6>

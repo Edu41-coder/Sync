@@ -114,10 +114,25 @@ include __DIR__ . '/../../partials/breadcrumb.php';
                             
                             <!-- Mot de passe (optionnel en édition) -->
                             <div class="col-12">
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Mot de passe :</strong> Laissez vide pour conserver le mot de passe actuel. 
-                                    Remplissez uniquement si vous souhaitez le modifier.
+                                <div class="alert alert-info alert-permanent d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Mot de passe actuel :</strong>
+                                        <?php if (!empty($user['password_plain'])): ?>
+                                            <code id="currentPwd" class="d-none"><?= htmlspecialchars($user['password_plain']) ?></code>
+                                            <span id="currentPwdMask">••••••••</span>
+                                        <?php else: ?>
+                                            <span class="text-muted">Non disponible</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php if (!empty($user['password_plain'])): ?>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleCurrentPwd">
+                                        <i class="fas fa-eye" id="eyeCurrentPwd"></i>
+                                    </button>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="form-text mb-2">
+                                    <i class="fas fa-info-circle me-1"></i>Laissez vide pour conserver le mot de passe actuel.
                                 </div>
                             </div>
                             
@@ -177,24 +192,71 @@ include __DIR__ . '/../../partials/breadcrumb.php';
                                 <label for="role" class="form-label">
                                     Rôle <span class="text-danger">*</span>
                                 </label>
-                                <select class="form-select" id="role" name="role" required>
+                                <?php $roleLocked = in_array($user['role'], ['admin', 'proprietaire', 'locataire_permanent', 'exploitant']); ?>
+                                <select class="form-select" id="role" name="role" required <?= $roleLocked ? 'disabled' : '' ?>>
                                     <option value="">-- Sélectionner un rôle --</option>
-                                    <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>>
-                                        Admin - Accès complet
-                                    </option>
-                                    <option value="gestionnaire" <?= $user['role'] === 'gestionnaire' ? 'selected' : '' ?>>
-                                        Gestionnaire - Gestion syndic
-                                    </option>
-                                    <option value="exploitant" <?= $user['role'] === 'exploitant' ? 'selected' : '' ?>>
-                                        Exploitant - Opérateur Domitys
-                                    </option>
-                                    <option value="proprietaire" <?= $user['role'] === 'proprietaire' ? 'selected' : '' ?>>
-                                        Propriétaire - Investisseur
-                                    </option>
-                                    <option value="resident" <?= $user['role'] === 'resident' ? 'selected' : '' ?>>
-                                        Résident - Senior occupant
-                                    </option>
+                                    <?php
+                                    $lastCategorie = null;
+                                    foreach ($roles as $r):
+                                        if ($r['categorie'] !== $lastCategorie):
+                                            if ($lastCategorie !== null) echo '</optgroup>';
+                                            $catLabels = ['admin'=>'Administration','direction'=>'Direction','proprietaire'=>'Propriétaire','staff'=>'Personnel','resident'=>'Résidents'];
+                                            echo '<optgroup label="' . htmlspecialchars($catLabels[$r['categorie']] ?? ucfirst($r['categorie'])) . '">';
+                                            $lastCategorie = $r['categorie'];
+                                        endif;
+                                    ?>
+                                        <option value="<?= htmlspecialchars($r['slug']) ?>"
+                                            <?= $user['role'] === $r['slug'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($r['nom_affichage']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                    <?php if ($lastCategorie !== null) echo '</optgroup>'; ?>
                                 </select>
+                                <?php if ($roleLocked): ?>
+                                    <input type="hidden" name="role" value="<?= htmlspecialchars($user['role']) ?>">
+                                    <small class="text-warning mt-1 d-block">
+                                        <i class="fas fa-lock me-1"></i><?= $user['role'] === 'admin' ? 'Le rôle administrateur ne peut pas être modifié' : 'Rôle verrouillé (fiche liée)' ?>
+                                    </small>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="col-12 <?= $user['role'] === 'exploitant' ? '' : 'd-none' ?>" id="exploitantResidencesSection">
+                                <label for="residence_ids" class="form-label">
+                                    Résidences affectées à l'exploitant
+                                </label>
+                                <div class="input-group input-group-sm mb-2">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" class="form-control" id="searchEditRes" placeholder="Rechercher une résidence...">
+                                    <button type="button" class="btn btn-outline-secondary" id="btnEditSelectAll" title="Tout cocher">
+                                        <i class="fas fa-check-double"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" id="btnEditDeselectAll" title="Tout décocher">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="border rounded p-2" style="max-height:220px;overflow-y:auto" id="editResContainer">
+                                    <?php
+                                    $selectedResidenceIds = $selectedResidenceIds ?? [];
+                                    foreach (($residencesForAssignment ?? []) as $residence):
+                                        $isSelected = in_array((int)$residence['id'], array_map('intval', $selectedResidenceIds), true);
+                                        $label = $residence['nom'] . ' - ' . ($residence['ville'] ?? '');
+                                    ?>
+                                    <div class="form-check edit-res-item" data-search="<?= htmlspecialchars(strtolower($label)) ?>">
+                                        <input class="form-check-input edit-res-cb" type="checkbox"
+                                               name="residence_ids[]"
+                                               value="<?= (int)$residence['id'] ?>"
+                                               id="edit_res_<?= $residence['id'] ?>"
+                                               <?= $isSelected ? 'checked' : '' ?>>
+                                        <label class="form-check-label small" for="edit_res_<?= $residence['id'] ?>">
+                                            <?= htmlspecialchars($label) ?>
+                                        </label>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="form-text">Cochez les résidences à assigner.</small>
+                                    <small class="text-muted"><span id="editResCount">0</span> sélectionnée(s)</small>
+                                </div>
                             </div>
                             
                             <!-- Statut actif -->
@@ -202,11 +264,19 @@ include __DIR__ . '/../../partials/breadcrumb.php';
                                 <label class="form-label d-block">
                                     Statut
                                 </label>
+                                <?php $isAdmin = $user['role'] === 'admin'; ?>
+                                <?php if ($isAdmin): ?>
+                                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Actif</span>
+                                    <input type="hidden" name="actif" value="1">
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="fas fa-lock me-1"></i>Vous ne pouvez pas modifier votre propre statut ni celui des autres administrateurs.
+                                    </small>
+                                <?php else: ?>
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input" 
-                                           type="checkbox" 
-                                           id="actif" 
-                                           name="actif" 
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           id="actif"
+                                           name="actif"
                                            <?= $user['actif'] ? 'checked' : '' ?>>
                                     <label class="form-check-label" for="actif">
                                         <span class="badge" id="statusBadge">
@@ -215,6 +285,7 @@ include __DIR__ . '/../../partials/breadcrumb.php';
                                         </span>
                                     </label>
                                 </div>
+                                <?php endif; ?>
                             </div>
                             
                             <!-- Informations supplémentaires -->
@@ -268,31 +339,52 @@ include __DIR__ . '/../../partials/breadcrumb.php';
         <!-- Colonne d'aide -->
         <div class="col-12 col-lg-4 mt-3 mt-lg-0">
             <!-- Carte d'avertissement sur les changements de rôle -->
-            <?php if ($user['role'] === 'resident'): ?>
-            <div class="card shadow border-warning mb-3">
-                <div class="card-header bg-warning text-dark">
+            <?php if ($user['role'] === 'admin'): ?>
+            <div class="card shadow border-danger mb-3">
+                <div class="card-header bg-danger text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Restriction Résident Senior
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Compte Administrateur
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-warning mb-0">
+                    <div class="alert alert-danger alert-permanent mb-0">
                         <p class="small mb-2">
-                            <i class="fas fa-ban me-1"></i>
-                            <strong>Un résident senior ne peut PAS changer de rôle.</strong>
+                            <i class="fas fa-lock me-1"></i>
+                            <strong>Le rôle administrateur ne peut PAS être modifié.</strong>
                         </p>
                         <p class="small mb-0">
-                            Si vous devez donner un autre statut à cette personne (propriétaire, exploitant, etc.), 
-                            <strong>créez un nouveau compte utilisateur</strong> avec le rôle souhaité.
+                            Le statut et le rôle d'un administrateur sont verrouillés pour des raisons de sécurité.
                         </p>
-                        <?php if (isset($residentProfile) && $residentProfile): ?>
-                        <hr class="my-2">
-                        <p class="small mb-0 text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Cet utilisateur possède un profil résident senior complet (ID: <?= $residentProfile['id'] ?>)
+                    </div>
+                </div>
+            </div>
+            <?php elseif (in_array($user['role'], ['proprietaire', 'locataire_permanent', 'exploitant'])): ?>
+            <?php
+                $roleLabels = [
+                    'proprietaire'        => 'propriétaire',
+                    'locataire_permanent' => 'résident senior',
+                    'exploitant'          => 'exploitant'
+                ];
+                $currentLabel = $roleLabels[$user['role']] ?? $user['role'];
+            ?>
+            <div class="card shadow border-warning mb-3">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lock me-2"></i>
+                        Rôle verrouillé
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning alert-permanent mb-0">
+                        <p class="small mb-2">
+                            <i class="fas fa-ban me-1"></i>
+                            <strong>Un <?= $currentLabel ?> ne peut PAS changer de rôle.</strong>
                         </p>
-                        <?php endif; ?>
+                        <p class="small mb-0">
+                            Cet utilisateur possède une fiche <?= $currentLabel ?> liée.
+                            Pour lui donner un autre rôle, <strong>créez un nouveau compte utilisateur</strong>.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -305,20 +397,20 @@ include __DIR__ . '/../../partials/breadcrumb.php';
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-info mb-0">
+                    <div class="alert alert-info alert-permanent mb-0">
                         <p class="small mb-2">
                             <i class="fas fa-ban me-1"></i>
-                            <strong>Cet utilisateur ne peut PAS devenir résident senior.</strong>
+                            <strong>Cet utilisateur ne peut PAS devenir résident senior, hôte temporaire ou exploitant.</strong>
                         </p>
                         <p class="small mb-0">
-                            Pour créer un résident senior, vous devez 
-                            <strong>créer un nouveau compte utilisateur</strong> avec le rôle "Résident" 
-                            dès le départ.
+                            Ces rôles nécessitent une fiche liée. Utilisez la
+                            <a href="<?= BASE_URL ?>/admin/users/create" class="fw-semibold">création d'utilisateur</a> avec le rôle souhaité.
                         </p>
                     </div>
                 </div>
             </div>
             <?php endif; ?>
+
             
             <div class="card shadow">
                 <div class="card-header bg-info text-white">
@@ -339,7 +431,7 @@ include __DIR__ . '/../../partials/breadcrumb.php';
                     <h6 class="fw-bold">Sécurité</h6>
                     <ul class="small mb-0">
                         <li>Les modifications sont loguées dans le système</li>
-                        <li>Vous ne pouvez pas modifier votre propre statut</li>
+                        <li>Vous ne pouvez pas modifier votre propre statut ni celui des autres administrateurs</li>
                         <li>Le changement de rôle affecte immédiatement les permissions</li>
                     </ul>
                 </div>
@@ -362,7 +454,7 @@ include __DIR__ . '/../../partials/breadcrumb.php';
             </div>
             <?php endif; ?>
             
-            <?php if ($user['role'] === 'resident'): ?>
+            <?php if ($user['role'] === 'locataire_permanent'): ?>
             <div class="card shadow mt-3 border-success">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0">
@@ -409,6 +501,25 @@ include __DIR__ . '/../../partials/breadcrumb.php';
 </div>
 
 <script>
+// Toggle current password visibility
+const toggleBtn = document.getElementById('toggleCurrentPwd');
+if (toggleBtn) {
+    toggleBtn.addEventListener('click', function() {
+        const pwd = document.getElementById('currentPwd');
+        const mask = document.getElementById('currentPwdMask');
+        const icon = document.getElementById('eyeCurrentPwd');
+        if (pwd.classList.contains('d-none')) {
+            pwd.classList.remove('d-none');
+            mask.classList.add('d-none');
+            icon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            pwd.classList.add('d-none');
+            mask.classList.remove('d-none');
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    });
+}
+
 // Toggle password visibility
 document.getElementById('togglePassword').addEventListener('click', function() {
     const password = document.getElementById('password');
@@ -476,4 +587,53 @@ document.getElementById('actif').addEventListener('change', function() {
         text.textContent = 'Inactif';
     }
 });
+
+function toggleExploitantResidencesSection() {
+    const roleSelect = document.getElementById('role');
+    const section = document.getElementById('exploitantResidencesSection');
+    if (!roleSelect || !section) return;
+
+    if (roleSelect.value === 'exploitant') {
+        section.classList.remove('d-none');
+    } else {
+        section.classList.add('d-none');
+    }
+}
+
+document.getElementById('role').addEventListener('change', toggleExploitantResidencesSection);
+toggleExploitantResidencesSection();
+
+// === Recherche résidences (edit) ===
+(function() {
+    const search = document.getElementById('searchEditRes');
+    const container = document.getElementById('editResContainer');
+    if (!search || !container) return;
+
+    function updateCount() {
+        const n = container.querySelectorAll('.edit-res-cb:checked').length;
+        document.getElementById('editResCount').textContent = n;
+    }
+
+    search.addEventListener('input', function() {
+        const q = this.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        container.querySelectorAll('[data-search]').forEach(item => {
+            const text = item.getAttribute('data-search').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+            item.style.display = !q || text.includes(q) ? '' : 'none';
+        });
+    });
+
+    container.addEventListener('change', updateCount);
+    updateCount();
+
+    const btnAll = document.getElementById('btnEditSelectAll');
+    const btnNone = document.getElementById('btnEditDeselectAll');
+    if (btnAll) btnAll.addEventListener('click', () => {
+        container.querySelectorAll('.edit-res-cb').forEach(cb => { if (cb.closest('.edit-res-item').style.display !== 'none') cb.checked = true; });
+        updateCount();
+    });
+    if (btnNone) btnNone.addEventListener('click', () => {
+        container.querySelectorAll('.edit-res-cb').forEach(cb => cb.checked = false);
+        updateCount();
+    });
+})();
 </script>

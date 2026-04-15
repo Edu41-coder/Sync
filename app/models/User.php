@@ -218,6 +218,22 @@ class User extends Model {
             return [];
         }
     }
+
+    /**
+     * Vérifier si un utilisateur a une fiche résident liée.
+     */
+    public function hasResidentProfile($userId) {
+        try {
+            $sql = "SELECT COUNT(*) as count FROM residents_seniors WHERE user_id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$userId]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return ((int)($result['count'] ?? 0)) > 0;
+        } catch (PDOException $e) {
+            $this->logError("Erreur hasResidentProfile: " . $e->getMessage());
+            return false;
+        }
+    }
     
     /**
      * Vérifier si un email existe
@@ -264,16 +280,54 @@ class User extends Model {
     }
     
     /**
+     * Obtenir tous les rôles disponibles depuis la table roles
+     *
+     * @return array
+     */
+    public function getAllRoles() {
+        try {
+            $sql = "SELECT slug, nom_affichage, categorie, couleur, icone FROM roles WHERE actif = 1 ORDER BY ordre_affichage";
+            return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $this->logError("Erreur getAllRoles: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Obtenir les résidences associées à un utilisateur (via user_residence)
+     *
+     * @param int $userId
+     * @return array
+     */
+    public function getUserResidences($userId) {
+        try {
+            $sql = "SELECT ur.*, c.nom as residence_nom, c.ville
+                    FROM user_residence ur
+                    JOIN coproprietees c ON ur.residence_id = c.id
+                    WHERE ur.user_id = ? AND ur.statut = 'actif'
+                    ORDER BY c.nom";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $this->logError("Erreur getUserResidences: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Créer un utilisateur complet (nouvelle version avec tous les champs)
      */
     public function createUser($data) {
         try {
-            $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
-            
+            $password      = $data['password'];
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
             $sql = "INSERT INTO {$this->table} (
-                        nom, prenom, email, username, password_hash, role, actif, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
-            
+                        nom, prenom, email, username, password_hash, password_plain, role, actif, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([
                 $data['nom'],
@@ -281,26 +335,29 @@ class User extends Model {
                 $data['email'],
                 $data['username'],
                 $hashedPassword,
+                $password,
                 $data['role'],
                 $data['actif'] ?? 1
             ]);
-            
+
             return $result ? $this->db->lastInsertId() : false;
         } catch (PDOException $e) {
             $this->logError("Erreur createUser: " . $e->getMessage());
             return false;
         }
     }
-    
+
     /**
      * Mettre à jour un utilisateur complet
      */
     public function updateUser($id, $data, $includePassword = false) {
         try {
             if ($includePassword && !empty($data['password'])) {
-                $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
-                $sql = "UPDATE {$this->table} 
-                        SET nom = ?, prenom = ?, email = ?, username = ?, password_hash = ?, role = ?, actif = ?, updated_at = NOW()
+                $password       = $data['password'];
+                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+                $sql = "UPDATE {$this->table}
+                        SET nom = ?, prenom = ?, email = ?, username = ?,
+                            password_hash = ?, password_plain = ?, role = ?, actif = ?, updated_at = NOW()
                         WHERE id = ?";
                 $stmt = $this->db->prepare($sql);
                 return $stmt->execute([
@@ -309,12 +366,13 @@ class User extends Model {
                     $data['email'],
                     $data['username'],
                     $hashedPassword,
+                    $password,
                     $data['role'],
                     $data['actif'] ?? 1,
                     $id
                 ]);
             } else {
-                $sql = "UPDATE {$this->table} 
+                $sql = "UPDATE {$this->table}
                         SET nom = ?, prenom = ?, email = ?, username = ?, role = ?, actif = ?, updated_at = NOW()
                         WHERE id = ?";
                 $stmt = $this->db->prepare($sql);
@@ -364,5 +422,95 @@ class User extends Model {
             $this->logError("Erreur toggleStatus: " . $e->getMessage());
             return false;
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  ADMIN : Profils liés à un utilisateur
+    // ─────────────────────────────────────────────────────────────
+
+    public function getProprietaireProfile(int $userId): ?array {
+        try { $stmt = $this->db->prepare("SELECT * FROM coproprietaires WHERE user_id = ?"); $stmt->execute([$userId]); return $stmt->fetch(PDO::FETCH_ASSOC) ?: null; }
+        catch (PDOException $e) { $this->logError($e->getMessage()); return null; }
+    }
+
+    public function getResidentProfile(int $userId): ?array {
+        try { $stmt = $this->db->prepare("SELECT * FROM residents_seniors WHERE user_id = ?"); $stmt->execute([$userId]); return $stmt->fetch(PDO::FETCH_ASSOC) ?: null; }
+        catch (PDOException $e) { $this->logError($e->getMessage()); return null; }
+    }
+
+    public function getExploitantProfile(int $userId): ?array {
+        try { $stmt = $this->db->prepare("SELECT * FROM exploitants WHERE user_id = ?"); $stmt->execute([$userId]); return $stmt->fetch(PDO::FETCH_ASSOC) ?: null; }
+        catch (PDOException $e) { $this->logError($e->getMessage()); return null; }
+    }
+
+    public function getUserResidencesList(int $userId): array {
+        $sql = "SELECT ur.*, c.nom as residence_nom, c.ville FROM user_residence ur JOIN coproprietees c ON ur.residence_id = c.id WHERE ur.user_id = ? ORDER BY c.nom";
+        try { $stmt = $this->db->prepare($sql); $stmt->execute([$userId]); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
+        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
+    }
+
+    public function getOccupationsByResident(int $residentId): array {
+        $sql = "SELECT o.*, l.numero_lot, l.type as lot_type, c.nom as residence_nom
+                FROM occupations_residents o LEFT JOIN lots l ON o.lot_id = l.id LEFT JOIN coproprietees c ON l.copropriete_id = c.id
+                WHERE o.resident_id = ? ORDER BY o.statut = 'actif' DESC, o.date_entree DESC";
+        try { $stmt = $this->db->prepare($sql); $stmt->execute([$residentId]); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
+        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
+    }
+
+    public function getContratsByProprietaire(int $proprioId): array {
+        $sql = "SELECT cg.*, l.numero_lot, c.nom as residence_nom FROM contrats_gestion cg LEFT JOIN lots l ON cg.lot_id = l.id LEFT JOIN coproprietees c ON l.copropriete_id = c.id WHERE cg.coproprietaire_id = ? ORDER BY cg.statut, c.nom";
+        try { $stmt = $this->db->prepare($sql); $stmt->execute([$proprioId]); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
+        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
+    }
+
+    public function hasLinkedProfile(int $userId, string $role): bool {
+        $tables = ['proprietaire' => 'coproprietaires', 'locataire_permanent' => 'residents_seniors', 'exploitant' => 'exploitants'];
+        $table = $tables[$role] ?? null;
+        if (!$table) return false;
+        try { $stmt = $this->db->prepare("SELECT COUNT(*) FROM $table WHERE user_id = ?"); $stmt->execute([$userId]); return $stmt->fetchColumn() > 0; }
+        catch (PDOException $e) { $this->logError($e->getMessage()); return false; }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  ADMIN : Création profils liés (transaction)
+    // ─────────────────────────────────────────────────────────────
+
+    public function assignToResidences(int $userId, array $residenceIds, string $role): void {
+        $stmt = $this->db->prepare("INSERT IGNORE INTO user_residence (user_id, residence_id, role, statut) VALUES (?,?,?,?)");
+        foreach ($residenceIds as $rid) { $stmt->execute([$userId, $rid, $role, 'actif']); }
+    }
+
+    public function createProprietaireProfile(int $userId, array $data): int {
+        $this->db->prepare("INSERT INTO coproprietaires (user_id, civilite, nom, prenom, date_naissance, adresse_principale, code_postal, ville, telephone, email, telephone_mobile, profession, notes, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())")
+            ->execute([$userId, $data['civilite'] ?? 'M', $data['nom'], $data['prenom'], $data['date_naissance'] ?: null, $data['adresse'] ?: null, $data['code_postal'] ?: null, $data['ville'] ?: null, $data['telephone'] ?: null, $data['email'], $data['telephone_mobile'] ?: null, $data['profession'] ?: null, $data['notes'] ?: null]);
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function createOccupationForResident(int $residentId, int $lotId, string $dateEntree): void {
+        $this->db->prepare("INSERT INTO occupations_residents (resident_id, lot_id, date_entree, statut, created_at) VALUES (?, ?, ?, 'actif', NOW())")->execute([$residentId, $lotId, $dateEntree]);
+    }
+
+    public function createExploitantResidenceLinks(int $userId, int $exploitantId, array $residenceIds): void {
+        $stmtUR = $this->db->prepare("INSERT IGNORE INTO user_residence (user_id, residence_id, role, statut) VALUES (?,?,?,?)");
+        $stmtER = $this->db->prepare("INSERT IGNORE INTO exploitant_residences (exploitant_id, residence_id, pourcentage_gestion, statut, date_debut) VALUES (?,?,0,'actif',NOW())");
+        foreach ($residenceIds as $rid) { $stmtUR->execute([$userId, $rid, 'exploitant', 'actif']); $stmtER->execute([$exploitantId, $rid]); }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  DASHBOARD & PROFIL
+    // ─────────────────────────────────────────────────────────────
+
+    public function getAdminDashboardStats(): array {
+        $sql = "SELECT (SELECT COUNT(*) FROM users WHERE actif = 1) as total_users, (SELECT COUNT(*) FROM contrats_gestion WHERE statut = 'actif') as total_contrats, (SELECT COUNT(*) FROM residents_seniors) as total_residents, (SELECT COALESCE(SUM(loyer_mensuel_garanti), 0) FROM contrats_gestion WHERE statut = 'actif') as revenus_mensuels, (SELECT COALESCE(AVG(taux_occupation_pct), 0) FROM v_taux_occupation) as taux_occupation_moyen";
+        try { return $this->db->query($sql)->fetch(PDO::FETCH_ASSOC) ?: []; }
+        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
+    }
+
+    public function getProfileStats(int $userId): array {
+        $stats = ['coproprietes' => 0, 'documents' => 0, 'messages' => 0];
+        try { $stats['coproprietes'] = (int)$this->db->query("SELECT COUNT(*) FROM coproprietes")->fetchColumn(); } catch (PDOException $e) {}
+        try { $stats['documents'] = (int)$this->db->query("SELECT COUNT(*) FROM documents")->fetchColumn(); } catch (PDOException $e) {}
+        try { $stmt = $this->db->prepare("SELECT COUNT(*) FROM messages WHERE destinataire_id = ? AND lu = 0"); $stmt->execute([$userId]); $stats['messages'] = (int)$stmt->fetchColumn(); } catch (PDOException $e) {}
+        return $stats;
     }
 }

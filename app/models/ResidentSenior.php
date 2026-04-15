@@ -7,6 +7,17 @@
  */
 
 class ResidentSenior extends Model {
+
+    /**
+     * Vérifier si un profil résident existe déjà pour un utilisateur.
+     */
+    public function hasProfileForUser($userId) {
+        $sql = "SELECT COUNT(*) as count FROM residents_seniors WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$userId]);
+        $result = $stmt->fetch(PDO::FETCH_OBJ);
+        return (int)($result->count ?? 0) > 0;
+    }
     
     /**
      * Récupérer tous les résidents actifs
@@ -74,27 +85,57 @@ class ResidentSenior extends Model {
     public function create($data) {
         $sql = "INSERT INTO residents_seniors (
                     user_id, civilite, nom, prenom, date_naissance,
-                    telephone_mobile, email, numero_cni, date_delivrance_cni, 
-                    lieu_delivrance_cni, niveau_autonomie, 
-                    notes, actif, date_entree
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())";
-        
+                    lieu_naissance, telephone_mobile, email,
+                    numero_cni, date_delivrance_cni, lieu_delivrance_cni,
+                    niveau_autonomie, besoin_assistance,
+                    situation_familiale, nombre_enfants, num_securite_sociale,
+                    urgence_nom, urgence_lien, urgence_telephone, urgence_telephone_2, urgence_email,
+                    medecin_traitant_nom, medecin_traitant_tel,
+                    regime_alimentaire, allergies,
+                    mutuelle, num_mutuelle,
+                    animal_compagnie, animal_type, animal_nom,
+                    centres_interet,
+                    date_entree, notes, actif
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
         $stmt = $this->db->prepare($sql);
         $result = $stmt->execute([
-            $data['user_id'] ?? null,
+            $data['user_id']              ?? null,
             $data['civilite'],
             $data['nom'],
             $data['prenom'],
             $data['date_naissance'],
-            $data['telephone_mobile'] ?? null,
-            $data['email'] ?? null,
-            $data['numero_cni'] ?? null,
-            $data['date_delivrance_cni'] ?? null,
-            $data['lieu_delivrance_cni'] ?? null,
-            $data['niveau_autonomie'] ?? 'autonome',
-            $data['notes'] ?? null
+            $data['lieu_naissance']        ?? null,
+            $data['telephone_mobile']      ?? null,
+            $data['email']                 ?? null,
+            $data['numero_cni']            ?? null,
+            $data['date_delivrance_cni']   ?? null,
+            $data['lieu_delivrance_cni']   ?? null,
+            $data['niveau_autonomie']      ?? 'autonome',
+            $data['besoin_assistance']     ?? 0,
+            $data['situation_familiale']   ?? null,
+            $data['nombre_enfants']        ?? 0,
+            $data['num_securite_sociale']  ?? null,
+            $data['urgence_nom']           ?? null,
+            $data['urgence_lien']          ?? null,
+            $data['urgence_telephone']     ?? null,
+            $data['urgence_telephone_2']   ?? null,
+            $data['urgence_email']         ?? null,
+            $data['medecin_traitant_nom']  ?? null,
+            $data['medecin_traitant_tel']  ?? null,
+            $data['regime_alimentaire']    ?? 'normal',
+            $data['allergies']             ?? null,
+            $data['mutuelle']              ?? null,
+            $data['num_mutuelle']          ?? null,
+            $data['animal_compagnie']      ?? 0,
+            $data['animal_type']           ?? null,
+            $data['animal_nom']            ?? null,
+            $data['centres_interet']       ?? null,
+            $data['date_entree']           ?? null,
+            $data['notes']                 ?? null,
+            $data['actif']                 ?? 1,
         ]);
-        
+
         return $result ? $this->db->lastInsertId() : false;
     }
     
@@ -122,7 +163,7 @@ class ResidentSenior extends Model {
             $email = strtolower($data['prenom'] . '.' . $data['nom'] . '@resident.syndgest.fr');
             $password = password_hash('resident123', PASSWORD_BCRYPT);
             
-            // Créer le compte utilisateur
+            // Creer directement le compte utilisateur resident.
             $sqlUser = "INSERT INTO users (username, email, password_hash, role, prenom, nom, telephone, actif) 
                         VALUES (?, ?, ?, 'resident', ?, ?, ?, 1)";
             $stmtUser = $this->db->prepare($sqlUser);
@@ -176,6 +217,75 @@ class ResidentSenior extends Model {
         } catch (PDOException $e) {
             $this->db->rollBack();
             $this->logError("Erreur createWithUser: " . $e->getMessage());
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Créer une fiche résident pour un compte utilisateur résident existant.
+     */
+    public function createForExistingUser($userId, $data) {
+        try {
+            $this->db->beginTransaction();
+
+            // Valider que l'utilisateur existe et est bien résident
+            $sqlUser = "SELECT id, role, email FROM users WHERE id = ? LIMIT 1";
+            $stmtUser = $this->db->prepare($sqlUser);
+            $stmtUser->execute([$userId]);
+            $user = $stmtUser->fetch(PDO::FETCH_OBJ);
+
+            if (!$user) {
+                throw new Exception("Utilisateur introuvable");
+            }
+
+            if ($user->role !== 'resident') {
+                throw new Exception("Le compte sélectionné n'a pas le rôle résident");
+            }
+
+            if ($this->hasProfileForUser($userId)) {
+                throw new Exception("Ce compte utilisateur a déjà une fiche résident");
+            }
+
+            $sqlResident = "INSERT INTO residents_seniors (
+                                user_id, civilite, nom, prenom, nom_naissance,
+                                date_naissance, lieu_naissance,
+                                telephone_fixe, telephone_mobile, email,
+                                numero_cni, date_delivrance_cni, lieu_delivrance_cni,
+                                niveau_autonomie, notes, actif, date_entree
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())";
+
+            $stmtResident = $this->db->prepare($sqlResident);
+            $stmtResident->execute([
+                $userId,
+                $data['civilite'],
+                $data['nom'],
+                $data['prenom'],
+                $data['nom_naissance'] ?? null,
+                $data['date_naissance'],
+                $data['lieu_naissance'] ?? null,
+                $data['telephone_fixe'] ?? null,
+                $data['telephone_mobile'] ?? null,
+                $data['email'] ?? $user->email,
+                $data['numero_cni'] ?? null,
+                $data['date_delivrance_cni'] ?? null,
+                $data['lieu_delivrance_cni'] ?? null,
+                $data['niveau_autonomie'] ?? 'autonome',
+                $data['notes'] ?? null
+            ]);
+
+            $residentId = $this->db->lastInsertId();
+            $this->db->commit();
+
+            return [
+                'success' => true,
+                'resident_id' => $residentId,
+                'user_id' => $userId
+            ];
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            $this->logError("Erreur createForExistingUser: " . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -258,6 +368,76 @@ class ResidentSenior extends Model {
         $sql = "UPDATE residents_seniors SET actif = 0, date_sortie = NOW() WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([$id]);
+    }
+
+    /**
+     * Synchroniser le statut actif entre la fiche résident et le compte utilisateur lié.
+     */
+    public function syncActiveStatusByResidentId($residentId, $isActive) {
+        try {
+            $ownTransaction = !$this->db->inTransaction();
+            if ($ownTransaction) $this->db->beginTransaction();
+
+            $sqlResident = "SELECT id, user_id FROM residents_seniors WHERE id = ? LIMIT 1";
+            $stmtResident = $this->db->prepare($sqlResident);
+            $stmtResident->execute([$residentId]);
+            $resident = $stmtResident->fetch(PDO::FETCH_OBJ);
+
+            if (!$resident) {
+                throw new Exception('Résident introuvable');
+            }
+
+            $activeValue = $isActive ? 1 : 0;
+            $dateSortie = $isActive ? null : date('Y-m-d');
+
+            // Mettre à jour le résident
+            $this->db->prepare("UPDATE residents_seniors SET actif = ?, date_sortie = ? WHERE id = ?")
+                ->execute([$activeValue, $dateSortie, $residentId]);
+
+            // Mettre à jour le user lié
+            if (!empty($resident->user_id)) {
+                $this->db->prepare("UPDATE users SET actif = ?, updated_at = NOW() WHERE id = ?")
+                    ->execute([$activeValue, (int)$resident->user_id]);
+            }
+
+            // Si désactivation → terminer toutes les occupations actives (libérer les lots)
+            if (!$isActive) {
+                $this->db->prepare("UPDATE occupations_residents
+                    SET statut = 'termine', date_sortie = ?, updated_at = NOW()
+                    WHERE resident_id = ? AND statut = 'actif'")
+                    ->execute([date('Y-m-d'), $residentId]);
+            }
+
+            if ($ownTransaction) $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            if ($this->db->inTransaction() && ($ownTransaction ?? false)) {
+                $this->db->rollBack();
+            }
+            $this->logError("Erreur syncActiveStatusByResidentId: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Synchroniser le statut actif en partant du user_id lié au résident.
+     */
+    public function syncActiveStatusByUserId($userId, $isActive) {
+        try {
+            $sql = "SELECT id FROM residents_seniors WHERE user_id = ? LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([(int)$userId]);
+            $resident = $stmt->fetch(PDO::FETCH_OBJ);
+
+            if (!$resident) {
+                return false;
+            }
+
+            return $this->syncActiveStatusByResidentId((int)$resident->id, $isActive);
+        } catch (Exception $e) {
+            $this->logError("Erreur syncActiveStatusByUserId: " . $e->getMessage());
+            return false;
+        }
     }
     
     /**

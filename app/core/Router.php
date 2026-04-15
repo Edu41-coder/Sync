@@ -28,8 +28,7 @@ class Router {
             }
         }
         
-        // Inclure et instancier le contrôleur
-        require_once '../app/controllers/' . $this->controller . '.php';
+        // Instancier le contrôleur (chargé automatiquement par l'autoloader)
         $this->controller = new $this->controller;
         
         // Vérifier si la méthode existe
@@ -47,7 +46,7 @@ class Router {
         $this->validateParams();
         
         // Vérifier le rate limiting par IP (plus strict)
-        if (!Security::checkRateLimitByIp(60)) {
+        if (!Security::checkRateLimitByIp(200)) {
             http_response_code(429);
             die('Trop de requêtes. Veuillez patienter une minute.');
         }

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 12-12-2025 a las 02:06:57
+-- Tiempo de generación: 30-03-2026 a las 14:45:36
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -615,7 +615,11 @@ CREATE TABLE `logs_activite` (
 INSERT INTO `logs_activite` (`id`, `user_id`, `action`, `table_name`, `record_id`, `details`, `ip_address`, `user_agent`, `created_at`) VALUES
 (1, 7, 'user_status_changed', 'users', 7, 'Status changed from 1 to 0', NULL, NULL, '2025-12-10 23:53:07'),
 (2, 7, 'user_status_changed', 'users', 7, 'Status changed from 0 to 1', NULL, NULL, '2025-12-10 23:53:11'),
-(3, 12, 'user_status_changed', 'users', 12, 'Status changed from 1 to 0', NULL, NULL, '2025-12-11 14:30:47');
+(3, 12, 'user_status_changed', 'users', 12, 'Status changed from 1 to 0', NULL, NULL, '2025-12-11 14:30:47'),
+(4, 40, 'user_status_changed', 'users', 40, 'Status changed from 1 to 0', NULL, NULL, '2025-12-15 23:30:40'),
+(5, 40, 'user_status_changed', 'users', 40, 'Status changed from 0 to 1', NULL, NULL, '2025-12-15 23:31:00'),
+(6, 41, 'user_status_changed', 'users', 41, 'Status changed from 1 to 0', NULL, NULL, '2025-12-15 23:39:30'),
+(7, 27, 'user_status_changed', 'users', 27, 'Status changed from 1 to 0', NULL, NULL, '2025-12-15 23:40:39');
 
 -- --------------------------------------------------------
 
@@ -989,7 +993,7 @@ INSERT INTO `parametres` (`id`, `cle`, `valeur`, `description`, `type`, `categor
 (8, 'max_upload_size', '10', 'Taille max upload en Mo', 'number', 'systeme', '2025-11-28 23:39:25'),
 (9, 'date_format', 'd/m/Y', 'Format de date', 'string', 'general', '2025-11-28 23:39:25'),
 (10, 'devise', 'EUR', 'Devise', 'string', 'comptabilite', '2025-11-28 23:39:25'),
-(11, 'user_1_prefs', '{\"language\":\"en\",\"timezone\":\"Europe\\/Paris\",\"date_format\":\"dd\\/mm\\/yyyy\",\"time_format\":\"12h\",\"theme\":\"light\",\"density\":\"comfortable\",\"show_animations\":1}', 'Préférences utilisateur', 'json', NULL, '2025-11-30 00:47:23'),
+(11, 'user_1_prefs', '{\"language\":\"en\",\"timezone\":\"Europe\\/Paris\",\"date_format\":\"dd\\/mm\\/yyyy\",\"time_format\":\"12h\",\"theme\":\"light\",\"density\":\"spacious\",\"show_animations\":1}', 'Préférences utilisateur', 'json', NULL, '2026-02-01 22:07:48'),
 (12, 'user_9_prefs', '{\"theme\":\"light\",\"density\":\"comfortable\",\"show_animations\":0}', 'Préférences utilisateur', 'json', NULL, '2025-11-30 21:28:12');
 
 -- --------------------------------------------------------
@@ -1212,7 +1216,29 @@ CREATE TABLE `residents_seniors` (
 INSERT INTO `residents_seniors` (`id`, `user_id`, `civilite`, `nom`, `prenom`, `nom_naissance`, `date_naissance`, `age`, `lieu_naissance`, `telephone_fixe`, `telephone_mobile`, `email`, `numero_cni`, `date_delivrance_cni`, `lieu_delivrance_cni`, `urgence_nom`, `urgence_lien`, `urgence_telephone`, `urgence_telephone_2`, `urgence_email`, `situation_familiale`, `nombre_enfants`, `niveau_autonomie`, `besoin_assistance`, `allergies`, `regime_alimentaire`, `medecin_traitant_nom`, `medecin_traitant_tel`, `num_securite_sociale`, `mutuelle`, `num_mutuelle`, `animal_compagnie`, `animal_type`, `animal_nom`, `centres_interet`, `actif`, `date_entree`, `date_sortie`, `motif_sortie`, `notes`, `photo`, `created_at`, `updated_at`) VALUES
 (1, NULL, 'Mme', 'DUPONT', 'Jeanne', NULL, '1938-04-12', 87, 'Marseille', '04 91 45 67 89', '06 78 90 12 34', 'jeanne.dupont@gmail.com', NULL, NULL, NULL, 'Marie DUPONT-SIMON', 'Fille', '06 45 78 90 12', NULL, 'marie.simon@orange.fr', 'veuf', 2, 'autonome', 0, NULL, 'sans_sel', 'Dr. MARTINEZ', '04 91 33 44 55', '2380446012345', 'MGEN', 'MG123456789', 1, 'Chat', 'Minou', '{\"jardinage\": true, \"lecture\": true, \"bridge\": true, \"gymnastique\": true}', 1, '2024-05-15', NULL, NULL, NULL, NULL, '2025-11-30 02:27:19', '2025-11-30 02:27:19'),
 (2, NULL, 'M', 'BLANC', 'Robert', NULL, '1940-08-25', 85, 'Bordeaux', '05 56 78 90 12', '06 89 01 23 45', 'robert.blanc@free.fr', NULL, NULL, NULL, 'Paul BLANC', 'Fils', '06 56 78 90 12', NULL, NULL, 'marie', 3, 'autonome', 0, NULL, 'diabetique', 'Dr. DURAND', '05 56 44 55 66', '1400867123456', 'Harmonie Mutuelle', NULL, 0, NULL, NULL, '{\"petanque\": true, \"echecs\": true, \"promenade\": true}', 1, '2024-06-10', NULL, NULL, NULL, NULL, '2025-11-30 02:27:19', '2025-11-30 02:27:19'),
-(3, NULL, 'Mme', 'PETIT', 'Françoise', NULL, '1942-11-30', 83, 'Lyon', NULL, '06 77 88 99 00', 'francoise.petit@gmail.com', NULL, NULL, NULL, 'Sophie PETIT-MARTIN', 'Fille', '06 34 56 78 90', NULL, 'sophie.martin@wanadoo.fr', 'celibataire', 0, 'autonome', 0, NULL, 'normal', 'Dr. LAMBERT', '04 78 66 77 88', NULL, 'AG2R La Mondiale', NULL, 0, NULL, NULL, '{\"peinture\": true, \"yoga\": true, \"chorale\": true, \"cinema\": true}', 1, '2024-04-20', NULL, NULL, NULL, NULL, '2025-11-30 02:27:19', '2025-11-30 02:27:19');
+(3, NULL, 'Mme', 'PETIT', 'Françoise', NULL, '1942-11-30', 83, 'Lyon', NULL, '06 77 88 99 00', 'francoise.petit@gmail.com', NULL, NULL, NULL, 'Sophie PETIT-MARTIN', 'Fille', '06 34 56 78 90', NULL, 'sophie.martin@wanadoo.fr', 'celibataire', 0, 'autonome', 0, NULL, 'normal', 'Dr. LAMBERT', '04 78 66 77 88', NULL, 'AG2R La Mondiale', NULL, 0, NULL, NULL, '{\"peinture\": true, \"yoga\": true, \"chorale\": true, \"cinema\": true}', 1, '2024-04-20', NULL, NULL, NULL, NULL, '2025-11-30 02:27:19', '2025-11-30 02:27:19'),
+(4, 40, 'M', 'Hermosilla', 'Edu', 'Edu Hermosilla', '1950-07-15', 75, NULL, '0660388810', NULL, 'hehermosilla@gmail.com', 'fdgfdgdf', '2018-08-14', 'paris', NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'dependant', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-12-12', NULL, NULL, 'tremblements', NULL, '2025-12-12 01:21:48', '2025-12-12 01:26:10'),
+(5, 16, 'Mme', 'MARTIN', 'Jeanne', NULL, '1949-12-12', 76, NULL, NULL, '06 78 90 12 01', 'resident1@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'semi_autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-27', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(6, 17, 'M', 'BERNARD', 'Pierre', NULL, '1948-12-12', 77, NULL, NULL, '06 78 90 12 02', 'resident2@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'gir5', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-26', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(7, 18, 'Mme', 'DUBOIS', 'Marie', NULL, '1947-12-12', 78, NULL, NULL, '06 78 90 12 03', 'resident3@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-25', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(8, 19, 'M', 'THOMAS', 'Jean', NULL, '1946-12-12', 79, NULL, NULL, '06 78 90 12 04', 'resident4@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'semi_autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-24', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(9, 20, 'Mme', 'ROBERT', 'Françoise', NULL, '1945-12-12', 80, NULL, NULL, '06 78 90 12 05', 'resident5@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'gir5', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-23', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(10, 21, 'M', 'RICHARD', 'Claude', NULL, '1944-12-12', 81, NULL, NULL, '06 78 90 12 06', 'resident6@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-22', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(11, 22, 'Mme', 'PETIT', 'Monique', NULL, '1943-12-12', 82, NULL, NULL, '06 78 90 12 07', 'resident7@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'semi_autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-21', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(12, 23, 'M', 'DURAND', 'André', NULL, '1942-12-12', 83, NULL, NULL, '06 78 90 12 08', 'resident8@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'gir5', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-20', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(13, 24, 'Mme', 'LEROY', 'Jacqueline', NULL, '1941-12-12', 84, NULL, NULL, '06 78 90 12 09', 'resident9@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-19', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(14, 25, 'M', 'MOREAU', 'Robert', NULL, '1940-12-12', 85, NULL, NULL, '06 78 90 12 10', 'resident10@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'semi_autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-18', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(15, 26, 'Mme', 'SIMON', 'Simone', NULL, '1939-12-12', 86, NULL, NULL, '06 78 90 12 11', 'resident11@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'gir5', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-17', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(16, 27, 'M', 'LAURENT', 'Michel', NULL, '1938-12-12', 87, NULL, NULL, '06 78 90 12 12', 'resident12@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-16', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(17, 28, 'Mme', 'LEFEBVRE', 'Denise', NULL, '1937-12-12', 88, NULL, NULL, '06 78 90 12 13', 'resident13@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'semi_autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-15', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(18, 29, 'M', 'ROUX', 'Georges', NULL, '1936-12-12', 89, NULL, NULL, '06 78 90 12 14', 'resident14@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'gir5', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-14', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(19, 30, 'Mme', 'VINCENT', 'Paulette', NULL, '1950-12-12', 75, NULL, NULL, '06 78 90 12 15', 'resident15@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-13', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(20, 31, 'M', 'FOURNIER', 'Henri', NULL, '1949-12-12', 76, NULL, NULL, '06 78 90 12 16', 'resident16@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'semi_autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-12', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(21, 32, 'M', 'GIRARD', 'Yvette', NULL, '1948-12-12', 77, NULL, NULL, '06 78 90 12 17', 'resident17@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'gir5', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-11', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(22, 33, 'M', 'BONNET', 'Maurice', NULL, '1947-12-12', 78, NULL, NULL, '06 78 90 12 18', 'resident18@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-10', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(23, 34, 'M', 'DUPUIS', 'Ginette', NULL, '1946-12-12', 79, NULL, NULL, '06 78 90 12 19', 'resident19@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'semi_autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-09', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(24, 35, 'M', 'LAMBERT', 'Raymond', NULL, '1945-12-12', 80, NULL, NULL, '06 78 90 12 20', 'resident20@syndgest.fr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'gir5', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-10-08', NULL, NULL, NULL, NULL, '2025-12-12 01:35:52', '2025-12-12 01:35:52'),
+(36, 42, 'M', 'Hermosilla', 'Edua', NULL, '1982-07-15', 43, NULL, NULL, NULL, 'hehermoisiilla@gmail.com', 'fdgfdgdf', '2021-05-12', 'antes', NULL, NULL, NULL, NULL, NULL, 'celibataire', 0, 'autonome', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, 1, '2025-12-12', NULL, NULL, 'bla bla', NULL, '2025-12-12 02:19:09', '2025-12-12 02:19:09');
 
 --
 -- Disparadores `residents_seniors`
@@ -1378,7 +1404,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `role`, `prenom`, `nom`, `telephone`, `actif`, `created_at`, `updated_at`, `last_login`) VALUES
-(1, 'admin', 'admin@syndgest.fr', '$2y$10$skKyIRaySFr3OVxpZ5SaK.jMitVa5DM/ZMp5Ljnv.E2rXLaA9GO9.', 'admin', 'Superin', 'Admin', '', 1, '2025-11-28 23:39:25', '2025-12-12 00:02:34', '2025-12-12 00:02:34'),
+(1, 'admin', 'admin@syndgest.fr', '$2y$10$skKyIRaySFr3OVxpZ5SaK.jMitVa5DM/ZMp5Ljnv.E2rXLaA9GO9.', 'admin', 'Superine', 'Admin', '', 1, '2025-11-28 23:39:25', '2026-03-28 20:53:06', '2026-03-28 20:53:06'),
 (2, 'user1', 'user1@syndgest.fr', '$2y$10$OR80bDqpBGT5FZ88zPUOEO2tO8m.zyawRdinjBBlramZaFVwIsBom', 'gestionnaire', 'Jean', 'Dupont', '01 23 45 67 01', 1, '2025-11-30 01:40:06', '2025-11-30 01:40:06', NULL),
 (3, 'user2', 'user2@syndgest.fr', '$2y$10$ylFvZOHpJqRZpTH.KShAkuh36HeqtPL6CKnqc.6woC5Tll0ZPcUZm', 'gestionnaire', 'Marie', 'Martin', '01 23 45 67 02', 1, '2025-11-30 01:40:06', '2025-11-30 01:40:06', NULL),
 (4, 'user3', 'user3@syndgest.fr', '$2y$10$B8s/JivkyoN.9L.glo.x0.MKXN/fiqBvCpVcEJLEDZyr4fqhYjd/u', 'gestionnaire', 'Pierre', 'Lefebvre', '01 23 45 67 03', 1, '2025-11-30 01:40:06', '2025-11-30 01:40:06', NULL),
@@ -1403,7 +1429,7 @@ INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `role`, `prenom
 (24, 'resident9', 'resident9@syndgest.fr', '$2y$10$PtkIXwkfsBAJ1FQKme1xG.tAk.gR8V5HuVWCtSTzWLAc.ERCChJ2W', 'resident', 'Jacqueline', 'LEROY', '06 78 90 12 09', 1, '2025-11-30 02:23:39', '2025-11-30 02:44:46', NULL),
 (25, 'resident10', 'resident10@syndgest.fr', '$2y$10$XuNdJ0T1i7bse7pdSEl5Pu7FBg28QnIzdRDi4zBeZihKm93x6ck8C', 'resident', 'Robert', 'MOREAU', '06 78 90 12 10', 1, '2025-11-30 02:23:39', '2025-11-30 02:44:46', NULL),
 (26, 'resident11', 'resident11@syndgest.fr', '$2y$10$hO2sbSesjyQ56WBcKBOhYe2GPpk3pY3b632.73KK8690ZEotEZlu6', 'resident', 'Simone', 'SIMON', '06 78 90 12 11', 1, '2025-11-30 02:23:39', '2025-11-30 02:44:46', NULL),
-(27, 'resident12', 'resident12@syndgest.fr', '$2y$10$9LRiTYzQ7wBx25G.6PxmnuVDCkUQPMUvUPz0dLCCIONdlFDcr3HqO', 'resident', 'Michel', 'LAURENT', '06 78 90 12 12', 1, '2025-11-30 02:23:39', '2025-11-30 02:44:46', NULL),
+(27, 'resident12', 'resident12@syndgest.fr', '$2y$10$9LRiTYzQ7wBx25G.6PxmnuVDCkUQPMUvUPz0dLCCIONdlFDcr3HqO', 'resident', 'Michel', 'LAURENT', '06 78 90 12 12', 0, '2025-11-30 02:23:39', '2025-12-15 23:40:39', NULL),
 (28, 'resident13', 'resident13@syndgest.fr', '$2y$10$J1jCgh7FpqElQEdg2fctuO0r5GgF8pQ12J0A0Um9CpTFzZCipwXNC', 'resident', 'Denise', 'LEFEBVRE', '06 78 90 12 13', 1, '2025-11-30 02:23:39', '2025-11-30 02:44:46', NULL),
 (29, 'resident14', 'resident14@syndgest.fr', '$2y$10$GnrHuWu/oGfFO6gFWoxD9.SyadY2bSQ4.ho5iME3hAlEveYNlQtHa', 'resident', 'Georges', 'ROUX', '06 78 90 12 14', 1, '2025-11-30 02:23:39', '2025-11-30 02:44:46', NULL),
 (30, 'resident15', 'resident15@syndgest.fr', '$2y$10$lm/qoxE4TTQYtv6ivdcPueDJtFNQPql8lRwJMT1WYrFUXCR95dJC2', 'resident', 'Paulette', 'VINCENT', '06 78 90 12 15', 1, '2025-11-30 02:23:39', '2025-11-30 02:44:46', NULL),
@@ -1411,7 +1437,10 @@ INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `role`, `prenom
 (32, 'resident17', 'resident17@syndgest.fr', '$2y$10$hbl9QkDSAKO0XVs7/Jxy..ql6PEk4C55TBWRSUzHsjP1yGwExqCCq', 'resident', 'Yvette', 'GIRARD', '06 78 90 12 17', 1, '2025-11-30 02:23:39', '2025-11-30 02:44:46', NULL),
 (33, 'resident18', 'resident18@syndgest.fr', '$2y$10$h/rOitTYqgM0VjQO.yaHD.bvexrnVeS.qKEIJYRH5k6xqmX2RYteS', 'resident', 'Maurice', 'BONNET', '06 78 90 12 18', 1, '2025-11-30 02:23:39', '2025-11-30 02:44:47', NULL),
 (34, 'resident19', 'resident19@syndgest.fr', '$2y$10$FwjeUGWy2p75.vxa2F6SiuRoQ96BL89.D54nJ6TVznetBG4JPTdeC', 'resident', 'Ginette', 'DUPUIS', '06 78 90 12 19', 1, '2025-11-30 02:23:39', '2025-11-30 02:44:47', NULL),
-(35, 'resident20', 'resident20@syndgest.fr', '$2y$10$XHPCoR9lxWvfZvsyzARIfOnkoCafkTMw/ZjXVySY7uvW9oQjt3QnK', 'resident', 'Raymond', 'LAMBERT', '06 78 90 12 20', 1, '2025-11-30 02:23:39', '2025-11-30 02:44:47', NULL);
+(35, 'resident20', 'resident20@syndgest.fr', '$2y$10$XHPCoR9lxWvfZvsyzARIfOnkoCafkTMw/ZjXVySY7uvW9oQjt3QnK', 'resident', 'Raymond', 'LAMBERT', '06 78 90 12 20', 1, '2025-11-30 02:23:39', '2025-11-30 02:44:47', NULL),
+(40, 'ehermosilla', 'edu.hermosilla@resident.syndgest.fr', '$2y$10$K7vzDaa0Qk9Q0pM9m6SLA.ChRSk2cq1t9rn3oP9nmNjoom7Paw4Y6', 'resident', 'Edu', 'Hermosilla', NULL, 1, '2025-12-12 01:21:48', '2025-12-15 23:31:00', NULL),
+(41, 'hehermosiilla@gmail.com', 'hehermosiilla@gmail.com', '$2y$10$NmTt6VwiKBVLlrMIlsSO/.cNHly.4.SP0Cnz73L9mTFwO2VyWSjv2', 'resident', 'Edua', 'Hermosilla', NULL, 0, '2025-12-12 02:11:46', '2025-12-15 23:39:30', '2025-12-12 02:29:29'),
+(42, 'ehermosilla1', 'edua.hermosilla@resident.syndgest.fr', '$2y$10$obQNWyRrgOT9KxBVzuoFeu7UsAkjFSUgmazWcsjN5iYoWsvZKgQhS', 'resident', 'Edua', 'Hermosilla', NULL, 1, '2025-12-12 02:19:09', '2025-12-12 02:19:09', NULL);
 
 --
 -- Disparadores `users`
@@ -2146,7 +2175,7 @@ ALTER TABLE `locataires`
 -- AUTO_INCREMENT de la tabla `logs_activite`
 --
 ALTER TABLE `logs_activite`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `lots`
@@ -2212,7 +2241,7 @@ ALTER TABLE `relances`
 -- AUTO_INCREMENT de la tabla `residents_seniors`
 --
 ALTER TABLE `residents_seniors`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
 
 --
 -- AUTO_INCREMENT de la tabla `revenus_fiscaux_proprietaires`
@@ -2242,7 +2271,7 @@ ALTER TABLE `travaux`
 -- AUTO_INCREMENT de la tabla `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
 -- AUTO_INCREMENT de la tabla `votes_ag`

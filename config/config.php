@@ -59,6 +59,10 @@ define('UPLOADS_URL', BASE_URL . '/uploads');
 // CONFIGURATION DE L'APPLICATION
 // ====================================================================
 
+// API Claude (Anthropic) - clé chargée depuis .env (jamais hardcodée)
+define('ANTHROPIC_API_KEY', $_ENV['ANTHROPIC_API_KEY'] ?? getenv('ANTHROPIC_API_KEY') ?: '');
+define('ANTHROPIC_MODEL', $_ENV['ANTHROPIC_MODEL'] ?? 'claude-sonnet-4-20250514');
+
 // Informations de l'application
 define('APP_NAME', 'Synd_Gest');
 define('APP_VERSION', '1.0.0');
@@ -84,7 +88,7 @@ if (IS_PRODUCTION) {
 }
 
 // Salt pour les tokens CSRF
-define('CSRF_SALT', 'synd_gest_csrf_salt_2025');
+define('CSRF_SALT', $_ENV['CSRF_SALT'] ?? 'synd_gest_csrf_salt_' . (DB_NAME ?? 'default'));
 
 // Durée de vie de la session (en secondes) - 2 heures par défaut
 define('SESSION_LIFETIME', 7200);

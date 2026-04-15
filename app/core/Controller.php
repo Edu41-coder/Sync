@@ -15,7 +15,7 @@ class Controller {
      * @return object Instance du modèle
      */
     protected function model($model) {
-        require_once '../app/models/' . $model . '.php';
+        // Classe chargée automatiquement par l'autoloader
         return new $model();
     }
     
@@ -57,7 +57,14 @@ class Controller {
      * @param string $url URL de destination
      */
     protected function redirect($url) {
-        header('Location: ' . BASE_URL . '/' . $url);
+        // Éviter le doublement si $url contient déjà une URL absolue ou BASE_URL
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            header('Location: ' . $url);
+        } elseif (str_starts_with($url, BASE_URL)) {
+            header('Location: ' . $url);
+        } else {
+            header('Location: ' . BASE_URL . '/' . ltrim($url, '/'));
+        }
         exit;
     }
     

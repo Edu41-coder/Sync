@@ -35,18 +35,34 @@ $marge_mensuelle = $stats['revenus_mensuels'] - $stats['charges_mensuelles'];
                     </p>
                 </div>
                 <div>
+                    <?php if (in_array($_SESSION['user_role'] ?? '', ['admin', 'directeur_residence'])): ?>
                     <a href="<?= BASE_URL ?>/admin/editResidence/<?= $residence['id'] ?>" class="btn btn-warning">
                         <i class="fas fa-edit"></i> Modifier
                     </a>
-                    <a href="<?= BASE_URL ?>/admin/residences" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Retour
+                    <?php endif; ?>
+                    <?php
+                    $backUrl = BASE_URL . '/admin/residences';
+                    $backLabel = 'Retour';
+                    if (isset($_GET['from']) && $_GET['from'] === 'mesLots') {
+                        $backUrl = BASE_URL . '/coproprietaire/mesLots';
+                        $backLabel = 'Retour à mes lots';
+                    } elseif (isset($_GET['from']) && $_GET['from'] === 'mesResidences') {
+                        $backUrl = BASE_URL . '/coproprietaire/mesResidences';
+                        $backLabel = 'Retour à mes résidences';
+                    }
+                    ?>
+                    <a href="<?= $backUrl ?>" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> <?= $backLabel ?>
                     </a>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Stats cards -->
+    <?php $isProprietaire = ($_SESSION['user_role'] ?? '') === 'proprietaire'; ?>
+
+    <!-- Stats cards (pas pour propriétaire) -->
+    <?php if (!$isProprietaire): ?>
     <div class="row mb-4">
         <!-- Total Lots -->
         <div class="col-12 col-md-6 col-lg-3 mb-3">
@@ -120,7 +136,8 @@ $marge_mensuelle = $stats['revenus_mensuels'] - $stats['charges_mensuelles'];
             </div>
         </div>
     </div>
-    
+    <?php endif; ?>
+
     <!-- Informations générales -->
     <div class="row mb-4">
         <div class="col-12 col-lg-6 mb-3">
@@ -153,7 +170,8 @@ $marge_mensuelle = $stats['revenus_mensuels'] - $stats['charges_mensuelles'];
             </div>
         </div>
         
-        <!-- Finances -->
+        <!-- Finances (pas pour propriétaire) -->
+        <?php if (!$isProprietaire): ?>
         <div class="col-12 col-lg-6 mb-3">
             <div class="card shadow">
                 <div class="card-header bg-white">
@@ -195,27 +213,33 @@ $marge_mensuelle = $stats['revenus_mensuels'] - $stats['charges_mensuelles'];
                 </div>
             </div>
         </div>
+        <?php endif; ?>
     </div>
-    
+
     <!-- Liste des lots -->
     <div class="card shadow">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-door-open me-2"></i>Lots de la résidence (<?= count($lots) ?>)</h5>
+            <h5 class="mb-0"><i class="fas fa-door-open me-2"></i><?= $isProprietaire ? 'Mes lots' : 'Lots de la résidence' ?> (<?= count($lots) ?>)</h5>
+            <?php if (in_array($_SESSION['user_role'] ?? '', ['admin', 'directeur_residence'])): ?>
             <a href="<?= BASE_URL ?>/lot/create/<?= $residence['id'] ?>" class="btn btn-sm btn-danger">
                 <i class="fas fa-plus"></i> Ajouter un lot
             </a>
+            <?php endif; ?>
         </div>
         <div class="card-body">
             <?php if (empty($lots)): ?>
                 <div class="text-center py-5">
                     <i class="fas fa-door-open fa-3x text-muted mb-3"></i>
                     <p class="text-muted">Aucun lot créé pour cette résidence</p>
+                    <?php if (in_array($_SESSION['user_role'] ?? '', ['admin', 'directeur_residence'])): ?>
                     <a href="<?= BASE_URL ?>/lot/create/<?= $residence['id'] ?>" class="btn btn-danger">
                         <i class="fas fa-plus"></i> Créer le premier lot
                     </a>
+                    <?php endif; ?>
                 </div>
             <?php else: ?>
-                <!-- Barre de recherche et filtres -->
+                <!-- Barre de recherche et filtres (pas pour proprio avec 1 lot) -->
+                <?php if (!$isProprietaire || count($lots) > 1): ?>
                 <div class="row mb-3">
                     <div class="col-12 col-md-5 mb-2">
                         <div class="input-group">
@@ -226,25 +250,30 @@ $marge_mensuelle = $stats['revenus_mensuels'] - $stats['charges_mensuelles'];
                     <div class="col-12 col-md-3 mb-2">
                         <select class="form-select" id="filterType">
                             <option value="">Tous types</option>
-                            <option value="appartement">Appartement</option>
+                            <option value="studio">Studio</option>
+                            <option value="t2">T2</option>
+                            <option value="t2_bis">T2 Bis</option>
+                            <option value="t3">T3</option>
                             <option value="parking">Parking</option>
                             <option value="cave">Cave</option>
-                            <option value="local">Local</option>
                         </select>
                     </div>
+                    <?php if (!$isProprietaire): ?>
                     <div class="col-12 col-md-2 mb-2">
                         <select class="form-select" id="filterStatut">
                             <option value="">Tous statuts</option>
-                            <option value="occupe">Occupé</option>
-                            <option value="libre">Libre</option>
+                            <option value="Occupé">Occupé</option>
+                            <option value="Libre">Libre</option>
                         </select>
                     </div>
+                    <?php endif; ?>
                     <div class="col-12 col-md-2 mb-2">
                         <button class="btn btn-secondary w-100" id="btnReset">
                             <i class="fas fa-redo"></i> Réinitialiser
                         </button>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <!-- Tableau avec tri -->
                 <div class="table-responsive">
@@ -254,9 +283,11 @@ $marge_mensuelle = $stats['revenus_mensuels'] - $stats['charges_mensuelles'];
                                 <th class="sortable" data-column="numero">Numéro</th>
                                 <th class="sortable" data-column="type">Type</th>
                                 <th class="sortable text-center" data-column="surface" data-type="number">Surface</th>
+                                <?php if (!$isProprietaire): ?>
                                 <th class="sortable text-center" data-column="tantiemes" data-type="number">Tantièmes</th>
                                 <th class="sortable" data-column="statut">Statut</th>
                                 <th>Résident</th>
+                                <?php endif; ?>
                                 <th class="text-center">Actions</th>
                             </tr>
                         </thead>
@@ -274,14 +305,15 @@ $marge_mensuelle = $stats['revenus_mensuels'] - $stats['charges_mensuelles'];
                                 <td class="text-center" data-sort="<?= $lot['surface'] ?>">
                                     <?= $lot['surface'] ?> m²
                                 </td>
+                                <?php if (!$isProprietaire): ?>
                                 <td class="text-center" data-sort="<?= $lot['tantiemes_generaux'] ?>">
                                     <?= $lot['tantiemes_generaux'] ?>
                                 </td>
                                 <td data-sort="<?= $lot['occupation_id'] ? 'occupe' : 'libre' ?>" data-filter="<?= $lot['occupation_id'] ? 'occupe' : 'libre' ?>">
                                     <?php if ($lot['occupation_id']): ?>
-                                        <span class="badge bg-success">occupe</span>
+                                        <span class="badge bg-success">Occupé</span>
                                     <?php else: ?>
-                                        <span class="badge bg-warning">libre</span>
+                                        <span class="badge bg-warning">Libre</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -292,18 +324,21 @@ $marge_mensuelle = $stats['revenus_mensuels'] - $stats['charges_mensuelles'];
                                         <span class="text-muted">-</span>
                                     <?php endif; ?>
                                 </td>
+                                <?php endif; ?>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm">
-                                        <a href="<?= BASE_URL ?>/lot/show/<?= $lot['id'] ?>" 
-                                           class="btn btn-outline-primary" 
+                                        <a href="<?= BASE_URL ?>/lot/show/<?= $lot['id'] ?>"
+                                           class="btn btn-outline-primary"
                                            title="Voir">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="<?= BASE_URL ?>/lot/edit/<?= $lot['id'] ?>" 
-                                           class="btn btn-outline-secondary" 
+                                        <?php if (in_array($_SESSION['user_role'] ?? '', ['admin', 'directeur_residence'])): ?>
+                                        <a href="<?= BASE_URL ?>/lot/edit/<?= $lot['id'] ?>"
+                                           class="btn btn-outline-secondary"
                                            title="Modifier">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>

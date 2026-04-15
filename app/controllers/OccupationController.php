@@ -7,267 +7,264 @@
  */
 
 class OccupationController extends Controller {
-    
+
     /**
      * Liste des occupations
-     * - Admin/Gestionnaire: toutes les occupations
-     * - Exploitant: occupations de ses résidences
-     * - Résident: uniquement sa propre occupation
      */
     public function index() {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire', 'exploitant', 'resident']);
-        
-        $userModel = $this->model('User');
-        $db = $userModel->getDb();
+        $this->requireRole(['admin', 'directeur_residence', 'exploitant', 'locataire_permanent']);
+
         $userId = $_SESSION['user_id'];
         $userRole = $_SESSION['user_role'];
-        
-        // Utiliser le modèle Occupation
-        require_once '../app/models/Occupation.php';
-        $occupationModel = new Occupation();
-        
-        // Filtrer selon le rôle
-        if ($userRole === 'resident') {
-            require_once '../app/models/ResidentSenior.php';
-            $residentModel = new ResidentSenior();
+        $occupationModel = $this->model('Occupation');
+
+        if ($userRole === 'locataire_permanent') {
+            $residentModel = $this->model('ResidentSenior');
             $resident = $residentModel->findByUserId($userId);
             $occupationsArray = $resident ? $occupationModel->getHistoryByResident($resident->id) : [];
         } elseif ($userRole === 'exploitant') {
-            require_once '../app/models/Exploitant.php';
-            $exploitantModel = new Exploitant();
+            $exploitantModel = $this->model('Exploitant');
             $exploitant = $exploitantModel->findByUserId($userId);
             $occupationsArray = $exploitant ? $occupationModel->getByExploitant($exploitant['id']) : [];
         } else {
             $occupationsArray = $occupationModel->getAll();
         }
-        
+
         $occupations = array_map(function($o) { return (object)$o; }, $occupationsArray);
-        
-        $data = [
+
+        $this->view('occupations/index', [
             'title' => 'Occupations - ' . APP_NAME,
             'showNavbar' => true,
             'occupations' => $occupations,
             'userRole' => $userRole,
             'flash' => $this->getFlash()
-        ];
-        
-        $this->view('occupations/index', $data);
+        ]);
     }
-    
-    /**
-     * Alias pour details (convention MVC standard)
-     */
+
     public function show($id) {
         $this->details($id);
     }
-    
+
     /**
      * Détails d'une occupation
      */
     public function details($id) {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire', 'exploitant', 'resident']);
-        
-        $userId = $_SESSION['user_id'];
-        $userRole = $_SESSION['user_role'];
-        
-        // Utiliser le modèle Occupation
-        require_once '../app/models/Occupation.php';
-        $occupationModel = new Occupation();
-        
-        // Récupérer l'occupation avec tous les détails via le modèle
+        $this->requireRole(['admin', 'directeur_residence', 'exploitant', 'locataire_permanent']);
+
+        $occupationModel = $this->model('Occupation');
         $occupation = $occupationModel->findById($id);
-        
+
         if (!$occupation) {
             $this->setFlash('error', 'Occupation introuvable');
             $this->redirect('occupation/index');
             return;
         }
-        
+
         // Vérifier les droits d'accès
-        if ($userRole === 'resident' && $occupation['resident_user_id'] != $userId) {
+        if ($_SESSION['user_role'] === 'locataire_permanent' && $occupation['resident_user_id'] != $_SESSION['user_id']) {
             $this->setFlash('error', 'Accès non autorisé');
             $this->redirect('occupation/index');
             return;
         }
-        
-        // Calculer le montant total mensuel
-        $totalMensuel = $occupation['loyer_mensuel_resident'] + 
-                       ($occupation['charges_mensuelles_resident'] ?? 0) + 
+
+        $totalMensuel = $occupation['loyer_mensuel_resident'] +
+                       ($occupation['charges_mensuelles_resident'] ?? 0) +
                        ($occupation['montant_services_sup'] ?? 0);
-        
-        $data = [
+
+        $serviceModel = $this->model('Service');
+
+        $this->view('occupations/show', [
             'title' => 'Occupation - ' . $occupation['resident_nom'] . ' - ' . APP_NAME,
             'showNavbar' => true,
             'occupation' => $occupation,
+            'services' => $serviceModel->getByOccupation($occupation['id']),
             'totalMensuel' => $totalMensuel,
-            'userRole' => $userRole,
+            'userRole' => $_SESSION['user_role'],
             'flash' => $this->getFlash()
-        ];
-        
-        $this->view('occupations/show', $data, true);
+        ], true);
     }
-    
+
     /**
      * Créer une nouvelle occupation
-     * Accessible uniquement par exploitant, gestionnaire et admin
      */
-    public function create() {
+    public function create($lotId = null) {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire', 'exploitant']);
-        
+        $this->requireRole(['admin', 'directeur_residence', 'exploitant']);
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->handleCreate();
-        } else {
-            $db = $this->model('User')->getDb();
-            $userRole = $_SESSION['user_role'];
-            $userId = $_SESSION['user_id'];
-            
-            // Récupérer les résidents disponibles
-            $residents = $db->query("SELECT id, CONCAT(prenom, ' ', nom) as nom_complet, age 
-                                     FROM residents_seniors 
-                                     WHERE actif = 1 
-                                     ORDER BY nom, prenom")->fetchAll(PDO::FETCH_OBJ);
-            
-            // Récupérer les lots disponibles via model
-            require_once '../app/models/Lot.php';
-            $lotModel = new Lot();
-            // Pour l'instant on récupère tous les lots (on pourrait filtrer par disponibilité)
-            $lotsArray = $lotModel->getAllForSelect();
-            $lots = array_map(function($l) { return (object)$l; }, $lotsArray);
-            
-            // Récupérer les exploitants
-            if ($userRole === 'exploitant') {
-                // Uniquement son exploitant
-                $sqlExploitant = "SELECT * FROM exploitants WHERE user_id = ?";
-                $stmtExploitant = $db->prepare($sqlExploitant);
-                $stmtExploitant->execute([$userId]);
-                $exploitants = [$stmtExploitant->fetch(PDO::FETCH_OBJ)];
-            } else {
-                $exploitants = $db->query("SELECT * FROM exploitants WHERE actif = 1")->fetchAll(PDO::FETCH_OBJ);
-            }
-            
-            $data = [
-                'title' => 'Nouvelle Occupation - ' . APP_NAME,
-                'showNavbar' => true,
-                'residents' => $residents,
-                'lots' => $lots,
-                'exploitants' => $exploitants,
-                'userRole' => $userRole,
-                'flash' => $this->getFlash()
-            ];
-            
-            $this->view('occupations/create', $data);
+            return;
         }
+
+        $occupationModel = $this->model('Occupation');
+        $lotId = $lotId ? (int)$lotId : null;
+
+        // Si un lot est pré-sélectionné, vérifier qu'il n'est pas occupé
+        $preselectedLot = null;
+        if ($lotId) {
+            $lotModel = $this->model('Lot');
+            if ($lotModel->isOccupied($lotId)) {
+                $this->setFlash('error', "Ce lot est déjà occupé.");
+                $this->redirect('lot/show/' . $lotId);
+                return;
+            }
+            $preselectedLot = $lotModel->findWithDetails($lotId);
+        }
+
+        $lotType = $preselectedLot['type'] ?? null;
+        $serviceModel = $this->model('Service');
+
+        $this->view('occupations/create', [
+            'title'          => 'Nouvelle Occupation - ' . APP_NAME,
+            'showNavbar'     => true,
+            'residents'      => $occupationModel->getResidentsDisponibles($lotType),
+            'lots'           => $occupationModel->getLotsLibres(),
+            'preselectedLot' => $preselectedLot,
+            'lotId'          => $lotId,
+            'services'       => $serviceModel->getAllActifs(),
+            'flash'          => $this->getFlash()
+        ], true);
     }
-    
+
     /**
      * Traiter la création d'une occupation
      */
     private function handleCreate() {
-        $db = $this->model('User')->getDb();
-        
+        $this->verifyCsrf();
+
         try {
-            // Utiliser le modèle Occupation pour créer
-            require_once '../app/models/Occupation.php';
-            $occupationModel = new Occupation();
-            
-            // Vérifier que le lot n'est pas déjà occupé
-            if ($occupationModel->isLotOccupied($_POST['lot_id'])) {
-                throw new Exception("Ce lot est déjà occupé");
+            $occupationModel = $this->model('Occupation');
+            $lotId = (int)($_POST['lot_id'] ?? 0);
+            $residentId = (int)($_POST['resident_id'] ?? 0);
+
+            if (!$lotId || !$residentId) {
+                throw new Exception("Lot et résident sont requis.");
             }
-            
+
+            if ($occupationModel->isLotOccupied($lotId)) {
+                throw new Exception("Ce lot est déjà occupé.");
+            }
+
+            // Vérifier les règles d'occupation par type de lot
+            $lotType = $occupationModel->getLotType($lotId);
+            $typesLogement = ['studio','t2','t2_bis','t3'];
+
+            if (in_array($lotType, $typesLogement)) {
+                if ($occupationModel->residentHasLogement($residentId)) {
+                    throw new Exception("Ce résident a déjà un logement actif. Un seul logement par résident.");
+                }
+            } else {
+                if ($occupationModel->residentHasAnnexe($residentId, $lotType)) {
+                    throw new Exception("Ce résident a déjà un(e) $lotType actif(ve).");
+                }
+            }
+
+            $exploitantId = $occupationModel->getLotExploitant($lotId);
+
             $data = [
-                'resident_id' => $_POST['resident_id'],
-                'lot_id' => $_POST['lot_id'],
-                'exploitant_id' => $_POST['exploitant_id'],
-                'date_entree' => $_POST['date_debut'],
-                'loyer_mensuel_resident' => $_POST['loyer_mensuel_resident'],
+                'resident_id' => $residentId,
+                'lot_id' => $lotId,
+                'exploitant_id' => $exploitantId,
+                'date_entree' => $_POST['date_debut'] ?? date('Y-m-d'),
+                'loyer_mensuel_resident' => !empty($_POST['loyer_mensuel_resident']) ? (float)$_POST['loyer_mensuel_resident'] : 0,
                 'charges_mensuelles_resident' => $_POST['charges_mensuelles'] ?? 0,
                 'depot_garantie' => $_POST['depot_garantie'] ?? 0,
+                'forfait_type' => $_POST['forfait_type'] ?? 'essentiel',
+                'mode_paiement' => $_POST['mode_paiement'] ?? 'prelevement',
+                'notes' => trim($_POST['notes'] ?? '') ?: null,
                 'statut' => 'actif'
             ];
-            
+
             $success = $occupationModel->create($data);
-            
+
             if (!$success) {
-                throw new Exception("Erreur lors de l'insertion");
+                throw new Exception("Erreur lors de l'insertion.");
             }
-            
+
+            // Sauvegarder les services sélectionnés
+            $newOccId = $occupationModel->getDb()->lastInsertId();
+            if ($newOccId) {
+                $serviceModel = $this->model('Service');
+                $selectedServices = [];
+                foreach ($_POST['services'] ?? [] as $svcId => $prix) {
+                    $selectedServices[(int)$svcId] = (float)$prix;
+                }
+                $serviceModel->syncOccupationServices((int)$newOccId, $selectedServices);
+            }
+
             $this->setFlash('success', 'Occupation créée avec succès');
-            $this->redirect('occupation/index');
-            
+            $this->redirect('lot/show/' . $lotId);
+
         } catch (Exception $e) {
-            $this->setFlash('error', 'Erreur lors de la création: ' . $e->getMessage());
-            $this->redirect('occupation/create');
+            $this->setFlash('error', 'Erreur : ' . $e->getMessage());
+            $this->redirect('occupation/create' . ($lotId ? '/' . $lotId : ''));
         }
     }
-    
+
     /**
      * Modifier une occupation
      */
     public function edit($id) {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire', 'exploitant']);
-        
+        $this->requireRole(['admin', 'directeur_residence', 'exploitant']);
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->handleUpdate($id);
-        } else {
-            // Utiliser le modèle Occupation
-            require_once '../app/models/Occupation.php';
-            $occupationModel = new Occupation();
-            
-            // Récupérer l'occupation via le modèle
-            $occupation = $occupationModel->findById($id);
-            
-            if (!$occupation) {
-                $this->setFlash('error', 'Occupation introuvable');
-                $this->redirect('occupation/index');
-                return;
-            }
-            
-            $data = [
-                'title' => 'Modifier l\'occupation - ' . APP_NAME,
-                'showNavbar' => true,
-                'occupation' => $occupation,
-                'flash' => $this->getFlash()
-            ];
-            
-            $this->view('occupations/edit', $data, true);
+            return;
         }
+
+        $occupationModel = $this->model('Occupation');
+        $occupation = $occupationModel->findById($id);
+
+        if (!$occupation) {
+            $this->setFlash('error', 'Occupation introuvable');
+            $this->redirect('occupation/index');
+            return;
+        }
+
+        $occLotType = $occupationModel->getOccupationLotType($id);
+        $serviceModel = $this->model('Service');
+
+        $this->view('occupations/edit', [
+            'title' => 'Modifier l\'occupation - ' . APP_NAME,
+            'showNavbar' => true,
+            'occupation' => $occupation,
+            'availableResidents' => $occupationModel->getResidentsDisponibles($occLotType, (int)$id),
+            'services' => $serviceModel->getByOccupation($occupation['id']),
+            'flash' => $this->getFlash()
+        ], true);
     }
-    
+
     /**
      * Traiter la mise à jour d'une occupation
      */
     private function handleUpdate($id) {
         try {
             $this->verifyCsrf();
-            
-            require_once '../app/models/Occupation.php';
-            $occupationModel = new Occupation();
-            
-            // Encoder les services en JSON
-            $servicesInclus = [];
-            if (isset($_POST['services_inclus']) && is_array($_POST['services_inclus'])) {
-                foreach ($_POST['services_inclus'] as $key => $value) {
-                    $servicesInclus[$key] = true;
+            $occupationModel = $this->model('Occupation');
+
+            $newResidentId = (int)($_POST['resident_id'] ?? 0);
+            if ($newResidentId > 0) {
+                $occLotType = $occupationModel->getOccupationLotType($id);
+                $typesLogement = ['studio','t2','t2_bis','t3'];
+
+                if (in_array($occLotType, $typesLogement)) {
+                    if ($occupationModel->residentHasLogement($newResidentId, (int)$id)) {
+                        throw new Exception("Ce résident a déjà un logement actif.");
+                    }
+                } else {
+                    if ($occupationModel->residentHasAnnexe($newResidentId, $occLotType, (int)$id)) {
+                        throw new Exception("Ce résident a déjà un(e) $occLotType.");
+                    }
                 }
             }
-            
-            $servicesSup = [];
-            if (isset($_POST['services_supplementaires']) && is_array($_POST['services_supplementaires'])) {
-                foreach ($_POST['services_supplementaires'] as $key => $value) {
-                    $servicesSup[$key] = true;
-                }
-            }
-            
+
             $data = [
+                'resident_id' => $newResidentId ?: null,
                 'loyer_mensuel_resident' => $_POST['loyer_mensuel_resident'],
                 'charges_mensuelles_resident' => $_POST['charges_mensuelles_resident'] ?? 0,
-                'services_inclus' => !empty($servicesInclus) ? json_encode($servicesInclus) : null,
-                'services_supplementaires' => !empty($servicesSup) ? json_encode($servicesSup) : null,
                 'montant_services_sup' => $_POST['montant_services_sup'] ?? 0,
                 'forfait_type' => $_POST['forfait_type'] ?? 'essentiel',
                 'mode_paiement' => $_POST['mode_paiement'] ?? 'prelevement',
@@ -279,53 +276,46 @@ class OccupationController extends Controller {
                 'statut' => $_POST['statut'] ?? 'actif',
                 'notes' => !empty($_POST['notes']) ? $_POST['notes'] : null
             ];
-            
+
             $success = $occupationModel->updateOccupation($id, $data);
-            
+
             if ($success) {
+                $serviceModel = $this->model('Service');
+                $selectedServices = [];
+                foreach ($_POST['services'] ?? [] as $svcId => $prix) {
+                    $selectedServices[(int)$svcId] = (float)$prix;
+                }
+                $serviceModel->syncOccupationServices((int)$id, $selectedServices);
+
                 $this->setFlash('success', 'Occupation modifiée avec succès');
                 $this->redirect('occupation/show/' . $id);
             } else {
                 throw new Exception("Erreur lors de la mise à jour");
             }
-            
+
         } catch (Exception $e) {
             $this->setFlash('error', 'Erreur: ' . $e->getMessage());
             $this->redirect('occupation/edit/' . $id);
         }
     }
-    
+
     /**
      * Terminer une occupation
      */
     public function terminer($id) {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire', 'exploitant']);
-        
+        $this->requireRole(['admin', 'directeur_residence', 'exploitant']);
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $db = $this->model('User')->getDb();
-            
-            try {
-                $sql = "UPDATE occupations_residents SET
-                        statut = 'termine',
-                        date_fin = ?,
-                        motif_fin = ?
-                        WHERE id = ?";
-                
-                $stmt = $db->prepare($sql);
-                $stmt->execute([
-                    $_POST['date_fin'],
-                    $_POST['motif_fin'] ?? null,
-                    $id
-                ]);
-                
+            $occupationModel = $this->model('Occupation');
+
+            if ($occupationModel->terminerOccupation($id, $_POST['date_fin'], $_POST['motif_fin'] ?? null)) {
                 $this->setFlash('success', 'Occupation terminée avec succès');
-                $this->redirect('occupation/details/' . $id);
-                
-            } catch (Exception $e) {
-                $this->setFlash('error', 'Erreur: ' . $e->getMessage());
-                $this->redirect('occupation/details/' . $id);
+            } else {
+                $this->setFlash('error', 'Erreur lors de la terminaison');
             }
+
+            $this->redirect('occupation/details/' . $id);
         }
     }
 }

@@ -10,15 +10,35 @@
 
 ---
 
-## 👥 Les 5 Rôles
+## 👥 Les 15 Rôles (table `roles`)
 
-| Rôle | Description | Filtrage données |
-|------|-------------|------------------|
-| **Admin** | Super admin, accès complet | Toutes les données |
-| **Gestionnaire** | Gestion syndic/copropriétés | `WHERE syndic_id = user_id` |
-| **Exploitant** | Domitys - gestion résidences seniors | `WHERE exploitant_id = user_id` |
-| **Propriétaire** | Investisseur immobilier | `WHERE coproprietaire.user_id = user_id` |
-| **Résident** | Senior occupant | `WHERE resident.user_id = user_id` |
+> Les rôles sont stockés dans la table `roles` (slug VARCHAR). **Ne jamais hardcoder** la liste — utiliser `User::getAllRoles()`.
+
+| Slug | Nom affiché | Catégorie | Filtrage données |
+|------|-------------|-----------|------------------|
+| `admin` | Administrateur | admin | Toutes les données |
+| `directeur_residence` | Directeur de Résidence | direction | `user_residence.residence_id` |
+| `proprietaire` | Propriétaire | proprietaire | `WHERE coproprietaire.user_id = user_id` |
+| `employe_residence` | Employé Résidence | staff | `user_residence.residence_id` |
+| `technicien` | Technicien | staff | `user_residence.residence_id` |
+| `jardinier_manager` | Jardinier-Paysagiste (Chef) | staff | `user_residence.residence_id` |
+| `jardinier_employe` | Jardinier-Paysagiste | staff | `user_residence.residence_id` |
+| `entretien_manager` | Responsable Entretien | staff | `user_residence.residence_id` |
+| `menage_interieur` | Ménage Intérieur | staff | `user_residence.residence_id` |
+| `menage_exterieur` | Ménage Extérieur | staff | `user_residence.residence_id` |
+| `restauration_manager` | Responsable Restauration | staff | `user_residence.residence_id` |
+| `restauration_serveur` | Serveur/Serveuse | staff | `user_residence.residence_id` |
+| `restauration_cuisine` | Cuisine | staff | `user_residence.residence_id` |
+| `locataire_permanent` | Résident Senior | resident | `WHERE resident.user_id = user_id` |
+| `locataire_temporel` | Hôte Temporaire | resident | `WHERE resident.user_id = user_id` |
+
+### 🔗 Tables d'association user ↔ résidence
+- **`user_residence`** : lie un user à une résidence avec son rôle (staff, directeur, etc.)
+- **`exploitant_residences`** : conservé pour les exploitants Domitys (legacy)
+
+### 🔑 Accès mots de passe (Admin uniquement)
+- Colonne `password_plain` dans `users` — visible uniquement via Admin > Gestion Utilisateurs
+- Toujours sauvegarder `password_plain` lors de création/modification mot de passe
 
 ---
 
@@ -292,11 +312,19 @@ include __DIR__ . '/../partials/breadcrumb.php';
 
 ## 🗄️ Tables principales
 
-### Domitys
-- `exploitants`, `contrats_gestion`, `residents_seniors`, `occupations_residents`, `paiements_loyers_exploitant`, `revenus_fiscaux_proprietaires`
+### Résidents
+- `residents_seniors` → `locataire_permanent` (fiche senior complète : santé, CNI, urgence...)
+- `hotes_temporaires` → `locataire_temporel` (séjour court : dates, chambre, facturation)
+- ~~`locataires`~~ **supprimée** (remplacée par `hotes_temporaires`)
 
-### Syndic
-- `users`, `permissions`, `coproprietees`, `lots`, `coproprietaires`
+### Résidences & Gestion
+- `coproprietees`, `lots`, `user_residence`, `exploitant_residences`
+- `exploitants`, `contrats_gestion`, `occupations_residents`
+- `paiements_loyers_exploitant`, `revenus_fiscaux_proprietaires`
+
+### Syndic / Copropriété
+- `users`, `permissions`, `roles`, `coproprietaires`
+- `baux` (locataire_id nullable — module syndic futur)
 
 ---
 
@@ -335,3 +363,4 @@ $this->view('vue', $data, true); // Paramètre true pour inclure layout
 ---
 
 **Version 4.0 - Ultra-Simplifié | 10 décembre 2025**
+

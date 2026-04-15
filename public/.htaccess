@@ -2,6 +2,10 @@
 # SYND_GEST - Configuration Apache pour MVC
 # ====================================================================
 
+# Encodage UTF-8 par défaut pour toute l'application
+AddDefaultCharset UTF-8
+php_value default_charset "UTF-8"
+
 # Définir index.php comme page par défaut
 DirectoryIndex index.php
 

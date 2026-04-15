@@ -30,6 +30,9 @@ include __DIR__ . '/../partials/breadcrumb.php';
     
     <form method="POST" action="<?= BASE_URL ?>/resident/create">
         <input type="hidden" name="csrf_token" value="<?= Security::getToken() ?>">
+        <?php if (isset($userData['user_id'])): ?>
+            <input type="hidden" name="user_id" value="<?= (int)$userData['user_id'] ?>">
+        <?php endif; ?>
         
         <div class="row">
             <!-- Colonne principale -->

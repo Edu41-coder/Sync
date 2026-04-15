@@ -34,7 +34,7 @@ class DocumentController extends Controller {
     
     public function delete($id) {
         $this->requireAuth();
-        $this->requireRole(['admin', 'gestionnaire']);
+        $this->requireRole(['admin', 'directeur_residence']);
         $this->setFlash('success', 'Document supprimé');
         $this->redirect('document/index');
     }
