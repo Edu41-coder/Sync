@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(C:/xampp/php/php -r ':*)"
+      "Bash(C:/xampp/php/php -r ':*)",
+      "Bash(php -r ':*)"
     ]
   }
 }

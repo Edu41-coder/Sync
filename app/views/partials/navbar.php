@@ -172,6 +172,115 @@
                 </li>
                 <?php endif; ?>
 
+                <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin', 'restauration_manager', 'restauration_serveur', 'restauration_cuisine'])): ?>
+                <!-- Menu Restauration -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-utensils me-1 text-warning"></i> Restauration
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/restauration/index">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/restauration/residents">
+                            <i class="fas fa-users me-2"></i> Résidents
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/restauration/planning">
+                            <i class="fas fa-calendar-alt me-2"></i> Planning
+                        </a></li>
+                        <?php if (in_array($_SESSION['user_role'], ['admin', 'restauration_manager'])): ?>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/restauration/equipe">
+                            <i class="fas fa-user-friends me-2"></i> Équipe
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/restauration/plats">
+                            <i class="fas fa-book-open me-2"></i> Plats
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/restauration/menus">
+                            <i class="fas fa-clipboard-list me-2"></i> Menus
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/restauration/produits">
+                            <i class="fas fa-box me-2"></i> Produits
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/restauration/inventaire">
+                            <i class="fas fa-boxes-stacked me-2"></i> Inventaire
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/restauration/commandes">
+                            <i class="fas fa-truck me-2"></i> Commandes
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/restauration/fournisseurs">
+                            <i class="fas fa-truck-loading me-2"></i> Fournisseurs
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/restauration/comptabilite">
+                            <i class="fas fa-calculator me-2"></i> Comptabilité
+                        </a></li>
+                        <?php endif; ?>
+                        <?php if (in_array($_SESSION['user_role'], ['admin', 'restauration_manager', 'restauration_serveur'])): ?>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/restauration/service">
+                            <i class="fas fa-cash-register me-2 text-danger"></i> Service / Facturer
+                        </a></li>
+                        <?php endif; ?>
+                    </ul>
+                </li>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin', 'directeur_residence', 'entretien_manager', 'menage_interieur', 'menage_exterieur', 'employe_laverie'])): ?>
+                <!-- Menu Ménage -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-broom me-1 text-info"></i> Ménage
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/menage/index">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/menage/planning">
+                            <i class="fas fa-calendar-alt me-2"></i> Planning
+                        </a></li>
+                        <?php if (in_array($_SESSION['user_role'], ['admin', 'directeur_residence', 'entretien_manager', 'menage_interieur'])): ?>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/menage/interieur">
+                            <i class="fas fa-bed me-2"></i> Intérieur
+                        </a></li>
+                        <?php endif; ?>
+                        <?php if (in_array($_SESSION['user_role'], ['admin', 'directeur_residence', 'entretien_manager', 'menage_exterieur'])): ?>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/menage/exterieur">
+                            <i class="fas fa-tree me-2"></i> Extérieur
+                        </a></li>
+                        <?php endif; ?>
+                        <?php if (in_array($_SESSION['user_role'], ['admin', 'directeur_residence', 'entretien_manager', 'employe_laverie'])): ?>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/menage/laverie">
+                            <i class="fas fa-tshirt me-2"></i> Laverie
+                        </a></li>
+                        <?php endif; ?>
+                        <?php if (in_array($_SESSION['user_role'], ['admin', 'directeur_residence', 'entretien_manager'])): ?>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/menage/equipe">
+                            <i class="fas fa-user-friends me-2"></i> Équipe
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/menage/zones">
+                            <i class="fas fa-map-marked me-2"></i> Zones extérieures
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/menage/produits">
+                            <i class="fas fa-box me-2"></i> Produits
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/menage/inventaire">
+                            <i class="fas fa-boxes-stacked me-2"></i> Inventaire
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/menage/commandes">
+                            <i class="fas fa-truck me-2"></i> Commandes
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/menage/fournisseurs">
+                            <i class="fas fa-truck-loading me-2"></i> Fournisseurs
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/menage/comptabilite">
+                            <i class="fas fa-calculator me-2"></i> Comptabilité
+                        </a></li>
+                        <?php endif; ?>
+                    </ul>
+                </li>
+                <?php endif; ?>
+
                 <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
                 <!-- Menu Administration -->
                 <li class="nav-item dropdown">

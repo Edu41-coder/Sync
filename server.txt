@@ -28,3 +28,53 @@ http://localhost/Synd_Gest/public/
 Pour ouvrir un nouveau chat dans Claude Code :
 
 Raccourci clavier : Ctrl + Shift + P puis tape Claude: New Chat
+
+
+
+
+Username	Rôle	Mot de passe	Résidences
+chef_resto	Responsable Restauration	Resto1234	La Badiane + Jardins d'Arcadie + Parc de Jade
+serveur1	Serveur	Resto1234	La Badiane + Jardins d'Arcadie
+serveur2	Serveur	Resto1234	La Badiane + Parc de Jade
+cuisine1	Cuisine	Resto1234	La Badiane + Jardins d'Arcadie
+cuisine2	Cuisine	Resto1234	La Badiane + Parc de Jade
+
+
+Données créées pour tester le module Ménage
+Lots à La Badiane
+Type	Quantité	Numéros
+Studio	10	101-105, 201-205
+T2	6	106-107, 206-207, 301-302
+T3	2	303-304
+12 résidents avec occupations
+Résident	Lot	Forfait	Ménage attendu
+Marguerite Dupont	101 studio	premium	Tous les jours
+Henri Martin	102 studio	premium	Tous les jours
+Jacques Laurent	203 studio	premium	Tous les jours
+Paulette Garcia	106 t2	premium	Tous les jours (poids 1.5)
+Jeanne Bernard	103 studio	confort	Lun/Mer/Ven
+Marcel Thomas	104 studio	confort	Lun/Mer/Ven
+Simone Robert	105 studio	confort	Lun/Mer/Ven
+Suzanne Simon	204 studio	confort	Lun/Mer/Ven
+Georges David	107 t2	confort	Lun/Mer/Ven (poids 1.5)
+Pierre Richard	201 studio	essentiel	Pas de ménage
+Yvette Moreau	202 studio	essentiel	Pas de ménage
+André Michel	205 studio	essentiel	Pas de ménage
+2 hôtes temporaires
+Jean Visiteur (lot 206) — ménage quotidien
+Marie Touriste (lot 207) — NE PAS DÉRANGER activé
+50 produits ménage + inventaire complet
+Nettoyants, désinfectants, lessives, matériel, sacs poubelle, papier — tous en stock à La Badiane
+
+7 fournisseurs (existants + 2 nouveaux)
+Metro, Initial (Hygiène Pro), Procter & Gamble Pro — liés à La Badiane
+
+Shifts planning du jour
+Tous les employés ménage ont un shift aujourd'hui → la distribution auto fonctionnera
+
+3 demandes laverie de test
+Premium (inclus), confort (payant 6€), essentiel (payant 12€)
+
+Pour tester
+chef_menage / Menage1234 → Ménage > Intérieur > Générer > Distribuer
+menage_int1 / Menage1234 → voir "Mes lots du jour" + cocher la checklist

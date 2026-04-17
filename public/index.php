@@ -54,13 +54,10 @@ if (file_exists($envFile)) {
 }
 
 // Charger la configuration dans le bon ordre
-// 1. database.php (définit les constantes DB_* avec $_ENV)
+// 1. database.php (définit les constantes DB_* depuis $_ENV)
 require_once '../config/database.php';
 
-// 2. constants.php (constantes métier indépendantes)
-require_once '../config/constants.php';
-
-// 3. config.php (configuration générale, chemins, etc.)
+// 2. config.php (configuration générale, chemins, URLs, sécurité)
 require_once '../config/config.php';
 
 // Charger les helpers (pas des classes, require_once nécessaire)

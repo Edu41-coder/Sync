@@ -52,6 +52,7 @@ body {
     line-height: 1.5;
     color: var(--text-primary);
     background-color: var(--bg-light);
+    min-width: fit-content;
 }
 
 /* ====================================================================
@@ -294,14 +295,17 @@ a:hover {
 /* ====================================================================
    NAVBAR (styles spécifiques)
    ==================================================================== */
+
+/* Navbar suit le scroll horizontal (ne se coupe plus sur petit écran) */
 .navbar.bg-primary {
-    background: linear-gradient(90deg, 
+    background: linear-gradient(90deg,
         #dc3545 0%,           /* Rouge vif à gauche */
         #e83e8c 25%,          /* Rose au quart */
         #ffc107 50%,          /* Jaune au milieu */
         #ffb300 75%,          /* Jaune moyen */
         #ffa000 100%          /* Jaune foncé à droite */
     ) !important;
+    min-width: fit-content;
 }
 
 /* Logo Domitys dans la navbar */
