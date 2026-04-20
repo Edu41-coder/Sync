@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(C:/xampp/php/php -r ':*)",
-      "Bash(php -r ':*)"
+      "Bash(php -r ':*)",
+      "Bash(/opt/lampp/bin/mysql -u root synd_gest -e ' *)"
     ]
   }
 }

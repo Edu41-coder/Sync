@@ -1,0 +1,30 @@
+Référencer des fichiers directement
+
+@app/controllers/ResidentController.php  ← charge le fichier dans le contexte
+@.claude/modules/residents.md            ← charge les règles du module
+Très utile pour dire "travaille sur ce fichier en suivant ces règles".
+
+Mode Plan avant les grosses tâches
+Tapez /plan avant une implémentation complexe — je propose l'approche et vous validez avant que j'écrive une seule ligne.
+
+/clear entre sujets différents
+Vide le contexte de la conversation. Utile quand vous changez de module — évite que le contexte du module précédent interfère.
+
+Sélectionner du code dans l'IDE
+Sélectionnez une fonction dans VS Code → posez une question dessus. Je travaille directement sur la sélection sans que vous copiiez-colliez.
+
+Commandes utiles
+Commande	Utilité
+/review	Review de sécurité + qualité du code modifié
+/init	Régénérer CLAUDE.md si l'archi évolue
+/simplify	Nettoyer le code après une implémentation
+Pour votre projet spécifiquement
+Commencez chaque session sur un module en chargeant le contexte :
+
+"@.claude/modules/residents.md @app/controllers/ResidentController.php — ajoute la fonctionnalité X"
+
+Ça évite que je redemande comment fonctionne le module à chaque fois.
+
+Ce qu'il ne faut pas faire
+Ne pas mettre plusieurs modules dans la même session sans /clear entre les deux
+Ne pas demander plusieurs choses à la fois sur des fichiers différents — une tâche à la fois est plus fiable
