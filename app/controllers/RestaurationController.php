@@ -1448,4 +1448,109 @@ class RestaurationController extends Controller {
         }
         $this->redirect('restauration/fournisseurs?residence_id=' . $residenceId);
     }
+
+    /**
+     * Laverie restauration — cycles d'envoi/retour (linge de salle, prestataire interne)
+     * Accès : admin, restauration_manager, restauration_cuisine
+     */
+    public function laverie($action = null, $id = null) {
+        $this->requireAuth();
+        $rolesLaverie = ['admin', 'restauration_manager', 'restauration_cuisine'];
+        $this->requireRole($rolesLaverie);
+
+        $model = $this->model('Restauration');
+        $userId = (int)$_SESSION['user_id'];
+        $userRole = $_SESSION['user_role'];
+
+        $residences = $model->getResidencesByUser($userId);
+        $residenceIds = array_column($residences, 'id');
+        if ($userRole === 'admin') {
+            $resModel = $this->model('Residence');
+            $residences = $resModel->getAllSimple();
+            $residenceIds = array_column($residences, 'id');
+        }
+
+        // POST actions
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->verifyCsrf();
+
+            if ($action === 'create') {
+                $residenceId = (int)($_POST['residence_id'] ?? 0);
+                if (!in_array($residenceId, $residenceIds, true)) {
+                    $this->setFlash('error', 'Résidence non autorisée');
+                    $this->redirect('restauration/laverie');
+                    return;
+                }
+                $newId = $model->createLaverieCycle([
+                    'residence_id'     => $residenceId,
+                    'type_linge'       => $_POST['type_linge'] ?? 'autre',
+                    'quantite_envoyee' => max(1, (int)($_POST['quantite_envoyee'] ?? 1)),
+                    'date_envoi'       => $_POST['date_envoi'] ?: date('Y-m-d H:i:s'),
+                    'cout'             => (float)($_POST['cout'] ?? 0),
+                    'user_envoi_id'    => $userId,
+                    'notes'            => trim($_POST['notes'] ?? '') ?: null,
+                ]);
+                $this->setFlash($newId ? 'success' : 'error', $newId ? 'Envoi enregistré' : 'Erreur lors de la création');
+                $this->redirect('restauration/laverie?residence_id=' . $residenceId);
+                return;
+            }
+
+            if ($action === 'reception' && $id) {
+                $cycle = $model->getLaverieCycle((int)$id);
+                if (!$cycle || !in_array((int)$cycle['residence_id'], $residenceIds, true)) {
+                    $this->setFlash('error', 'Cycle introuvable ou non autorisé');
+                    $this->redirect('restauration/laverie');
+                    return;
+                }
+                $ok = $model->receptionnerLaverieCycle(
+                    (int)$id,
+                    (int)($_POST['quantite_recue'] ?? 0),
+                    $userId,
+                    trim($_POST['notes'] ?? '') ?: null
+                );
+                $this->setFlash($ok ? 'success' : 'error', $ok ? 'Réception enregistrée' : 'Erreur lors de la réception');
+                $this->redirect('restauration/laverie?residence_id=' . $cycle['residence_id']);
+                return;
+            }
+
+            if ($action === 'delete' && $id) {
+                $cycle = $model->getLaverieCycle((int)$id);
+                if (!$cycle || !in_array((int)$cycle['residence_id'], $residenceIds, true)) {
+                    $this->setFlash('error', 'Cycle introuvable ou non autorisé');
+                    $this->redirect('restauration/laverie');
+                    return;
+                }
+                if (!in_array($userRole, self::ROLES_MANAGER, true)) {
+                    $this->setFlash('error', 'Suppression réservée au manager');
+                    $this->redirect('restauration/laverie?residence_id=' . $cycle['residence_id']);
+                    return;
+                }
+                $ok = $model->deleteLaverieCycle((int)$id);
+                $this->setFlash($ok ? 'success' : 'error', $ok ? 'Cycle supprimé' : 'Erreur suppression');
+                $this->redirect('restauration/laverie?residence_id=' . $cycle['residence_id']);
+                return;
+            }
+        }
+
+        // GET — affichage liste
+        $selectedResidence = (int)($_GET['residence_id'] ?? 0);
+        $filteredIds = $selectedResidence ? [$selectedResidence] : $residenceIds;
+        $statutFilter = $_GET['statut'] ?? null;
+        $typeFilter   = $_GET['type_linge'] ?? null;
+
+        $cycles = $model->getLaverieCycles($filteredIds, $statutFilter ?: null, $typeFilter ?: null);
+        $stats  = $model->getLaverieStats($filteredIds, (int)date('Y'));
+
+        $this->view('restauration/laverie', [
+            'title'             => 'Laverie - Restauration - ' . APP_NAME,
+            'showNavbar'        => true,
+            'userRole'          => $userRole,
+            'residences'        => $residences,
+            'selectedResidence' => $selectedResidence,
+            'cycles'            => $cycles,
+            'stats'             => $stats,
+            'isManager'         => in_array($userRole, self::ROLES_MANAGER, true),
+            'flash'             => $this->getFlash(),
+        ], true);
+    }
 }

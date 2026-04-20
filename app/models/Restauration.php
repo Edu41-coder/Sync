@@ -1330,4 +1330,108 @@ class Restauration extends Model {
         try { $stmt = $this->db->prepare($sql); $stmt->execute($params); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
         catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
     }
+
+    // ====================================================================
+    // LAVERIE RESTAURATION (cycles d'envoi/retour, prestataire interne)
+    // ====================================================================
+
+    public function getLaverieCycles(array $residenceIds, ?string $statut = null, ?string $typeLinge = null): array {
+        if (empty($residenceIds)) return [];
+        $ph = implode(',', array_fill(0, count($residenceIds), '?'));
+        $sql = "SELECT l.*, c.nom AS residence_nom,
+                       ue.username AS user_envoi_nom, ur.username AS user_reception_nom
+                FROM rest_laverie l
+                JOIN coproprietees c ON l.residence_id = c.id
+                LEFT JOIN users ue ON l.user_envoi_id = ue.id
+                LEFT JOIN users ur ON l.user_reception_id = ur.id
+                WHERE l.residence_id IN ($ph)";
+        $params = $residenceIds;
+        if ($statut)    { $sql .= " AND l.statut = ?";     $params[] = $statut; }
+        if ($typeLinge) { $sql .= " AND l.type_linge = ?"; $params[] = $typeLinge; }
+        $sql .= " ORDER BY l.date_envoi DESC, l.id DESC";
+        try { $stmt = $this->db->prepare($sql); $stmt->execute($params); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
+        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
+    }
+
+    public function getLaverieCycle(int $id): ?array {
+        $sql = "SELECT l.*, c.nom AS residence_nom FROM rest_laverie l
+                JOIN coproprietees c ON l.residence_id = c.id WHERE l.id = ? LIMIT 1";
+        try { $stmt = $this->db->prepare($sql); $stmt->execute([$id]); $row = $stmt->fetch(PDO::FETCH_ASSOC); return $row ?: null; }
+        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return null; }
+    }
+
+    public function createLaverieCycle(array $data): int|false {
+        $sql = "INSERT INTO rest_laverie
+                (residence_id, type_linge, quantite_envoyee, date_envoi, cout, user_envoi_id, notes)
+                VALUES (:residence_id, :type_linge, :quantite_envoyee, :date_envoi, :cout, :user_envoi_id, :notes)";
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                'residence_id'     => $data['residence_id'],
+                'type_linge'       => $data['type_linge'],
+                'quantite_envoyee' => $data['quantite_envoyee'],
+                'date_envoi'       => $data['date_envoi'] ?? date('Y-m-d H:i:s'),
+                'cout'             => $data['cout'] ?? 0.00,
+                'user_envoi_id'    => $data['user_envoi_id'] ?? null,
+                'notes'            => $data['notes'] ?? null,
+            ]);
+            return (int)$this->db->lastInsertId();
+        } catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return false; }
+    }
+
+    public function receptionnerLaverieCycle(int $id, int $quantiteRecue, ?int $userId = null, ?string $notes = null): bool {
+        $cycle = $this->getLaverieCycle($id);
+        if (!$cycle) return false;
+        $envoyee = (int)$cycle['quantite_envoyee'];
+        if ($quantiteRecue < 0)        $quantiteRecue = 0;
+        if ($quantiteRecue > $envoyee) $quantiteRecue = $envoyee;
+        $statut = $quantiteRecue === $envoyee ? 'recu' : ($quantiteRecue === 0 ? 'perdu' : 'partiel');
+        $sql = "UPDATE rest_laverie
+                SET quantite_recue = :q, date_retour = :dr, statut = :s,
+                    user_reception_id = :u, notes = COALESCE(:notes, notes)
+                WHERE id = :id";
+        try {
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                'q'     => $quantiteRecue,
+                'dr'    => date('Y-m-d H:i:s'),
+                's'     => $statut,
+                'u'     => $userId,
+                'notes' => $notes,
+                'id'    => $id,
+            ]);
+        } catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return false; }
+    }
+
+    public function updateLaverieCycle(int $id, array $data): bool {
+        $allowed = ['type_linge', 'quantite_envoyee', 'date_envoi', 'cout', 'notes'];
+        $sets = []; $params = ['id' => $id];
+        foreach ($allowed as $f) { if (array_key_exists($f, $data)) { $sets[] = "$f = :$f"; $params[$f] = $data[$f]; } }
+        if (empty($sets)) return false;
+        $sql = "UPDATE rest_laverie SET " . implode(', ', $sets) . " WHERE id = :id";
+        try { $stmt = $this->db->prepare($sql); return $stmt->execute($params); }
+        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return false; }
+    }
+
+    public function deleteLaverieCycle(int $id): bool {
+        try { $stmt = $this->db->prepare("DELETE FROM rest_laverie WHERE id = ?"); return $stmt->execute([$id]); }
+        catch (PDOException $e) { $this->logError($e->getMessage()); return false; }
+    }
+
+    public function getLaverieStats(array $residenceIds, ?int $annee = null, ?int $mois = null): array {
+        if (empty($residenceIds)) return ['cycles_total' => 0, 'en_cours' => 0, 'cout_total' => 0.0, 'pertes' => 0];
+        $ph = implode(',', array_fill(0, count($residenceIds), '?'));
+        $sql = "SELECT
+                    COUNT(*) AS cycles_total,
+                    SUM(CASE WHEN statut IN ('envoye','partiel') THEN 1 ELSE 0 END) AS en_cours,
+                    COALESCE(SUM(cout), 0) AS cout_total,
+                    COALESCE(SUM(quantite_envoyee - COALESCE(quantite_recue, quantite_envoyee)), 0) AS pertes
+                FROM rest_laverie
+                WHERE residence_id IN ($ph)";
+        $params = $residenceIds;
+        if ($annee) { $sql .= " AND YEAR(date_envoi) = ?";  $params[] = $annee; }
+        if ($mois)  { $sql .= " AND MONTH(date_envoi) = ?"; $params[] = $mois; }
+        try { $stmt = $this->db->prepare($sql); $stmt->execute($params); return $stmt->fetch(PDO::FETCH_ASSOC) ?: []; }
+        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
+    }
 }

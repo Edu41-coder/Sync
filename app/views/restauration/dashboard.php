@@ -108,6 +108,11 @@ include __DIR__ . '/../partials/breadcrumb.php';
                             </a>
                         </div>
                         <div class="col-6 col-md-3 col-lg-2">
+                            <a href="<?= BASE_URL ?>/restauration/laverie" class="btn btn-outline-info w-100 py-3">
+                                <i class="fas fa-soap fa-2x mb-2 d-block"></i><small>Laverie</small>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3 col-lg-2">
                             <a href="<?= BASE_URL ?>/restauration/commandes" class="btn btn-outline-primary w-100 py-3">
                                 <i class="fas fa-truck fa-2x mb-2 d-block"></i><small>Commandes</small>
                             </a>

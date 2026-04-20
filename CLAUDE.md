@@ -121,6 +121,7 @@ Chaque rôle a ses propres boutons — ne jamais mélanger les privilèges entre
 - Module Planning staff → @.claude/modules/planning.md
 - Module Hôtes temporaires → @.claude/modules/hotes.md
 - Module Restauration → @.claude/modules/restauration.md
+- Module Ménage → @.claude/modules/menage.md
 - Module Jardinerie (à créer) → @.claude/modules/jardinerie.md
 - Module Entretien Technique (à créer) → @.claude/modules/entretien.md
 - Module Travaux (proposition) → @.claude/modules/travaux.md
