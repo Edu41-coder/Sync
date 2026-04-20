@@ -106,6 +106,44 @@ class Residence extends Model {
     }
 
     /**
+     * Toutes les résidences sans pagination — filtre exploitant uniquement (sécurité)
+     */
+    public function getAll(array $filters = []): array {
+        $sql = "
+            SELECT c.id, c.nom, c.adresse, c.ville, c.code_postal, c.latitude, c.longitude, c.actif,
+                GROUP_CONCAT(DISTINCT e.raison_sociale ORDER BY e.raison_sociale SEPARATOR ', ') as exploitant,
+                GROUP_CONCAT(DISTINCT e.id SEPARATOR ',') as exploitant_id,
+                COUNT(DISTINCT l.id) as nb_lots,
+                COUNT(DISTINCT CASE WHEN o.statut = 'actif' THEN o.id END) as nb_occupations,
+                CASE WHEN COUNT(DISTINCT l.id) > 0
+                    THEN ROUND((COUNT(DISTINCT CASE WHEN o.statut = 'actif' THEN o.id END) / COUNT(DISTINCT l.id)) * 100, 2)
+                    ELSE 0 END as taux_occupation,
+                COALESCE(SUM(CASE WHEN o.statut = 'actif' THEN o.loyer_mensuel_resident END), 0) as revenus_mensuels,
+                MAX(CASE WHEN e.actif = 1 THEN 1 ELSE 0 END) as statut
+            FROM coproprietees c
+            LEFT JOIN exploitant_residences er ON c.id = er.residence_id AND er.statut IN ('actif', 'suspendu')
+            LEFT JOIN exploitants e ON er.exploitant_id = e.id
+            LEFT JOIN lots l ON c.id = l.copropriete_id
+            LEFT JOIN occupations_residents o ON l.id = o.lot_id
+            WHERE c.type_residence = 'residence_seniors'
+        ";
+        $params = [];
+        if (!empty($filters['exploitant'])) {
+            $sql .= " AND e.id = :exploitant";
+            $params['exploitant'] = $filters['exploitant'];
+        }
+        $sql .= " GROUP BY c.id, c.nom, c.adresse, c.ville, c.code_postal, c.latitude, c.longitude, c.actif ORDER BY c.nom ASC";
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $this->logError($e->getMessage(), $sql, $params);
+            return [];
+        }
+    }
+
+    /**
      * Liste des villes où il y a des résidences seniors
      * @return array
      */

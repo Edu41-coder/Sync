@@ -367,22 +367,12 @@ class AdminController extends Controller {
         $currentRole = $_SESSION['user_role'] ?? null;
         $currentUserId = (int)($_SESSION['user_id'] ?? 0);
 
-        $filters = [
-            'search' => $_GET['search'] ?? '',
-            'ville' => $_GET['ville'] ?? '',
-            'exploitant' => $_GET['exploitant'] ?? '',
-            'taux_min' => $_GET['taux_min'] ?? ''
-        ];
-
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-        $perPage = 10;
-
         $resModel = $this->model('Residence');
 
+        $filters = [];
         if ($currentRole === 'exploitant') {
             $exploitantModel = $this->model('Exploitant');
             $exploitant = $exploitantModel->findByUserId($currentUserId);
-
             if ($exploitant && isset($exploitant->id)) {
                 $filters['exploitant'] = (string)$exploitant->id;
             } else {
@@ -391,32 +381,13 @@ class AdminController extends Controller {
             }
         }
 
-        $result = $resModel->search($filters, $page, $perPage);
-
-        $residences = $result['rows'] ?? [];
-        $totalRecords = $result['total'] ?? 0;
-        $totalPages = $totalRecords ? ceil($totalRecords / $perPage) : 0;
-
-        $villes = $resModel->getCities();
+        $residences = $resModel->getAll($filters);
         $exploitants = $resModel->getExploitantsList();
-
-        if ($currentRole === 'exploitant') {
-            $exploitants = array_values(array_filter($exploitants, fn($e) => (string)$e['id'] === (string)$filters['exploitant']));
-        }
 
         $this->view('residences/residences', [
             'title' => 'Résidences Seniors - ' . APP_NAME,
             'residences' => $residences,
-            'villes' => $villes,
             'exploitants' => $exploitants,
-            'search' => $filters['search'],
-            'ville' => $filters['ville'],
-            'exploitant' => $filters['exploitant'],
-            'taux_min' => $filters['taux_min'],
-            'page' => $page,
-            'perPage' => $perPage,
-            'totalRecords' => $totalRecords,
-            'totalPages' => $totalPages,
             'currentRole' => $currentRole,
             'canManageResidences' => $currentRole === 'admin',
             'canExportResidences' => in_array($currentRole, ['admin', 'directeur_residence']),

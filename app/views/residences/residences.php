@@ -32,9 +32,7 @@
                         <i class="fas fa-building text-dark"></i>
                         Résidences Seniors
                     </h1>
-                    <p class="text-muted mb-0">
-                        <?= $totalRecords ?> résidence<?= $totalRecords > 1 ? 's' : '' ?> trouvée<?= $totalRecords > 1 ? 's' : '' ?>
-                    </p>
+                    <p class="text-muted mb-0" id="tableInfo">Chargement...</p>
                 </div>
                 <div class="btn-stack-mobile">
                     <?php if ($canSeeMap): ?>
@@ -57,74 +55,33 @@
         </div>
     </div>
     
-    <!-- Card principale -->
+    <!-- Recherche et Filtres -->
     <div class="card shadow-sm">
-        <div class="card-header bg-white">
-            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Recherche et Filtres</h5>
-        </div>
         <div class="card-body">
-            <form method="GET" action="<?= BASE_URL ?>/admin/residences" class="row g-3">
-                <!-- Recherche -->
-                <div class="col-12 col-md-4">
+            <div class="row g-3">
+                <div class="col-12 col-md-5">
                     <label class="form-label"><i class="fas fa-search me-1"></i>Rechercher</label>
-                    <input type="text" name="search" class="form-control" 
-                           placeholder="Nom, ville, adresse..." 
-                           value="<?= htmlspecialchars($search) ?>">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Nom, ville, adresse...">
                 </div>
-                
-                <!-- Filtre Ville -->
-                <div class="col-12 col-md-2">
-                    <label class="form-label"><i class="fas fa-map-marker-alt me-1"></i>Ville</label>
-                    <select name="ville" class="form-select">
-                        <option value="">Toutes</option>
-                        <?php foreach ($villes as $v): ?>
-                            <option value="<?= htmlspecialchars($v) ?>" 
-                                    <?= $ville === $v ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($v) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <!-- Filtre Exploitant -->
                 <?php if ($currentRole !== 'exploitant'): ?>
                 <div class="col-12 col-md-3">
                     <label class="form-label"><i class="fas fa-building me-1"></i>Exploitant</label>
-                    <select name="exploitant" class="form-select">
+                    <select id="filterExploitant" class="form-select">
                         <option value="">Tous</option>
                         <?php foreach ($exploitants as $e): ?>
-                            <option value="<?= $e['id'] ?>" 
-                                    <?= $exploitant == $e['id'] ? 'selected' : '' ?>>
+                            <option value="<?= htmlspecialchars($e['raison_sociale']) ?>">
                                 <?= htmlspecialchars($e['raison_sociale']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <?php else: ?>
-                <input type="hidden" name="exploitant" value="<?= htmlspecialchars((string)$exploitant) ?>">
                 <?php endif; ?>
-                
-                <?php if (!$isProprietaire): ?>
-                <!-- Filtre Taux -->
-                <div class="col-12 col-md-2">
-                    <label class="form-label"><i class="fas fa-percent me-1"></i>Taux min.</label>
-                    <select name="taux_min" class="form-select">
-                        <option value="">Tous</option>
-                        <option value="0" <?= $taux_min === '0' ? 'selected' : '' ?>>0%</option>
-                        <option value="50" <?= $taux_min === '50' ? 'selected' : '' ?>>50%</option>
-                        <option value="80" <?= $taux_min === '80' ? 'selected' : '' ?>>80%</option>
-                    </select>
-                </div>
-                <?php endif; ?>
-                
-                <!-- Boutons -->
-                <div class="col-12 col-md-1">
-                    <label class="form-label d-none d-md-block">&nbsp;</label>
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-search"></i>
+                <div class="col-12 col-md-2 d-flex align-items-end">
+                    <button id="btnReset" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-times me-1"></i>Réinitialiser
                     </button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
     
@@ -251,12 +208,20 @@
         </div>
         
         <!-- Pagination -->
-        <?php
-        // Préparer les variables pour le partial de pagination réutilisable
-        $currentPage = $page;
-        $params = $_GET;
-        include __DIR__ . '/../partials/pagination.php';
-        ?>
+        <div class="card-footer bg-white border-top">
+            <div class="row align-items-center">
+                <div class="col-md-5">
+                    <p class="mb-0 text-muted small" id="tableInfo">
+                        Affichage de <strong><span id="startEntry">0</span></strong>
+                        à <strong><span id="endEntry">0</span></strong>
+                        sur <strong><span id="totalEntries">0</span></strong> résultats
+                    </p>
+                </div>
+                <div class="col-md-7">
+                    <ul class="pagination justify-content-end mb-0" id="pagination"></ul>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -301,20 +266,16 @@
 
 <!-- Scripts -->
 <script src="<?= BASE_URL ?>/assets/js/datatable.js"></script>
+<script src="<?= BASE_URL ?>/assets/js/datatable-pagination.js"></script>
 <script>
 let residenceIdToDelete = null;
 
-// Ouvrir le modal de confirmation
 function confirmDelete(id) {
-    <?php if (!$canManageResidences): ?>
-    return;
-    <?php endif; ?>
+    <?php if (!$canManageResidences): ?>return;<?php endif; ?>
     residenceIdToDelete = id;
-    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    modal.show();
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
 
-// Confirmer la suppression
 <?php if ($canManageResidences): ?>
 document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
     if (residenceIdToDelete) {
@@ -323,26 +284,23 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function()
 });
 <?php endif; ?>
 
-// Export Excel
 function exportExcel() {
-    <?php if (!$canExportResidences): ?>
-    return;
-    <?php endif; ?>
-    // Récupérer les filtres actuels
-    const urlParams = new URLSearchParams(window.location.search);
-    const exportUrl = '<?= BASE_URL ?>/admin/exportResidencesExcel?' + urlParams.toString();
-    
-    // Télécharger le fichier
-    window.location.href = exportUrl;
+    <?php if (!$canExportResidences): ?>return;<?php endif; ?>
+    window.location.href = '<?= BASE_URL ?>/admin/exportResidencesExcel';
 }
 
-// Initialiser le tri des colonnes avec DataTable.js
 document.addEventListener('DOMContentLoaded', function() {
-    const dataTable = new DataTable('residencesTable', {
-        sortable: true,
-        excludeColumns: [7, 8] // Statut et Actions ne sont pas triables
+    <?php
+    $jsFilters = $currentRole !== 'exploitant' ? [['id' => 'filterExploitant', 'column' => 2]] : [];
+    $jsExclude = $isProprietaire ? [3, 4] : [7, 8];
+    ?>
+    new DataTableWithPagination('residencesTable', {
+        rowsPerPage: 10,
+        searchInputId: 'searchInput',
+        filters: <?= json_encode($jsFilters) ?>,
+        excludeColumns: <?= json_encode($jsExclude) ?>,
+        paginationId: 'pagination',
+        infoId: 'tableInfo'
     });
-    
-    console.log('DataTable initialisé pour le tableau des résidences');
 });
 </script>
