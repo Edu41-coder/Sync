@@ -103,42 +103,45 @@ class Migration {
 
         $batch = $this->getNextBatch();
 
+        // Pas de transaction explicite : MySQL/MariaDB applique un implicit commit
+        // sur chaque DDL (CREATE/ALTER/DROP TABLE...), donc beginTransaction/commit
+        // n'offre aucune atomicité et fait planter commit() à tort.
         foreach ($pending as $name => $file) {
+            $sql = file_get_contents($file);
+
+            if (empty(trim($sql))) {
+                $results['errors'][] = "$name — fichier vide, ignoré";
+                continue;
+            }
+
+            $statements = $this->splitStatements($sql);
+            $failed = null;
+
+            foreach ($statements as $i => $statement) {
+                $statement = trim($statement);
+                if (empty($statement)) continue;
+
+                try {
+                    $this->db->exec($statement);
+                } catch (PDOException $e) {
+                    $preview = substr(preg_replace('/\s+/', ' ', $statement), 0, 120);
+                    $failed = "instruction #" . $i + 1 . " [" . $preview . "…] : " . $e->getMessage();
+                    break;
+                }
+            }
+
+            if ($failed !== null) {
+                $results['errors'][] = "$name — $failed";
+                // Stop à la première erreur pour éviter d'appliquer les migrations suivantes
+                break;
+            }
+
             try {
-                $sql = file_get_contents($file);
-
-                if (empty(trim($sql))) {
-                    $results['errors'][] = "$name — fichier vide, ignoré";
-                    continue;
-                }
-
-                // Exécuter chaque instruction séparément (séparées par ;)
-                $this->db->beginTransaction();
-
-                // Découper par ; en tenant compte des délimiteurs
-                $statements = $this->splitStatements($sql);
-
-                foreach ($statements as $statement) {
-                    $statement = trim($statement);
-                    if (!empty($statement)) {
-                        $this->db->exec($statement);
-                    }
-                }
-
-                // Enregistrer la migration
                 $stmt = $this->db->prepare("INSERT INTO migrations (migration, batch, applied_at) VALUES (?, ?, NOW())");
                 $stmt->execute([$name, $batch]);
-
-                $this->db->commit();
                 $results['applied'][] = $name;
-
             } catch (PDOException $e) {
-                if ($this->db->inTransaction()) {
-                    $this->db->rollBack();
-                }
-                $results['errors'][] = "$name — " . $e->getMessage();
-                // Stop à la première erreur pour éviter d'appliquer des migrations suivantes
-                // qui pourraient dépendre de celle-ci
+                $results['errors'][] = "$name — SQL appliqué mais suivi impossible : " . $e->getMessage();
                 break;
             }
         }
@@ -181,9 +184,10 @@ class Migration {
 
     /**
      * Marquer une migration comme déjà appliquée (sans l'exécuter)
-     * Utile pour le schéma initial déjà en place
+     * Utile pour le schéma initial déjà en place ou des migrations appliquées hors système
      */
     public function markAsApplied(string $name): bool {
+        if (!$this->isKnownMigration($name)) return false;
         try {
             $batch = $this->getNextBatch();
             $stmt = $this->db->prepare("INSERT IGNORE INTO migrations (migration, batch, applied_at) VALUES (?, ?, NOW())");
@@ -191,6 +195,87 @@ class Migration {
         } catch (PDOException $e) {
             return false;
         }
+    }
+
+    /**
+     * Démarquer une migration (supprime l'entrée de la table migrations)
+     * ⚠️ N'annule PAS les changements SQL — seul le tracking est retiré.
+     */
+    public function unmarkAsApplied(string $name): bool {
+        if (!$this->isKnownMigration($name)) return false;
+        try {
+            $stmt = $this->db->prepare("DELETE FROM migrations WHERE migration = ?");
+            return $stmt->execute([$name]);
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Appliquer uniquement les migrations sélectionnées (dans l'ordre de leur nom)
+     *
+     * @param string[] $names Liste des noms de migrations à appliquer
+     * @return array ['applied' => string[], 'errors' => string[], 'skipped' => string[]]
+     */
+    public function migrateSelected(array $names): array {
+        $available = $this->getAvailable();
+        $applied = $this->getApplied();
+        $results = ['applied' => [], 'errors' => [], 'skipped' => []];
+
+        // Filtrer + trier par ordre de nom
+        $toRun = [];
+        foreach ($names as $name) {
+            if (!isset($available[$name])) {
+                $results['errors'][] = "$name — fichier introuvable";
+                continue;
+            }
+            if (in_array($name, $applied, true)) {
+                $results['skipped'][] = $name;
+                continue;
+            }
+            $toRun[$name] = $available[$name];
+        }
+        ksort($toRun);
+
+        if (empty($toRun)) return $results;
+
+        $batch = $this->getNextBatch();
+
+        foreach ($toRun as $name => $file) {
+            try {
+                $sql = file_get_contents($file);
+                if (empty(trim($sql))) {
+                    $results['errors'][] = "$name — fichier vide, ignoré";
+                    continue;
+                }
+
+                $this->db->beginTransaction();
+                foreach ($this->splitStatements($sql) as $statement) {
+                    $statement = trim($statement);
+                    if (!empty($statement)) {
+                        $this->db->exec($statement);
+                    }
+                }
+                $stmt = $this->db->prepare("INSERT INTO migrations (migration, batch, applied_at) VALUES (?, ?, NOW())");
+                $stmt->execute([$name, $batch]);
+                $this->db->commit();
+                $results['applied'][] = $name;
+            } catch (PDOException $e) {
+                if ($this->db->inTransaction()) $this->db->rollBack();
+                $results['errors'][] = "$name — " . $e->getMessage();
+                break;
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Vérifier qu'un nom de migration correspond à un fichier réel
+     * (protection contre injection de noms arbitraires)
+     */
+    private function isKnownMigration(string $name): bool {
+        return array_key_exists($name, $this->getAvailable());
     }
 
     /**

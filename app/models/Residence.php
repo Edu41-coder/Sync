@@ -183,7 +183,7 @@ class Residence extends Model {
             $defaultExploitantId = $this->db->query("SELECT id FROM exploitants ORDER BY id LIMIT 1")->fetchColumn() ?: null;
         }
 
-        $sql = "INSERT INTO coproprietees (nom, adresse, ville, code_postal, latitude, longitude, exploitant_id, type_residence, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        $sql = "INSERT INTO coproprietees (nom, adresse, ville, code_postal, latitude, longitude, exploitant_id, type_residence, ruches, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
         $params = [
             $data['nom'] ?? null,
             $data['adresse'] ?? null,
@@ -192,7 +192,8 @@ class Residence extends Model {
             $data['latitude'] ?? null,
             $data['longitude'] ?? null,
             $defaultExploitantId,
-            $data['type_residence'] ?? 'residence_seniors'
+            $data['type_residence'] ?? 'residence_seniors',
+            !empty($data['ruches']) ? 1 : 0
         ];
 
         if (!$this->execute($sql, $params)) return false;
@@ -217,7 +218,7 @@ class Residence extends Model {
      * Mettre à jour une résidence
      */
     public function updateResidence(int $id, array $data) {
-        $sql = "UPDATE coproprietees SET nom = ?, adresse = ?, ville = ?, code_postal = ?, latitude = ?, longitude = ?, exploitant_id = ?, updated_at = NOW() WHERE id = ? AND type_residence = 'residence_seniors'";
+        $sql = "UPDATE coproprietees SET nom = ?, adresse = ?, ville = ?, code_postal = ?, latitude = ?, longitude = ?, exploitant_id = ?, ruches = ?, updated_at = NOW() WHERE id = ? AND type_residence = 'residence_seniors'";
         $params = [
             $data['nom'] ?? null,
             $data['adresse'] ?? null,
@@ -226,9 +227,22 @@ class Residence extends Model {
             $data['latitude'] ?? null,
             $data['longitude'] ?? null,
             $data['exploitant_id'] ?? null,
+            !empty($data['ruches']) ? 1 : 0,
             $id
         ];
         return $this->execute($sql, $params);
+    }
+
+    /**
+     * Compte les ruches actives d'une résidence (garde-fou désactivation apiculture).
+     */
+    public function countRuchesActives(int $residenceId): int {
+        $sql = "SELECT COUNT(*) FROM jardin_ruches WHERE residence_id = ? AND statut = 'active'";
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$residenceId]);
+            return (int)$stmt->fetchColumn();
+        } catch (PDOException $e) { $this->logError($e->getMessage()); return 0; }
     }
 
     /**

@@ -1,5 +1,14 @@
 {
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(php -r ' *)",
+      "Bash(curl -s -c /tmp/cookies.txt -b /tmp/cookies.txt \"http://localhost/Synd_Gest/public/admin/migrationSql/004_module_restauration\")"
+    ],
+    "additionalDirectories": [
+      "c:\\xampp\\htdocs\\Synd_Gest\\app\\views"
+    ]
   }
 }

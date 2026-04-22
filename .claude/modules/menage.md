@@ -111,7 +111,7 @@ private const ROLES_MANAGER = ['admin', 'directeur_residence', 'entretien_manage
 - Distribution équitable automatique (algorithme basé sur `poids` des tâches)
 
 ### Catalogue produits & inventaire (`/menage/produits`, `/menage/inventaire`)
-Structure analogue restauration/jardinerie :
+Structure analogue restauration/jardinage :
 - Mouvements traçables (`menage_inventaire_mouvements`)
 - Sortie liée à un employé / une tâche (analyse coût)
 

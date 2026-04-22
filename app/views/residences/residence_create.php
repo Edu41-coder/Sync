@@ -139,13 +139,28 @@
                             <label for="description" class="form-label">
                                 <i class="fas fa-align-left me-1"></i>Description
                             </label>
-                            <textarea class="form-control" 
-                                      id="description" 
-                                      name="description" 
+                            <textarea class="form-control"
+                                      id="description"
+                                      name="description"
                                       rows="4"
                                       placeholder="Description de la résidence, équipements, services..."></textarea>
                         </div>
-                        
+
+                        <!-- Apiculture (ruches) -->
+                        <div class="mb-3 p-3 border rounded bg-light">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="ruches" name="ruches" value="1">
+                                <label class="form-check-label" for="ruches">
+                                    🐝 <strong>Cette résidence disposera de ruches (apiculture)</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Si coché, le module apiculture (ruches + carnet de visite) sera disponible dans Jardinage après la création.
+                                La configuration détaillée (NAPI, référent…) se fera ensuite via le module Jardinage.
+                            </small>
+                        </div>
+
                         <hr class="my-4">
                         
                         <!-- Boutons -->

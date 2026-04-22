@@ -850,27 +850,27 @@ img {
         height: 1.5em !important;
     }
     
-    /* Menu mobile amélioré - FOND JAUNE #ffa000 */
+    /* Menu mobile - dégradé diagonal orange → rouge (ton primary theme) */
     .navbar-collapse {
         max-height: calc(100vh - 60px);
         overflow-y: auto;
         pointer-events: auto !important;
-        background-color: #ffa000 !important;
+        background: linear-gradient(135deg, #ffa000 0%, #ffc947 50%, #ffd76a 100%) !important;
         position: relative;
         z-index: 1031;
     }
-    
+
     /* S'assurer que le collapse fonctionne */
     .navbar-collapse.collapsing {
         transition: height 0.35s ease;
         pointer-events: auto !important;
-        background-color: #ffa000 !important;
+        background: linear-gradient(135deg, #ffa000 0%, #ffc947 50%, #ffd76a 100%) !important;
     }
-    
+
     .navbar-collapse.show {
         display: block !important;
         pointer-events: auto !important;
-        background-color: #ffa000 !important;
+        background: linear-gradient(135deg, #ffa000 0%, #ffc947 50%, #ffd76a 100%) !important;
     }
     
     /* Tous les liens de navigation - zone cliquable complète */
@@ -881,9 +881,11 @@ img {
         z-index: 1;
         display: block !important;
         width: 100% !important;
+        color: #ffffff !important;
+        font-weight: 500;
         transition: all 0.2s ease !important;
     }
-    
+
     /* Highlight blanc brillant au survol des nav-links */
     .navbar-nav .nav-link:hover,
     .navbar-nav .nav-link:focus,
@@ -905,6 +907,8 @@ img {
         cursor: pointer !important;
         display: block !important;
         width: 100% !important;
+        color: #ffffff !important;
+        font-weight: 500;
         transition: all 0.2s ease !important;
     }
     
@@ -917,11 +921,11 @@ img {
         box-shadow: 0 0 10px rgba(255, 255, 255, 0.3) !important;
     }
     
-    /* Dropdown items plus espacés sur mobile - FOND JAUNE LÉGÈREMENT TRANSPARENT */
+    /* Dropdown items plus espacés sur mobile - fond transparent pour laisser passer le dégradé */
     .navbar-nav .dropdown-menu {
         border: none;
         box-shadow: none;
-        background-color: rgba(255, 160, 0, 0.8) !important;
+        background-color: rgba(0, 0, 0, 0.15) !important;
         width: 100% !important;
         min-width: 100% !important;
         position: static !important;
@@ -939,9 +943,11 @@ img {
         width: 100% !important;
         position: relative;
         z-index: 1;
+        color: #ffffff !important;
+        font-weight: 500;
         transition: all 0.2s ease !important;
     }
-    
+
     /* Highlight blanc brillant au survol des dropdown items */
     .navbar-nav .dropdown-item:hover,
     .navbar-nav .dropdown-item:focus,
@@ -1003,15 +1009,16 @@ img {
         margin-right: 0 !important;
     }
     
-    /* Menu déroulant utilisateur - textes et icônes en BLANC PÂLE */
+    /* Menu déroulant utilisateur - textes et icônes en BLANC BRILLANT */
     .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item {
-        color: rgba(255, 255, 255, 0.7) !important;
+        color: #ffffff !important;
         background-color: transparent !important;
+        font-weight: 500;
         transition: all 0.2s ease;
     }
-    
+
     .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item i {
-        color: rgba(255, 255, 255, 0.7) !important;
+        color: #ffffff !important;
         transition: color 0.2s ease;
     }
     
@@ -1055,13 +1062,13 @@ img {
         font-weight: 600;
     }
     
-    /* Texte du rôle en blanc pâle */
+    /* Texte du rôle en blanc brillant */
     .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item-text {
-        color: rgba(255, 255, 255, 0.7) !important;
+        color: #ffffff !important;
     }
-    
+
     .navbar-nav .dropdown-menu.dropdown-menu-end .dropdown-item-text i {
-        color: rgba(255, 255, 255, 0.7) !important;
+        color: #ffffff !important;
     }
     
     /* Menu notifications - garder les couleurs d'origine des icônes */

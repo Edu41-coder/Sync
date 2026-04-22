@@ -182,12 +182,35 @@
                             <label for="description" class="form-label">
                                 <i class="fas fa-align-left me-1"></i>Description
                             </label>
-                            <textarea class="form-control" 
-                                      id="description" 
-                                      name="description" 
+                            <textarea class="form-control"
+                                      id="description"
+                                      name="description"
                                       rows="4"><?= htmlspecialchars($residence['description'] ?? '') ?></textarea>
                         </div>
-                        
+
+                        <!-- Apiculture (ruches) -->
+                        <div class="mb-3 p-3 border rounded bg-light">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="ruches" name="ruches" value="1"
+                                       <?= !empty($residence['ruches']) ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="ruches">
+                                    🐝 <strong>Cette résidence dispose de ruches (apiculture)</strong>
+                                </label>
+                            </div>
+                            <?php if (!empty($residence['ruches'])): ?>
+                            <div class="mt-2 small">
+                                <a href="<?= BASE_URL ?>/jardinage/apiculture?residence_id=<?= (int)$residence['id'] ?>" class="text-decoration-none">
+                                    <i class="fas fa-cog me-1"></i>Configuration détaillée (NAPI, référent, distances…) dans le module Jardinage →
+                                </a>
+                            </div>
+                            <?php else: ?>
+                            <small class="text-muted d-block mt-1">
+                                Activer cette option fait apparaître le module apiculture (ruches + carnet de visite) dans Jardinage.
+                            </small>
+                            <?php endif; ?>
+                        </div>
+
                         <hr class="my-4">
                         
                         <!-- Boutons -->

@@ -867,6 +867,20 @@ body.no-animations *::after {
     border-color: #dee2e6;
 }
 
+/* Bouton ultra-compact — texte au plus près du cadre */
+.btn-xs {
+    padding: 0.05rem 0.25rem;
+    font-size: 0.55rem;
+    line-height: 1.2;
+    border-radius: 0.18rem;
+}
+.btn-xs .fa,
+.btn-xs .fas,
+.btn-xs .far {
+    font-size: 0.6rem;
+    margin-right: 0.15rem !important;
+}
+
 /* ====================================================================
    FIN DU FICHIER - LES STYLES RESPONSIVE SONT DANS mobile.css
    ==================================================================== */

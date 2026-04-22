@@ -143,17 +143,20 @@ include __DIR__ . '/../partials/breadcrumb.php';
         <!-- Repas du jour -->
         <div class="col-lg-7">
             <div class="card shadow-sm">
-                <div class="card-header d-flex justify-content-between">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h6 class="mb-0"><i class="fas fa-list me-2"></i>Repas du <?= date('d/m/Y', strtotime($date)) ?>
                         <?= $typeService ? ' — ' . ($serviceLabels[$typeService] ?? '') : '' ?>
                     </h6>
-                    <span class="badge bg-dark"><?= count($repasJour) ?> repas</span>
+                    <div class="d-flex gap-2 align-items-center">
+                        <input type="text" id="searchInputRepas" class="form-control form-control-sm" placeholder="Rechercher..." style="width:160px">
+                        <span class="badge bg-dark"><?= count($repasJour) ?> repas</span>
+                    </div>
                 </div>
                 <div class="card-body p-0">
                     <?php if (empty($repasJour)): ?>
                     <p class="text-muted text-center py-4">Aucun repas enregistré.</p>
                     <?php else: ?>
-                    <table class="table table-sm table-hover mb-0">
+                    <table class="table table-sm table-hover mb-0" id="repasJourTable">
                         <thead><tr><th>Client</th><th>Service</th><th>Mode</th><th class="text-end">Montant</th><th></th></tr></thead>
                         <tbody>
                         <?php foreach ($repasJour as $r): ?>
@@ -164,7 +167,7 @@ include __DIR__ . '/../partials/breadcrumb.php';
                             </td>
                             <td><i class="fas <?= $serviceIcons[$r['type_service']] ?? 'fa-utensils' ?> me-1"></i><small><?= str_replace('_',' ',$r['type_service']) ?></small></td>
                             <td><span class="badge bg-<?= $r['mode_facturation'] === 'pension_complete' ? 'success' : ($r['mode_facturation'] === 'menu' ? 'warning text-dark' : 'info') ?>"><?= str_replace('_',' ',$r['mode_facturation']) ?></span></td>
-                            <td class="text-end"><?= $r['mode_facturation'] === 'pension_complete' ? '<span class="text-success">inclus</span>' : number_format($r['montant'],2,',',' ').' €' ?></td>
+                            <td class="text-end" data-sort="<?= $r['mode_facturation'] === 'pension_complete' ? 0 : (float)$r['montant'] ?>"><?= $r['mode_facturation'] === 'pension_complete' ? '<span class="text-success">inclus</span>' : number_format($r['montant'],2,',',' ').' €' ?></td>
                             <td><a href="<?= BASE_URL ?>/restauration/service/supprimer/<?= $r['id'] ?>?residence_id=<?= $selectedResidence ?>" class="btn btn-sm btn-outline-danger py-0" onclick="return confirm('Supprimer ?')"><i class="fas fa-times"></i></a></td>
                         </tr>
                         <?php endforeach; ?>
@@ -172,6 +175,12 @@ include __DIR__ . '/../partials/breadcrumb.php';
                     </table>
                     <?php endif; ?>
                 </div>
+                <?php if (!empty($repasJour)): ?>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div class="text-muted small" id="tableInfoRepas"></div>
+                    <nav><ul class="pagination pagination-sm mb-0" id="paginationRepas"></ul></nav>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -215,3 +224,17 @@ document.querySelector('select[name="type_service"]')?.addEventListener('change'
     }
 });
 </script>
+
+<?php if (!empty($repasJour)): ?>
+<script src="<?= BASE_URL ?>/assets/js/datatable.js"></script>
+<script src="<?= BASE_URL ?>/assets/js/datatable-pagination.js"></script>
+<script>
+new DataTableWithPagination('repasJourTable', {
+    rowsPerPage: 15,
+    searchInputId: 'searchInputRepas',
+    excludeColumns: [4],
+    paginationId: 'paginationRepas',
+    infoId: 'tableInfoRepas'
+});
+</script>
+<?php endif; ?>

@@ -117,7 +117,7 @@ CREATE TABLE entretien_interventions (
 );
 ```
 
-#### Catalogue produits/outils + inventaire (analogue jardinerie/restauration)
+#### Catalogue produits/outils + inventaire (analogue jardinage/restauration)
 ```sql
 CREATE TABLE entretien_produits (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -183,7 +183,7 @@ CREATE TABLE entretien_inventaire_mouvements (
 - Affichage niveau et certifications
 
 ### Inventaire, commandes, fournisseurs
-Structure analogue aux autres modules (restauration, jardinerie).
+Structure analogue aux autres modules (restauration, jardinage).
 - Sortie d'inventaire liée à une `intervention_id` (calcul coût intervention)
 
 ### Comptabilité entretien (`/entretien/comptabilite`) — MANAGER UNIQUEMENT

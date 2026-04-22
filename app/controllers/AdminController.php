@@ -69,17 +69,38 @@ class AdminController extends Controller {
             $action = $_POST['action'] ?? 'migrate';
 
             if ($action === 'migrate') {
-                $results = $migration->migrate();
+                // Appliquer sélection (checkboxes) ou tout si rien coché
+                $selected = $_POST['selected'] ?? [];
+                if (!empty($selected) && is_array($selected)) {
+                    $results = $migration->migrateSelected($selected);
+                } else {
+                    $results = $migration->migrate();
+                }
+
                 if (!empty($results['applied'])) {
                     $this->setFlash('success', count($results['applied']) . ' migration(s) appliquée(s) avec succès.');
                 } elseif (!empty($results['errors'])) {
                     $this->setFlash('error', 'Erreur lors de la migration.');
                 } else {
-                    $this->setFlash('info', 'Aucune migration en attente.');
+                    $this->setFlash('info', 'Aucune migration appliquée.');
                 }
             } elseif ($action === 'mark_initial') {
                 $migration->markAsApplied('001_initial_schema');
                 $this->setFlash('success', 'Schéma initial marqué comme appliqué.');
+            } elseif ($action === 'mark_applied') {
+                $name = (string)($_POST['name'] ?? '');
+                if ($migration->markAsApplied($name)) {
+                    $this->setFlash('success', "Migration « $name » marquée comme appliquée.");
+                } else {
+                    $this->setFlash('error', "Impossible de marquer « $name » (nom inconnu ou erreur DB).");
+                }
+            } elseif ($action === 'unmark_applied') {
+                $name = (string)($_POST['name'] ?? '');
+                if ($migration->unmarkAsApplied($name)) {
+                    $this->setFlash('warning', "Migration « $name » démarquée. ⚠️ Les changements SQL ne sont PAS annulés.");
+                } else {
+                    $this->setFlash('error', "Impossible de démarquer « $name ».");
+                }
             }
         }
 
@@ -91,6 +112,43 @@ class AdminController extends Controller {
             'results'  => $results,
             'flash'    => $this->getFlash()
         ], true);
+    }
+
+    /**
+     * Retourne le contenu SQL d'une migration (AJAX)
+     */
+    public function migrationSql($name = null) {
+        $this->requireAuth();
+        $this->requireRole(['admin']);
+        header('Content-Type: application/json; charset=utf-8');
+
+        try {
+            if (!$name) throw new Exception("Nom manquant.");
+
+            // Protection : uniquement des caractères autorisés dans un nom de migration
+            if (!preg_match('/^[a-zA-Z0-9_-]+$/', $name)) {
+                throw new Exception("Nom invalide.");
+            }
+
+            $path = realpath(ROOT_PATH . '/database/migrations/' . $name . '.sql');
+            $migrationsDir = realpath(ROOT_PATH . '/database/migrations');
+
+            // Double garde : fichier existe ET est bien dans le dossier migrations (anti path traversal)
+            if (!$path || !$migrationsDir || !str_starts_with($path, $migrationsDir)) {
+                throw new Exception("Fichier introuvable.");
+            }
+
+            $content = file_get_contents($path);
+            echo json_encode([
+                'success' => true,
+                'name'    => $name,
+                'size'    => filesize($path),
+                'content' => $content,
+            ]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
     }
 
     /**
@@ -448,7 +506,8 @@ class AdminController extends Controller {
                 'longitude' => !empty($_POST['longitude']) ? (float)$_POST['longitude'] : null,
                 'exploitant_id' => $_POST['exploitant_id'] ?? null,
                 'description' => $_POST['description'] ?? '',
-                'type_residence' => 'residence_seniors'
+                'type_residence' => 'residence_seniors',
+                'ruches' => !empty($_POST['ruches']) ? 1 : 0
             ];
 
             $errors = [];
@@ -562,6 +621,8 @@ class AdminController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->verifyCsrf();
 
+            $ruchesPost = !empty($_POST['ruches']) ? 1 : 0;
+
             $data = [
                 'nom' => $_POST['nom'] ?? '', 'adresse' => $_POST['adresse'] ?? '',
                 'code_postal' => $_POST['code_postal'] ?? '',
@@ -569,7 +630,8 @@ class AdminController extends Controller {
                 'latitude' => !empty($_POST['latitude']) ? (float)$_POST['latitude'] : null,
                 'longitude' => !empty($_POST['longitude']) ? (float)$_POST['longitude'] : null,
                 'exploitant_id' => $_POST['exploitant_id'] ?? null,
-                'description' => $_POST['description'] ?? ''
+                'description' => $_POST['description'] ?? '',
+                'ruches' => $ruchesPost
             ];
 
             $errors = [];
@@ -577,6 +639,15 @@ class AdminController extends Controller {
             if (empty($data['adresse'])) $errors[] = "L'adresse est requise";
             if (empty($data['code_postal'])) $errors[] = "Le code postal est requis";
             if (empty($data['ville'])) $errors[] = "La ville est requise";
+
+            // Garde-fou : refuser la désactivation de l'apiculture s'il y a des ruches actives
+            if (!empty($residence['ruches']) && $ruchesPost === 0) {
+                $nbActives = $resModel->countRuchesActives((int)$id);
+                if ($nbActives > 0) {
+                    $errors[] = "Impossible de désactiver l'apiculture : $nbActives ruche(s) active(s) sur ce site. "
+                              . "Passez-les en statut 'inactive' ou 'morte' depuis le module Jardinage avant de décocher.";
+                }
+            }
 
             if (empty($data['latitude']) && !empty($data['adresse']) && !empty($data['ville'])) {
                 $coords = $this->geocodeAddress($data['adresse'], $data['code_postal'], $data['ville']);

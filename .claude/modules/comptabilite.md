@@ -35,7 +35,7 @@ Lors de la création d'un user avec le rôle `comptable` :
 
 Vue principale = tableau résumé où **chaque ligne = une résidence**, et **chaque colonne = un poste comptable consolidé** :
 
-| Résidence | Loyers résidents | Recettes hôtes | Restauration | Ménage | Jardinerie | Entretien | Travaux | Salaires staff | **Solde** |
+| Résidence | Loyers résidents | Recettes hôtes | Restauration | Ménage | Jardinage | Entretien | Travaux | Salaires staff | **Solde** |
 |-----------|------------------|----------------|--------------|--------|------------|-----------|---------|----------------|-----------|
 | Résidence A | +50 000 € | +2 500 € | +8 000 / -3 200 € | +1 200 / -800 € | +200 / -400 € | -1 500 € | -12 000 € | -25 000 € | **+19 000 €** |
 | Résidence B | ... | ... | ... | ... | ... | ... | ... | ... | ... |
@@ -53,15 +53,15 @@ Pour chaque colonne, format `+recettes / -dépenses` (ou seulement la colonne un
 | Repas servis | restauration | `rest_services_repas` | `montant` | période, par `residence_id` |
 | Factures résidents restauration | restauration | `rest_factures` + `rest_facture_lignes` | `montant_total` | période |
 | Services ménage | menage | `menage_comptabilite` | (à voir selon structure) | période |
-| Récolte miel (si ruches) | jardinerie | `jardin_ruches_visites` (`type=recolte`) × prix kg | `quantite_miel_kg` | période, résidences avec `coproprietees.ruches=1` |
+| Récolte miel (si ruches) | jardinage | `jardin_ruches_visites` (`type=recolte`) × prix kg | `quantite_miel_kg` | période, résidences avec `coproprietees.ruches=1` |
 
 ### Dépenses
 | Source | Module | Table(s) | Colonne(s) clé(s) |
 |--------|--------|----------|------------------|
 | Factures fournisseurs restauration | restauration | `rest_factures` | `montant_total` |
 | Factures fournisseurs ménage | menage | `menage_commandes` (factures) | `montant_total` |
-| Commandes jardinerie | jardinerie | `jardin_commandes` + `jardin_commande_lignes` | total commande |
-| Sorties stock jardinerie (coût valorisé) | jardinerie | `jardin_inventaire_mouvements` (`type=sortie`) × prix unitaire | `quantite × prix` |
+| Commandes jardinage | jardinage | `jardin_commandes` + `jardin_commande_lignes` | total commande |
+| Sorties stock jardinage (coût valorisé) | jardinage | `jardin_inventaire_mouvements` (`type=sortie`) × prix unitaire | `quantite × prix` |
 | Interventions entretien | entretien | `entretien_interventions` | `cout` |
 | Sorties stock entretien (coût valorisé) | entretien | `entretien_inventaire_mouvements` (`type=sortie`) × prix unitaire | `quantite × prix` |
 | Factures fournisseurs entretien | entretien | `factures_fournisseurs` (filtré catégorie entretien) | `montant_ttc` |
@@ -75,7 +75,7 @@ Cliquer sur une résidence → drill-down avec :
 - Écritures (`ecritures_comptables`) filtrées par résidence
 - Exercice comptable courant (`exercices_comptables`)
 - Export Excel/PDF par période
-- **Onglets par module** : Restauration / Ménage / Jardinerie / Entretien / Travaux / Salaires
+- **Onglets par module** : Restauration / Ménage / Jardinage / Entretien / Travaux / Salaires
   - Chaque onglet = liste détaillée des écritures du module pour cette résidence
   - Lien vers le module concerné (ex: clic sur une intervention entretien → fiche intervention)
 
@@ -142,7 +142,7 @@ Pour comprendre la logique métier de chaque agrégat, se référer aux modules 
 - @.claude/modules/hotes.md — séjours courts, tarifs
 - @.claude/modules/restauration.md — services repas, factures, inventaire
 - @.claude/modules/menage.md (à créer/compléter) — services ménage, fournitures
-- @.claude/modules/jardinerie.md — produits, outils, miel (si ruches), commandes
+- @.claude/modules/jardinage.md — produits, outils, miel (si ruches), commandes
 - @.claude/modules/entretien.md — interventions, produits, factures
 - @.claude/modules/travaux.md — chantiers, devis, garanties, quote-parts
 - @.claude/modules/proprietaires.md — fiscalité, contrats de gestion (recettes loyers garantis)
