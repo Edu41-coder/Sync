@@ -5,101 +5,10 @@ $breadcrumb = [
     ['icon' => 'fas fa-truck-loading', 'text' => 'Fournisseurs', 'url' => null]
 ];
 include __DIR__ . '/../partials/breadcrumb.php';
-?>
 
-<div class="container-fluid py-4">
+$modulePath  = 'restauration';
+$moduleLabel = 'Restauration';
+$moduleIcon  = 'fa-utensils';
+$moduleColor = 'warning';
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-truck-loading me-2 text-warning"></i>Fournisseurs</h2>
-        <select class="form-select form-select-sm" style="width:auto" onchange="window.location='?residence_id='+this.value">
-            <option value="0">-- Résidence --</option>
-            <?php foreach ($residences as $r): ?><option value="<?= $r['id'] ?>" <?= $selectedResidence==$r['id']?'selected':'' ?>><?= htmlspecialchars($r['nom']) ?></option><?php endforeach; ?>
-        </select>
-    </div>
-
-    <?php if (!$selectedResidence): ?>
-        <div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>Sélectionnez une résidence pour voir ses fournisseurs.</div>
-    <?php else: ?>
-
-    <!-- Ajouter un fournisseur -->
-    <?php if (!empty($nonLies)): ?>
-    <div class="card shadow-sm mb-4 border-info">
-        <div class="card-header bg-info text-white py-2"><h6 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Ajouter un fournisseur à cette résidence</h6></div>
-        <div class="card-body">
-            <form method="POST" action="<?= BASE_URL ?>/restauration/fournisseurs/lier" class="row g-2 align-items-end">
-                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
-                <input type="hidden" name="residence_id" value="<?= $selectedResidence ?>">
-                <div class="col-md-3">
-                    <label class="form-label small">Fournisseur</label>
-                    <select name="fournisseur_id" class="form-select form-select-sm" required>
-                        <option value="">-- Choisir --</option>
-                        <?php foreach ($nonLies as $f): ?><option value="<?= $f['id'] ?>"><?= htmlspecialchars($f['nom']) ?> (<?= $f['type_service'] ?? 'divers' ?>)</option><?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-2"><label class="form-label small">Contact local</label><input type="text" name="contact_local" class="form-control form-control-sm"></div>
-                <div class="col-md-2"><label class="form-label small">Tél. local</label><input type="text" name="telephone_local" class="form-control form-control-sm"></div>
-                <div class="col-md-2"><label class="form-label small">Jours livraison</label><input type="text" name="jour_livraison" class="form-control form-control-sm" placeholder="lundi,jeudi"></div>
-                <div class="col-md-1"><label class="form-label small">Délai (j)</label><input type="number" name="delai_livraison_jours" class="form-control form-control-sm" min="0"></div>
-                <div class="col-md-2"><button type="submit" class="btn btn-info btn-sm w-100"><i class="fas fa-link me-1"></i>Ajouter</button></div>
-            </form>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Liste fournisseurs -->
-    <div class="card shadow-sm">
-        <div class="card-header d-flex justify-content-between">
-            <h6 class="mb-0"><?= count($fournisseurs) ?> fournisseur(s) pour cette résidence</h6>
-            <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Rechercher..." style="width:200px">
-        </div>
-        <div class="card-body p-0">
-            <table class="table table-hover mb-0" id="fournisseursTable">
-                <thead><tr><th>Fournisseur</th><th>Contact</th><th>Livraison</th><th class="text-center">Commandes</th><th class="text-end">Total dépensé</th><th>Dernière commande</th><th class="text-center">Actions</th></tr></thead>
-                <tbody>
-                    <?php if (empty($fournisseurs)): ?>
-                    <tr><td colspan="7" class="text-center text-muted py-4">Aucun fournisseur lié à cette résidence.</td></tr>
-                    <?php else: foreach ($fournisseurs as $f): ?>
-                    <tr>
-                        <td>
-                            <a href="<?= BASE_URL ?>/restauration/fournisseurs/show/<?= $f['id'] ?>" class="text-decoration-none">
-                                <strong><?= htmlspecialchars($f['nom']) ?></strong>
-                            </a>
-                            <?php if ($f['type_service']): ?><br><small class="text-muted"><?= htmlspecialchars($f['type_service']) ?></small><?php endif; ?>
-                        </td>
-                        <td>
-                            <?php if ($f['contact_local']): ?><small><?= htmlspecialchars($f['contact_local']) ?></small><br><?php endif; ?>
-                            <?php if ($f['telephone_local'] ?? $f['telephone']): ?>
-                            <small class="text-muted"><i class="fas fa-phone me-1"></i><?= htmlspecialchars($f['telephone_local'] ?? $f['telephone']) ?></small>
-                            <?php endif; ?>
-                            <?php if ($f['email']): ?><br><small><a href="mailto:<?= htmlspecialchars($f['email']) ?>"><?= htmlspecialchars($f['email']) ?></a></small><?php endif; ?>
-                        </td>
-                        <td>
-                            <?php if ($f['jour_livraison']): ?><span class="badge bg-secondary"><?= htmlspecialchars($f['jour_livraison']) ?></span><?php endif; ?>
-                            <?php if ($f['delai_livraison_jours']): ?><br><small class="text-muted"><?= $f['delai_livraison_jours'] ?>j délai</small><?php endif; ?>
-                        </td>
-                        <td class="text-center"><span class="badge bg-primary"><?= $f['nb_commandes'] ?></span></td>
-                        <td class="text-end"><strong><?= number_format((float)($f['total_commandes'] ?? 0), 0, ',', ' ') ?> &euro;</strong></td>
-                        <td><?= $f['derniere_commande'] ? date('d/m/Y', strtotime($f['derniere_commande'])) : '-' ?></td>
-                        <td class="text-end">
-                            <div class="btn-group btn-group-sm" role="group">
-                                <a href="<?= BASE_URL ?>/restauration/fournisseurs/show/<?= $f['id'] ?>" class="btn btn-outline-info" title="Voir détails" data-bs-toggle="tooltip"><i class="fas fa-eye"></i></a>
-                                <a href="<?= BASE_URL ?>/restauration/fournisseurs/edit/<?= $f['id'] ?>?residence_id=<?= $selectedResidence ?>" class="btn btn-outline-primary" title="Modifier" data-bs-toggle="tooltip"><i class="fas fa-edit"></i></a>
-                                <a href="<?= BASE_URL ?>/restauration/commandes/create?fournisseur_id=<?= $f['id'] ?>" class="btn btn-outline-success" title="Commander" data-bs-toggle="tooltip"><i class="fas fa-cart-plus"></i></a>
-                                <a href="<?= BASE_URL ?>/restauration/fournisseurs/delier/<?= $f['id'] ?>?residence_id=<?= $selectedResidence ?>" class="btn btn-outline-danger" title="Retirer" data-bs-toggle="tooltip" onclick="return confirm('Retirer ce fournisseur ?')"><i class="fas fa-unlink"></i></a>
-                            </div>
-                        </td>
-                    </tr>
-                    <?php endforeach; endif; ?>
-                </tbody>
-            </table>
-        </div>
-        <div class="card-footer d-flex justify-content-between align-items-center">
-            <div class="text-muted small" id="tableInfo"></div>
-            <nav><ul class="pagination pagination-sm mb-0" id="pagination"></ul></nav>
-        </div>
-    </div>
-    <?php endif; ?>
-</div>
-<script src="<?= BASE_URL ?>/assets/js/datatable.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/datatable-pagination.js"></script>
-<script>new DataTableWithPagination('fournisseursTable', { rowsPerPage: 20, searchInputId: 'searchInput', paginationId: 'pagination', infoId: 'tableInfo' });</script>
+include __DIR__ . '/../partials/fournisseurs_residence_module.php';

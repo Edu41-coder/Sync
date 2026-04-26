@@ -47,13 +47,7 @@ $uniteLabels = ['kg','g','litre','ml','sac','piece','rouleau','bidon','autre'];
                         </select></div>
                     <div class="col-md-3"><label class="form-label">Prix unitaire (€)</label>
                         <input type="number" step="0.01" min="0" name="prix_unitaire" class="form-control" value="<?= $produit['prix_unitaire'] ?? '' ?>"></div>
-                    <div class="col-md-6"><label class="form-label">Fournisseur</label>
-                        <select name="fournisseur_id" class="form-select">
-                            <option value="">— Aucun —</option>
-                            <?php foreach ($fournisseurs as $f): ?>
-                            <option value="<?= $f['id'] ?>" <?= $produit['fournisseur_id'] == $f['id'] ? 'selected' : '' ?>><?= htmlspecialchars($f['nom']) ?></option>
-                            <?php endforeach; ?>
-                        </select></div>
+                    <div class="col-md-6"></div>
                     <div class="col-md-3 d-flex align-items-end">
                         <div class="form-check"><input type="checkbox" class="form-check-input" name="bio" value="1" id="fieldBio" <?= $produit['bio'] ? 'checked' : '' ?>>
                             <label class="form-check-label" for="fieldBio">Produit BIO</label></div>
@@ -75,6 +69,10 @@ $uniteLabels = ['kg','g','litre','ml','sac','piece','rouleau','bidon','autre'];
                     <div class="col-12">
                         <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="actif" value="1" id="fieldActif" <?= $produit['actif'] ? 'checked' : '' ?>>
                             <label class="form-check-label" for="fieldActif">Actif</label></div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label mb-2"><i class="fas fa-truck-loading me-1"></i><strong>Fournisseurs</strong></label>
+                        <?php $widgetId = 'pfEdit'; include ROOT_PATH . '/app/views/partials/produit_fournisseurs_widget.php'; ?>
                     </div>
                 </div>
                 <div class="d-flex justify-content-between mt-4">

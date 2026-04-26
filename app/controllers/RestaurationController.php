@@ -970,11 +970,14 @@ class RestaurationController extends Controller {
     }
 
     private function listProduits(Restauration $model) {
+        $fm = new Fournisseur();
         $this->view('restauration/produits', [
             'title'        => 'Produits - Restauration - ' . APP_NAME,
             'showNavbar'   => true,
             'produits'     => $model->getAllProduits($_GET['categorie'] ?? null),
             'fournisseurs' => $model->getFournisseursList(),
+            'produitFournisseurs'     => [],
+            'fournisseursDisponibles' => $fm->getAll('restauration', null, true),
             'flash'        => $this->getFlash()
         ], true);
     }
@@ -990,9 +993,13 @@ class RestaurationController extends Controller {
     private function editProduit(Restauration $model, $id) {
         $produit = $model->getProduit($id);
         if (!$produit) { $this->setFlash('error','Produit introuvable'); $this->redirect('restauration/produits'); return; }
+        $fm = new Fournisseur();
         $this->view('restauration/produit_edit', [
             'title'=>'Modifier produit - '.APP_NAME, 'showNavbar'=>true,
-            'produit'=>$produit, 'fournisseurs'=>$model->getFournisseursList(), 'flash'=>$this->getFlash()
+            'produit'=>$produit, 'fournisseurs'=>$model->getFournisseursList(),
+            'produitFournisseurs'     => $fm->getFournisseursDuProduit('restauration', (int)$id),
+            'fournisseursDisponibles' => $fm->getAll('restauration', null, true),
+            'flash'=>$this->getFlash()
         ], true);
     }
 
@@ -1100,100 +1107,116 @@ class RestaurationController extends Controller {
 
     public function commandes($action = null, $id = null) {
         $this->requireAuth();
-        // Lecture pour cuisine, écriture pour manager
-        $isReadOnly = !in_array($_SESSION['user_role'], ['admin','restauration_manager']);
-
+        $this->requireRole(self::ROLES_MANAGER);
+        $cm = new Commande();
         $model = $this->model('Restauration');
+        $fm    = new Fournisseur();
+        $modulePath = 'restauration';
+
         switch ($action) {
-            case 'create': if ($isReadOnly) { $this->redirect('restauration/commandes'); return; } return $this->createCommandeForm($model);
-            case 'store':  if ($isReadOnly) { $this->redirect('restauration/commandes'); return; } return $this->storeCommande($model);
-            case 'show':   return $this->showCommande($model, $id, $isReadOnly);
-            case 'envoyer': if ($isReadOnly) break; $model->updateCommandeStatut($id, 'envoyee'); $this->setFlash('success','Commande envoyée'); $this->redirect('restauration/commandes/show/'.$id); return;
-            case 'receptionner': if ($isReadOnly) break; return $this->receptionnerCommande($model, $id);
-            case 'delete':  if ($isReadOnly) break; $model->deleteCommande($id); $this->setFlash('success','Commande supprimée'); $this->redirect('restauration/commandes'); return;
-            default:        return $this->listCommandes($model);
-        }
-    }
+            case 'create':
+                $userId = (int)$_SESSION['user_id'];
+                $residences = $_SESSION['user_role'] === 'admin' ? $this->model('Residence')->getAllSimple() : $model->getResidencesByUser($userId);
+                $residenceId = (int)($_GET['residence_id'] ?? 0);
+                if (!$residenceId && count($residences) === 1) $residenceId = (int)$residences[0]['id'];
+                $this->view($modulePath . '/commande_form', [
+                    'title'             => 'Nouvelle commande - ' . APP_NAME,
+                    'showNavbar'        => true,
+                    'residences'        => $residences,
+                    'selectedResidence' => $residenceId,
+                    'fournisseurs'      => $residenceId ? $fm->getFournisseursResidence($residenceId, 'restauration') : [],
+                    'produits'          => $model->getAllProduits(null, true),
+                    'flash'             => $this->getFlash()
+                ], true);
+                return;
 
-    private function listCommandes(Restauration $model) {
-        $userId = (int)$_SESSION['user_id']; $userRole = $_SESSION['user_role'];
-        $residences = $model->getResidencesByUser($userId);
-        if ($userRole === 'admin') $residences = $this->model('Residence')->getAllSimple();
-        $residenceIds = array_column($residences, 'id');
-        $statut = $_GET['statut'] ?? null;
-
-        $this->view('restauration/commandes', [
-            'title'=>'Commandes Fournisseurs - '.APP_NAME, 'showNavbar'=>true,
-            'userRole'=>$userRole, 'commandes'=>$model->getCommandes($residenceIds, $statut),
-            'statut'=>$statut,
-            'isManager'=>in_array($userRole, ['admin','restauration_manager']),
-            'flash'=>$this->getFlash()
-        ], true);
-    }
-
-    private function createCommandeForm(Restauration $model) {
-        $this->requireRole(self::ROLES_MANAGER);
-        $userId = (int)$_SESSION['user_id'];
-        $residences = $_SESSION['user_role'] === 'admin' ? $this->model('Residence')->getAllSimple() : $model->getResidencesByUser($userId);
-
-        $this->view('restauration/commande_form', [
-            'title'=>'Nouvelle Commande - '.APP_NAME, 'showNavbar'=>true,
-            'commande'=>null, 'residences'=>$residences,
-            'fournisseurs'=>$model->getFournisseursList(),
-            'produits'=>$model->getAllProduits(null, true),
-            'flash'=>$this->getFlash()
-        ], true);
-    }
-
-    private function storeCommande(Restauration $model) {
-        $this->requireRole(self::ROLES_MANAGER);
-        $this->verifyCsrf();
-        try {
-            $lignes = [];
-            foreach ($_POST['lignes'] ?? [] as $l) {
-                if (!empty($l['produit_id']) && !empty($l['quantite_commandee'])) {
-                    // Récupérer le nom du produit
-                    $p = $model->getProduit((int)$l['produit_id']);
-                    $lignes[] = ['produit_id'=>(int)$l['produit_id'], 'designation'=>$p['nom'] ?? '', 'quantite_commandee'=>(float)$l['quantite_commandee'], 'prix_unitaire_ht'=>(float)($l['prix_unitaire_ht'] ?? 0), 'taux_tva'=>(float)($l['taux_tva'] ?? 5.5)];
+            case 'store':
+                $this->verifyCsrf();
+                try {
+                    $lignes = $this->buildLignesFromPost($_POST['lignes'] ?? [], $model, 5.5);
+                    if (empty($lignes)) throw new Exception("Au moins une ligne est requise");
+                    $cmdId = $cm->create('restauration', [
+                        'residence_id'          => (int)$_POST['residence_id'],
+                        'fournisseur_id'        => (int)$_POST['fournisseur_id'],
+                        'date_commande'         => $_POST['date_commande'] ?? date('Y-m-d'),
+                        'date_livraison_prevue' => $_POST['date_livraison_prevue'] ?? null,
+                        'statut'                => $_POST['statut'] ?? 'brouillon',
+                        'notes'                 => $_POST['notes'] ?? '',
+                        'created_by'            => (int)$_SESSION['user_id'],
+                    ], $lignes);
+                    $this->setFlash('success', 'Commande créée');
+                    $this->redirect($modulePath . '/commandes/show/' . $cmdId);
+                } catch (Exception $e) {
+                    $this->setFlash('error', 'Erreur : ' . $e->getMessage());
+                    $this->redirect($modulePath . '/commandes/create?residence_id=' . ($_POST['residence_id'] ?? ''));
                 }
-            }
-            if (empty($lignes)) throw new Exception("Au moins une ligne requise.");
+                return;
 
-            $cmdId = $model->createCommande([
-                'residence_id'=>(int)$_POST['residence_id'], 'fournisseur_id'=>(int)$_POST['fournisseur_id'],
-                'date_commande'=>$_POST['date_commande'] ?? date('Y-m-d'), 'date_livraison_prevue'=>$_POST['date_livraison_prevue'] ?: null,
-                'statut'=>$_POST['statut'] ?? 'brouillon', 'notes'=>trim($_POST['notes'] ?? '')
-            ], $lignes);
+            case 'show':
+                $cmd = $cm->get((int)$id);
+                if (!$cmd || $cmd['module'] !== 'restauration') { $this->setFlash('error', 'Commande introuvable'); $this->redirect($modulePath . '/commandes'); return; }
+                $this->view($modulePath . '/commande_show', [
+                    'title' => 'Commande ' . $cmd['numero_commande'] . ' - ' . APP_NAME,
+                    'showNavbar' => true, 'commande' => $cmd, 'flash' => $this->getFlash()
+                ], true);
+                return;
 
-            $this->setFlash('success','Commande créée');
-            $this->redirect('restauration/commandes/show/'.$cmdId);
-        } catch (Exception $e) {
-            $this->setFlash('error','Erreur : '.$e->getMessage());
-            $this->redirect('restauration/commandes/create');
+            case 'envoyer':
+                $cm->updateStatut((int)$id, 'envoyee');
+                $this->setFlash('success', 'Commande envoyée au fournisseur');
+                $this->redirect($modulePath . '/commandes/show/' . (int)$id);
+                return;
+
+            case 'receptionner':
+                $this->verifyCsrf();
+                try {
+                    $qtes = array_map('floatval', $_POST['quantites_recues'] ?? []);
+                    $cm->receptionner((int)$id, $qtes, (int)$_SESSION['user_id']);
+                    $this->setFlash('success', 'Commande réceptionnée — stock mis à jour');
+                } catch (Exception $e) { $this->setFlash('error', 'Erreur : ' . $e->getMessage()); }
+                $this->redirect($modulePath . '/commandes/show/' . (int)$id);
+                return;
+
+            case 'facturer':
+                $cm->updateStatut((int)$id, 'facturee');
+                $this->setFlash('success', 'Commande marquée comme facturée');
+                $this->redirect($modulePath . '/commandes/show/' . (int)$id);
+                return;
+
+            case 'delete':
+                $result = $cm->deleteOrCancel((int)$id);
+                $this->setFlash('success', $result === 'deleted' ? 'Commande supprimée' : 'Commande annulée');
+                $this->redirect($modulePath . '/commandes');
+                return;
+
+            default:
+                $userId = (int)$_SESSION['user_id'];
+                $residences = $_SESSION['user_role'] === 'admin' ? $this->model('Residence')->getAllSimple() : $model->getResidencesByUser($userId);
+                $this->view($modulePath . '/commandes', [
+                    'title'      => 'Commandes Restauration - ' . APP_NAME,
+                    'showNavbar' => true,
+                    'commandes'  => $cm->getAll('restauration', array_column($residences, 'id'), $_GET['statut'] ?? null),
+                    'statut'     => $_GET['statut'] ?? null,
+                    'flash'      => $this->getFlash()
+                ], true);
         }
     }
 
-    private function showCommande(Restauration $model, $id, bool $isReadOnly) {
-        $commande = $model->getCommande($id);
-        if (!$commande) { $this->setFlash('error','Commande introuvable'); $this->redirect('restauration/commandes'); return; }
-
-        $this->view('restauration/commande_show', [
-            'title'=>'Commande '.$commande['numero_commande'].' - '.APP_NAME, 'showNavbar'=>true,
-            'commande'=>$commande, 'isReadOnly'=>$isReadOnly,
-            'isManager'=>!$isReadOnly, 'flash'=>$this->getFlash()
-        ], true);
-    }
-
-    private function receptionnerCommande(Restauration $model, $id) {
-        $this->requireRole(self::ROLES_MANAGER);
-        $this->verifyCsrf();
-        $quantites = $_POST['quantites_recues'] ?? [];
-        if ($model->receptionnerCommande($id, $quantites)) {
-            $this->setFlash('success','Commande réceptionnée — stock mis à jour');
-        } else {
-            $this->setFlash('error','Erreur lors de la réception');
+    private function buildLignesFromPost(array $postLignes, $model, float $tvaDefault = 20.0): array {
+        $lignes = [];
+        foreach ($postLignes as $l) {
+            if (empty($l['produit_id']) || empty($l['quantite_commandee'])) continue;
+            $p = $model->getProduit((int)$l['produit_id']);
+            if (!$p) continue;
+            $lignes[] = [
+                'produit_id'         => (int)$l['produit_id'],
+                'designation'        => trim($l['designation'] ?? ($p['nom'] ?? '')),
+                'quantite_commandee' => (float)$l['quantite_commandee'],
+                'prix_unitaire_ht'   => (float)($l['prix_unitaire_ht'] ?? $p['prix_reference'] ?? $p['prix_unitaire'] ?? 0),
+                'taux_tva'           => (float)($l['taux_tva'] ?? $tvaDefault),
+            ];
         }
-        $this->redirect('restauration/commandes/show/'.$id);
+        return $lignes;
     }
 
     // =================================================================
@@ -1341,112 +1364,63 @@ class RestaurationController extends Controller {
     public function fournisseurs($action = null, $id = null) {
         $this->requireAuth();
         $this->requireRole(self::ROLES_MANAGER);
-
         $model = $this->model('Restauration');
+        $fm    = new Fournisseur();
+
         switch ($action) {
-            case 'show':    return $this->showFournisseur($model, $id);
-            case 'edit':    return $this->editFournisseur($model, $id);
-            case 'update':  return $this->updateFournisseurAction($model, $id);
-            case 'lier':    return $this->lierFournisseur($model);
-            case 'delier':  return $this->delierFournisseur($model, $id);
-            default:        return $this->listFournisseurs($model);
+            // Legacy : anciennes routes redirigées vers la page globale
+            case 'show':
+                $this->redirect('fournisseur/show/' . (int)$id);
+                return;
+            case 'edit':
+                $this->redirect('fournisseur/edit/' . (int)$id);
+                return;
+
+            case 'lier':
+                $this->verifyCsrf();
+                try {
+                    $fournId = (int)($_POST['fournisseur_id'] ?? 0);
+                    $resId   = (int)($_POST['residence_id'] ?? 0);
+                    if (!$fournId || !$resId) throw new Exception("Fournisseur et résidence requis");
+                    $fm->lier($fournId, $resId, $_POST);
+                    $this->setFlash('success', 'Fournisseur lié à la résidence');
+                } catch (Exception $e) { $this->setFlash('error', 'Erreur : ' . $e->getMessage()); }
+                $this->redirect('restauration/fournisseurs?residence_id=' . ($_POST['residence_id'] ?? ''));
+                return;
+
+            case 'update':
+                $this->verifyCsrf();
+                try {
+                    $fm->updateLien((int)$id, $_POST);
+                    $this->setFlash('success', 'Lien fournisseur modifié');
+                } catch (Exception $e) { $this->setFlash('error', 'Erreur : ' . $e->getMessage()); }
+                $this->redirect('restauration/fournisseurs?residence_id=' . ($_POST['residence_id'] ?? $_GET['residence_id'] ?? ''));
+                return;
+
+            case 'delier':
+                $fm->delier((int)$id);
+                $this->setFlash('success', 'Lien fournisseur désactivé');
+                $this->redirect('restauration/fournisseurs?residence_id=' . ($_GET['residence_id'] ?? ''));
+                return;
+
+            default:
+                $userId = (int)$_SESSION['user_id'];
+                $userRole = $_SESSION['user_role'];
+                $residences = $model->getResidencesByUser($userId);
+                if ($userRole === 'admin') $residences = $this->model('Residence')->getAllSimple();
+                $selectedResidence = (int)($_GET['residence_id'] ?? 0);
+                if (!$selectedResidence && count($residences) === 1) $selectedResidence = $residences[0]['id'];
+
+                $this->view('restauration/fournisseurs', [
+                    'title'             => 'Fournisseurs - Restauration - ' . APP_NAME,
+                    'showNavbar'        => true,
+                    'residences'        => $residences,
+                    'selectedResidence' => $selectedResidence,
+                    'fournisseurs'      => $selectedResidence ? $model->getFournisseursResidence($selectedResidence) : [],
+                    'disponibles'       => $selectedResidence ? $fm->getFournisseursDisponibles($selectedResidence, 'restauration') : [],
+                    'flash'             => $this->getFlash()
+                ], true);
         }
-    }
-
-    private function listFournisseurs(Restauration $model) {
-        $userId = (int)$_SESSION['user_id'];
-        $userRole = $_SESSION['user_role'];
-        $residences = $model->getResidencesByUser($userId);
-        if ($userRole === 'admin') $residences = $this->model('Residence')->getAllSimple();
-
-        $selectedResidence = (int)($_GET['residence_id'] ?? 0);
-        if (!$selectedResidence && count($residences) === 1) $selectedResidence = $residences[0]['id'];
-
-        $fournisseurs = []; $nonLies = [];
-        if ($selectedResidence) {
-            $fournisseurs = $model->getFournisseursResidence($selectedResidence);
-            $nonLies = $model->getFournisseursNonLies($selectedResidence);
-        }
-
-        $this->view('restauration/fournisseurs', [
-            'title'             => 'Fournisseurs - Restauration - ' . APP_NAME,
-            'showNavbar'        => true,
-            'residences'        => $residences,
-            'selectedResidence' => $selectedResidence,
-            'fournisseurs'      => $fournisseurs,
-            'nonLies'           => $nonLies,
-            'flash'             => $this->getFlash()
-        ], true);
-    }
-
-    private function showFournisseur(Restauration $model, $id) {
-        $fournisseur = $model->getFournisseurDetail($id);
-        if (!$fournisseur) {
-            $this->setFlash('error', 'Fournisseur introuvable');
-            $this->redirect('restauration/fournisseurs');
-            return;
-        }
-
-        $this->view('restauration/fournisseur_show', [
-            'title'       => $fournisseur['nom'] . ' - Fournisseur - ' . APP_NAME,
-            'showNavbar'  => true,
-            'fournisseur' => $fournisseur,
-            'flash'       => $this->getFlash()
-        ], true);
-    }
-
-    private function lierFournisseur(Restauration $model) {
-        $this->verifyCsrf();
-        try {
-            $model->lierFournisseurResidence((int)$_POST['fournisseur_id'], (int)$_POST['residence_id'], $_POST);
-            $this->setFlash('success', 'Fournisseur ajouté à la résidence');
-        } catch (Exception $e) {
-            $this->setFlash('error', 'Erreur : ' . $e->getMessage());
-        }
-        $this->redirect('restauration/fournisseurs?residence_id=' . $_POST['residence_id']);
-    }
-
-    private function delierFournisseur(Restauration $model, $id) {
-        $residenceId = (int)($_GET['residence_id'] ?? 0);
-        $model->delierFournisseurResidence($id, $residenceId);
-        $this->setFlash('success', 'Fournisseur retiré de la résidence');
-        $this->redirect('restauration/fournisseurs?residence_id=' . $residenceId);
-    }
-
-    private function editFournisseur(Restauration $model, $id) {
-        $residenceId = (int)($_GET['residence_id'] ?? 0);
-        if (!$residenceId) {
-            $this->setFlash('error', 'Résidence requise');
-            $this->redirect('restauration/fournisseurs');
-            return;
-        }
-
-        $lien = $model->getFournisseurResidenceLien($id, $residenceId);
-        if (!$lien) {
-            $this->setFlash('error', 'Fournisseur non lié à cette résidence');
-            $this->redirect('restauration/fournisseurs?residence_id=' . $residenceId);
-            return;
-        }
-
-        $this->view('restauration/fournisseur_edit', [
-            'title'       => 'Modifier fournisseur - ' . APP_NAME,
-            'showNavbar'  => true,
-            'lien'        => $lien,
-            'residenceId' => $residenceId,
-            'flash'       => $this->getFlash()
-        ], true);
-    }
-
-    private function updateFournisseurAction(Restauration $model, $id) {
-        $this->verifyCsrf();
-        $residenceId = (int)$_POST['residence_id'];
-        try {
-            $model->updateFournisseurResidence($id, $residenceId, $_POST);
-            $this->setFlash('success', 'Fournisseur mis à jour');
-        } catch (Exception $e) {
-            $this->setFlash('error', 'Erreur : ' . $e->getMessage());
-        }
-        $this->redirect('restauration/fournisseurs?residence_id=' . $residenceId);
     }
 
     /**

@@ -293,9 +293,14 @@ class Jardinage extends Model {
     // ─────────────────────────────────────────────────────────────
 
     public function getAllProduits(?string $categorie = null, ?string $type = null, bool $actifsOnly = false): array {
-        $sql = "SELECT p.*, f.nom as fournisseur_nom
+        // LEFT JOIN sur produit_fournisseurs pour récupérer le fournisseur préféré
+        $sql = "SELECT p.*,
+                       pf_pref.fournisseur_id as fournisseur_id,
+                       f.nom as fournisseur_nom
                 FROM jardin_produits p
-                LEFT JOIN fournisseurs f ON p.fournisseur_id = f.id
+                LEFT JOIN produit_fournisseurs pf_pref
+                    ON pf_pref.produit_module='jardinage' AND pf_pref.produit_id=p.id AND pf_pref.fournisseur_prefere=1
+                LEFT JOIN fournisseurs f ON f.id = pf_pref.fournisseur_id
                 WHERE 1=1";
         $params = [];
         if ($actifsOnly) $sql .= " AND p.actif = 1";
@@ -307,14 +312,19 @@ class Jardinage extends Model {
     }
 
     public function getProduit(int $id): ?array {
-        $sql = "SELECT * FROM jardin_produits WHERE id = ?";
+        $sql = "SELECT p.*,
+                       pf_pref.fournisseur_id as fournisseur_id
+                FROM jardin_produits p
+                LEFT JOIN produit_fournisseurs pf_pref
+                    ON pf_pref.produit_module='jardinage' AND pf_pref.produit_id=p.id AND pf_pref.fournisseur_prefere=1
+                WHERE p.id = ?";
         try { $stmt = $this->db->prepare($sql); $stmt->execute([$id]); $r = $stmt->fetch(PDO::FETCH_ASSOC); return $r ?: null; }
         catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return null; }
     }
 
     public function createProduit(array $data): int {
-        $sql = "INSERT INTO jardin_produits (nom, categorie, type, unite, prix_unitaire, fournisseur_id, marque, bio, danger, notes, actif)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+        $sql = "INSERT INTO jardin_produits (nom, categorie, type, unite, prix_unitaire, marque, bio, danger, notes, actif)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             trim($data['nom']),
@@ -322,18 +332,19 @@ class Jardinage extends Model {
             $data['type'] ?? 'produit',
             $data['unite'] ?? 'piece',
             !empty($data['prix_unitaire']) ? (float)$data['prix_unitaire'] : null,
-            !empty($data['fournisseur_id']) ? (int)$data['fournisseur_id'] : null,
             !empty($data['marque']) ? trim($data['marque']) : null,
             !empty($data['bio']) ? 1 : 0,
             !empty($data['danger']) ? trim($data['danger']) : null,
             !empty($data['notes']) ? trim($data['notes']) : null,
         ]);
-        return (int)$this->db->lastInsertId();
+        $newId = (int)$this->db->lastInsertId();
+        $this->syncProduitFournisseurs($newId, $data);
+        return $newId;
     }
 
     public function updateProduit(int $id, array $data): void {
         $sql = "UPDATE jardin_produits SET nom = ?, categorie = ?, type = ?, unite = ?, prix_unitaire = ?,
-                       fournisseur_id = ?, marque = ?, bio = ?, danger = ?, notes = ?, actif = ?
+                       marque = ?, bio = ?, danger = ?, notes = ?, actif = ?
                 WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -342,7 +353,6 @@ class Jardinage extends Model {
             $data['type'] ?? 'produit',
             $data['unite'] ?? 'piece',
             !empty($data['prix_unitaire']) ? (float)$data['prix_unitaire'] : null,
-            !empty($data['fournisseur_id']) ? (int)$data['fournisseur_id'] : null,
             !empty($data['marque']) ? trim($data['marque']) : null,
             !empty($data['bio']) ? 1 : 0,
             !empty($data['danger']) ? trim($data['danger']) : null,
@@ -350,11 +360,37 @@ class Jardinage extends Model {
             isset($data['actif']) ? (int)$data['actif'] : 1,
             $id
         ]);
+        $this->syncProduitFournisseurs($id, $data);
     }
 
     public function deleteProduit(int $id): void {
+        (new Fournisseur())->purgeForProduit('jardinage', $id);
         $stmt = $this->db->prepare("UPDATE jardin_produits SET actif = 0 WHERE id = ?");
         $stmt->execute([$id]);
+    }
+
+    private function syncProduitFournisseurs(int $produitId, array $d): void {
+        $fm = new Fournisseur();
+        if (isset($d['fournisseurs']) && is_array($d['fournisseurs'])) {
+            $data = [];
+            foreach ($d['fournisseurs'] as $fid => $row) {
+                $fid = (int)$fid;
+                if (!$fid) continue;
+                $data[] = [
+                    'fournisseur_id' => $fid,
+                    'prix_unitaire_specifique' => $row['prix'] ?? null,
+                    'reference_fournisseur'    => $row['ref'] ?? null,
+                    'fournisseur_prefere'      => !empty($d['fournisseur_prefere_id']) && (int)$d['fournisseur_prefere_id'] === $fid ? 1 : 0,
+                    'notes'                    => $row['notes'] ?? null,
+                ];
+            }
+            $fm->syncFournisseursForProduit('jardinage', $produitId, $data);
+        } elseif (!empty($d['fournisseur_id'])) {
+            $fm->syncFournisseursForProduit('jardinage', $produitId, [[
+                'fournisseur_id' => (int)$d['fournisseur_id'],
+                'fournisseur_prefere' => 1,
+            ]]);
+        }
     }
 
     public function updateProduitPhoto(int $id, ?string $path): void {
@@ -1077,7 +1113,7 @@ class Jardinage extends Model {
                        COALESCE(SUM(c.montant_total_ttc),0) as total_ttc,
                        COALESCE(SUM(c.montant_total_ht),0) as total_ht
                 FROM fournisseurs f
-                JOIN jardin_commandes c ON c.fournisseur_id = f.id
+                JOIN commandes c ON c.fournisseur_id = f.id AND c.module = 'jardinage'
                 WHERE c.residence_id IN ($ph)
                   AND c.statut IN ('livree','livree_partiel','facturee')
                   AND YEAR(c.date_commande) = ?";
@@ -1122,333 +1158,48 @@ class Jardinage extends Model {
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  COMMANDES FOURNISSEURS
+    //  COMMANDES FOURNISSEURS — centralisées dans app/models/Commande.php
+    //  (table unifiée `commandes` polymorphe, module = 'jardinage')
     // ─────────────────────────────────────────────────────────────
-
-    /**
-     * Liste des commandes, filtrable par résidence(s) et statut.
-     */
-    public function getCommandes(array $residenceIds, ?string $statut = null): array {
-        if (empty($residenceIds)) return [];
-        $ph = implode(',', array_fill(0, count($residenceIds), '?'));
-        $params = array_values($residenceIds);
-        $sql = "SELECT c.*, f.nom as fournisseur_nom, r.nom as residence_nom,
-                       (SELECT COUNT(*) FROM jardin_commande_lignes WHERE commande_id = c.id) as nb_lignes
-                FROM jardin_commandes c
-                JOIN fournisseurs f ON c.fournisseur_id = f.id
-                JOIN coproprietees r ON c.residence_id = r.id
-                WHERE c.residence_id IN ($ph)";
-        if ($statut) { $sql .= " AND c.statut = ?"; $params[] = $statut; }
-        $sql .= " ORDER BY c.date_commande DESC, c.id DESC";
-        try { $stmt = $this->db->prepare($sql); $stmt->execute($params); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
-        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
-    }
-
-    /**
-     * Détail d'une commande + lignes + fournisseur + résidence.
-     */
-    public function getCommande(int $id): ?array {
-        $sql = "SELECT c.*, f.nom as fournisseur_nom, f.email as fournisseur_email,
-                       f.telephone as fournisseur_telephone, f.adresse as fournisseur_adresse,
-                       f.code_postal as fournisseur_cp, f.ville as fournisseur_ville,
-                       r.nom as residence_nom,
-                       u.prenom as created_by_prenom, u.nom as created_by_nom
-                FROM jardin_commandes c
-                JOIN fournisseurs f ON c.fournisseur_id = f.id
-                JOIN coproprietees r ON c.residence_id = r.id
-                LEFT JOIN users u ON c.created_by = u.id
-                WHERE c.id = ?";
-        try {
-            $stmt = $this->db->prepare($sql); $stmt->execute([$id]);
-            $cmd = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$cmd) return null;
-
-            $lstmt = $this->db->prepare("SELECT l.*, p.nom as produit_nom, p.unite, p.categorie
-                                         FROM jardin_commande_lignes l
-                                         JOIN jardin_produits p ON l.produit_id = p.id
-                                         WHERE l.commande_id = ?
-                                         ORDER BY l.id");
-            $lstmt->execute([$id]);
-            $cmd['lignes'] = $lstmt->fetchAll(PDO::FETCH_ASSOC);
-            return $cmd;
-        } catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return null; }
-    }
-
-    /**
-     * Génère un numéro séquentiel : CMD-JARD-YYYY-NNNN
-     */
-    private function generateNumeroCommande(): string {
-        $year = date('Y');
-        try {
-            $stmt = $this->db->prepare("SELECT COUNT(*) FROM jardin_commandes WHERE YEAR(date_commande) = ?");
-            $stmt->execute([$year]);
-            $n = (int)$stmt->fetchColumn() + 1;
-        } catch (PDOException $e) { $n = 1; }
-        return 'CMD-JARD-' . $year . '-' . str_pad((string)$n, 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
-     * Création d'une commande avec ses lignes (transaction).
-     */
-    public function createCommande(array $data, array $lignes): int {
-        $this->db->beginTransaction();
-        try {
-            $numero = $this->generateNumeroCommande();
-
-            // Totaux
-            $totalHt = 0.0; $totalTva = 0.0;
-            foreach ($lignes as $l) {
-                $ligneHt = (float)$l['quantite_commandee'] * (float)$l['prix_unitaire_ht'];
-                $totalHt += $ligneHt;
-                $totalTva += $ligneHt * ((float)($l['taux_tva'] ?? 20) / 100);
-            }
-            $totalTtc = $totalHt + $totalTva;
-
-            $stmt = $this->db->prepare("INSERT INTO jardin_commandes
-                (residence_id, fournisseur_id, numero_commande, date_commande,
-                 date_livraison_prevue, statut, montant_total_ht, montant_tva, montant_total_ttc,
-                 notes, created_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([
-                (int)$data['residence_id'],
-                (int)$data['fournisseur_id'],
-                $numero,
-                $data['date_commande'] ?? date('Y-m-d'),
-                !empty($data['date_livraison_prevue']) ? $data['date_livraison_prevue'] : null,
-                $data['statut'] ?? 'brouillon',
-                round($totalHt, 2),
-                round($totalTva, 2),
-                round($totalTtc, 2),
-                !empty($data['notes']) ? trim($data['notes']) : null,
-                !empty($data['created_by']) ? (int)$data['created_by'] : null,
-            ]);
-            $cmdId = (int)$this->db->lastInsertId();
-
-            $lstmt = $this->db->prepare("INSERT INTO jardin_commande_lignes
-                (commande_id, produit_id, designation, quantite_commandee, prix_unitaire_ht, taux_tva)
-                VALUES (?, ?, ?, ?, ?, ?)");
-            foreach ($lignes as $l) {
-                $lstmt->execute([
-                    $cmdId,
-                    (int)$l['produit_id'],
-                    $l['designation'],
-                    (float)$l['quantite_commandee'],
-                    (float)$l['prix_unitaire_ht'],
-                    (float)($l['taux_tva'] ?? 20),
-                ]);
-            }
-            $this->db->commit();
-            return $cmdId;
-        } catch (Exception $e) {
-            if ($this->db->inTransaction()) $this->db->rollBack();
-            $this->logError($e->getMessage());
-            throw $e;
-        }
-    }
-
-    public function updateCommandeStatut(int $id, string $statut): void {
-        $stmt = $this->db->prepare("UPDATE jardin_commandes SET statut = ? WHERE id = ?");
-        $stmt->execute([$statut, $id]);
-    }
-
-    /**
-     * Réception d'une commande : met à jour les quantités reçues,
-     * crée les mouvements d'entrée en inventaire, ajuste le statut.
-     * @param array $quantitesRecues [ligne_id => quantite_recue]
-     */
-    public function receptionnerCommande(int $commandeId, array $quantitesRecues, int $userId): bool {
-        $this->db->beginTransaction();
-        try {
-            // Récupérer la commande + ses lignes
-            $cstmt = $this->db->prepare("SELECT * FROM jardin_commandes WHERE id = ? FOR UPDATE");
-            $cstmt->execute([$commandeId]);
-            $cmd = $cstmt->fetch(PDO::FETCH_ASSOC);
-            if (!$cmd) throw new Exception("Commande introuvable");
-            if (in_array($cmd['statut'], ['livree', 'facturee', 'annulee'], true)) {
-                throw new Exception("Commande non modifiable (statut : " . $cmd['statut'] . ")");
-            }
-            $residenceId = (int)$cmd['residence_id'];
-
-            $lstmt = $this->db->prepare("SELECT * FROM jardin_commande_lignes WHERE commande_id = ?");
-            $lstmt->execute([$commandeId]);
-            $lignes = $lstmt->fetchAll(PDO::FETCH_ASSOC);
-
-            $touteRecue = true;
-            $auMoinsUne = false;
-
-            foreach ($lignes as $ligne) {
-                $ligneId = (int)$ligne['id'];
-                $qteRecue = (float)($quantitesRecues[$ligneId] ?? 0);
-                $qteDeja = (float)($ligne['quantite_recue'] ?? 0);
-                $qteCommandee = (float)$ligne['quantite_commandee'];
-                $delta = $qteRecue - $qteDeja;
-
-                if ($delta > 0) {
-                    $auMoinsUne = true;
-                    // 1) Garantir l'existence de l'entrée inventaire (produit_id, residence_id)
-                    $invSel = $this->db->prepare("SELECT id FROM jardin_inventaire WHERE produit_id = ? AND residence_id = ?");
-                    $invSel->execute([(int)$ligne['produit_id'], $residenceId]);
-                    $invId = $invSel->fetchColumn();
-                    if (!$invId) {
-                        $this->db->prepare("INSERT INTO jardin_inventaire (produit_id, residence_id, quantite_actuelle, seuil_alerte) VALUES (?, ?, 0, 0)")
-                                 ->execute([(int)$ligne['produit_id'], $residenceId]);
-                        $invId = (int)$this->db->lastInsertId();
-                    } else {
-                        $invId = (int)$invId;
-                    }
-
-                    // 2) Mouvement d'entrée (motif = livraison, notes référençant la commande)
-                    //    On n'appelle pas mouvementStock() ici (qui a son propre begin/commit)
-                    //    → on fait l'update + l'insert mouvement dans la même transaction.
-                    $this->db->prepare("UPDATE jardin_inventaire SET quantite_actuelle = quantite_actuelle + ? WHERE id = ?")
-                             ->execute([$delta, $invId]);
-                    $this->db->prepare("INSERT INTO jardin_inventaire_mouvements
-                        (inventaire_id, type_mouvement, quantite, motif, user_id, notes)
-                        VALUES (?, 'entree', ?, 'livraison', ?, ?)")
-                             ->execute([$invId, $delta, $userId, 'Réception commande ' . $cmd['numero_commande']]);
-                }
-
-                // Update quantite_recue de la ligne
-                $this->db->prepare("UPDATE jardin_commande_lignes SET quantite_recue = ? WHERE id = ?")
-                         ->execute([$qteRecue, $ligneId]);
-
-                if ($qteRecue < $qteCommandee) $touteRecue = false;
-            }
-
-            if (!$auMoinsUne) throw new Exception("Aucune quantité saisie");
-
-            // Statut + date de livraison effective
-            $nouveauStatut = $touteRecue ? 'livree' : 'livree_partiel';
-            $this->db->prepare("UPDATE jardin_commandes SET statut = ?, date_livraison_effective = CURDATE() WHERE id = ?")
-                     ->execute([$nouveauStatut, $commandeId]);
-
-            $this->db->commit();
-            return true;
-        } catch (Exception $e) {
-            if ($this->db->inTransaction()) $this->db->rollBack();
-            $this->logError($e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
-     * Suppression : hard delete si brouillon, sinon statut = annulee.
-     */
-    public function deleteOrCancelCommande(int $id): string {
-        $stmt = $this->db->prepare("SELECT statut FROM jardin_commandes WHERE id = ?");
-        $stmt->execute([$id]);
-        $statut = $stmt->fetchColumn();
-        if ($statut === 'brouillon') {
-            $this->db->prepare("DELETE FROM jardin_commandes WHERE id = ?")->execute([$id]);
-            return 'deleted';
-        }
-        $this->db->prepare("UPDATE jardin_commandes SET statut = 'annulee' WHERE id = ?")->execute([$id]);
-        return 'cancelled';
-    }
 
     /**
      * Fournisseurs actifs liés à la résidence (pour sélecteur commande).
      */
     public function getFournisseursActifsResidence(int $residenceId): array {
         $sql = "SELECT f.id, f.nom FROM fournisseurs f
-                JOIN jardin_fournisseur_residence fr ON fr.fournisseur_id = f.id AND fr.residence_id = ?
+                JOIN fournisseur_residence fr ON fr.fournisseur_id = f.id AND fr.residence_id = ?
                 WHERE f.actif = 1 AND fr.statut = 'actif'
+                  AND FIND_IN_SET('jardinage', f.type_service) > 0
                 ORDER BY f.nom";
         try { $stmt = $this->db->prepare($sql); $stmt->execute([$residenceId]); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
         catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  FOURNISSEURS JARDINERIE (pivot jardin_fournisseur_residence)
+    //  FOURNISSEURS JARDINAGE (lecture-seule, pivot global fournisseur_residence)
+    //  CRUD (lier/modifier/délier) centralisé dans /fournisseur/show/<id>
     // ─────────────────────────────────────────────────────────────
 
     public function getFournisseursResidence(int $residenceId): array {
         $sql = "SELECT f.*, fr.id as pivot_id, fr.statut as lien_statut,
                        fr.contact_local, fr.telephone_local,
                        fr.jour_livraison, fr.delai_livraison_jours,
-                       fr.notes as pivot_notes
+                       fr.notes as pivot_notes,
+                       (SELECT COUNT(*) FROM commandes c WHERE c.module='jardinage' AND c.fournisseur_id=f.id AND c.residence_id=?) as nb_commandes,
+                       (SELECT COALESCE(SUM(c2.montant_total_ttc),0) FROM commandes c2 WHERE c2.module='jardinage' AND c2.fournisseur_id=f.id AND c2.residence_id=? AND c2.statut!='annulee') as total_commandes,
+                       (SELECT MAX(c3.date_commande) FROM commandes c3 WHERE c3.module='jardinage' AND c3.fournisseur_id=f.id AND c3.residence_id=?) as derniere_commande
                 FROM fournisseurs f
-                JOIN jardin_fournisseur_residence fr ON fr.fournisseur_id = f.id AND fr.residence_id = ?
+                JOIN fournisseur_residence fr ON fr.fournisseur_id = f.id AND fr.residence_id = ?
                 WHERE fr.statut = 'actif' AND f.actif = 1
+                  AND FIND_IN_SET('jardinage', f.type_service) > 0
                 ORDER BY f.nom";
-        try { $stmt = $this->db->prepare($sql); $stmt->execute([$residenceId]); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
+        try { $stmt = $this->db->prepare($sql); $stmt->execute([$residenceId, $residenceId, $residenceId, $residenceId]); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
         catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
     }
 
-    /**
-     * Fournisseurs actifs PAS encore liés (ou liés en statut 'inactif') à la résidence.
-     */
-    public function getFournisseursDisponibles(int $residenceId): array {
-        $sql = "SELECT f.id, f.nom, f.type_service
-                FROM fournisseurs f
-                WHERE f.actif = 1
-                  AND f.id NOT IN (
-                    SELECT fournisseur_id FROM jardin_fournisseur_residence
-                    WHERE residence_id = ? AND statut = 'actif'
-                  )
-                ORDER BY f.nom";
-        try { $stmt = $this->db->prepare($sql); $stmt->execute([$residenceId]); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
-        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
-    }
-
-    public function getLienFournisseur(int $pivotId): ?array {
-        $sql = "SELECT fr.*, f.nom as fournisseur_nom
-                FROM jardin_fournisseur_residence fr
-                JOIN fournisseurs f ON f.id = fr.fournisseur_id
-                WHERE fr.id = ?";
-        try { $stmt = $this->db->prepare($sql); $stmt->execute([$pivotId]); $r = $stmt->fetch(PDO::FETCH_ASSOC); return $r ?: null; }
-        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return null; }
-    }
-
-    /**
-     * Lie un fournisseur à une résidence (ou réactive un lien 'inactif').
-     */
-    public function lierFournisseurResidence(int $fournisseurId, int $residenceId, array $data = []): int {
-        $sql = "INSERT INTO jardin_fournisseur_residence
-                (fournisseur_id, residence_id, statut, contact_local, telephone_local, jour_livraison, delai_livraison_jours, notes)
-                VALUES (?, ?, 'actif', ?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                    statut = 'actif',
-                    contact_local = VALUES(contact_local),
-                    telephone_local = VALUES(telephone_local),
-                    jour_livraison = VALUES(jour_livraison),
-                    delai_livraison_jours = VALUES(delai_livraison_jours),
-                    notes = VALUES(notes)";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            $fournisseurId,
-            $residenceId,
-            !empty($data['contact_local']) ? trim($data['contact_local']) : null,
-            !empty($data['telephone_local']) ? trim($data['telephone_local']) : null,
-            !empty($data['jour_livraison']) ? trim($data['jour_livraison']) : null,
-            !empty($data['delai_livraison_jours']) ? (int)$data['delai_livraison_jours'] : null,
-            !empty($data['notes']) ? trim($data['notes']) : null,
-        ]);
-        // Récupérer le pivot_id (créé ou existant)
-        $sel = $this->db->prepare("SELECT id FROM jardin_fournisseur_residence WHERE fournisseur_id = ? AND residence_id = ?");
-        $sel->execute([$fournisseurId, $residenceId]);
-        return (int)$sel->fetchColumn();
-    }
-
-    public function updateLienFournisseur(int $pivotId, array $data): void {
-        $sql = "UPDATE jardin_fournisseur_residence
-                SET contact_local = ?, telephone_local = ?, jour_livraison = ?, delai_livraison_jours = ?, notes = ?
-                WHERE id = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            !empty($data['contact_local']) ? trim($data['contact_local']) : null,
-            !empty($data['telephone_local']) ? trim($data['telephone_local']) : null,
-            !empty($data['jour_livraison']) ? trim($data['jour_livraison']) : null,
-            !empty($data['delai_livraison_jours']) ? (int)$data['delai_livraison_jours'] : null,
-            !empty($data['notes']) ? trim($data['notes']) : null,
-            $pivotId
-        ]);
-    }
-
-    public function delierFournisseurResidence(int $pivotId): void {
-        $stmt = $this->db->prepare("UPDATE jardin_fournisseur_residence SET statut = 'inactif' WHERE id = ?");
-        $stmt->execute([$pivotId]);
-    }
+    // Les méthodes getFournisseursDisponibles, getLienFournisseur, lierFournisseurResidence,
+    // updateLienFournisseur, delierFournisseurResidence ont été centralisées dans
+    // app/models/Fournisseur.php (voir getFournisseursDisponibles/getLien/lier/updateLien/delier).
 
     public function getVisitesByRuche(int $rucheId, int $limit = 0): array {
         $sql = "SELECT v.*, u.prenom as user_prenom, u.nom as user_nom

@@ -126,7 +126,8 @@ class Coproprietaire extends Model {
                 FROM contrats_gestion cg
                 LEFT JOIN lots l ON cg.lot_id = l.id
                 LEFT JOIN coproprietees c ON l.copropriete_id = c.id
-                WHERE cg.coproprietaire_id = ? AND cg.statut = 'actif'";
+                WHERE cg.coproprietaire_id = ? AND cg.statut = 'actif'
+                ORDER BY cg.date_debut DESC";
         try {
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$proprioId]);

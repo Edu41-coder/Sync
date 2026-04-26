@@ -579,12 +579,28 @@ class MenageController extends Controller {
         $model = $this->model('Menage');
         switch ($action) {
             case 'create':  $this->verifyCsrf(); $model->createProduit($_POST); $this->setFlash('success','Produit créé'); $this->redirect('menage/produits'); return;
-            case 'edit':    $p = $model->getProduit($id); if (!$p) { $this->redirect('menage/produits'); return; }
-                            $this->view('menage/produit_edit', ['title'=>'Modifier produit - '.APP_NAME,'showNavbar'=>true,'produit'=>$p,'fournisseurs'=>$model->getFournisseursList(),'flash'=>$this->getFlash()], true); return;
+            case 'edit':
+                $p = $model->getProduit($id); if (!$p) { $this->redirect('menage/produits'); return; }
+                $fm = new Fournisseur();
+                $this->view('menage/produit_edit', [
+                    'title'=>'Modifier produit - '.APP_NAME,'showNavbar'=>true,'produit'=>$p,
+                    'fournisseurs'=>$model->getFournisseursList(), // rétrocompat (non utilisé par le widget)
+                    'produitFournisseurs' => $fm->getFournisseursDuProduit('menage', (int)$id),
+                    'fournisseursDisponibles' => $fm->getAll('menage', null, true),
+                    'flash'=>$this->getFlash()
+                ], true); return;
             case 'update':  $this->verifyCsrf(); $model->updateProduit($id, $_POST); $this->setFlash('success','Produit modifié'); $this->redirect('menage/produits'); return;
             case 'delete':  $model->deleteProduit($id); $this->setFlash('success','Désactivé'); $this->redirect('menage/produits'); return;
             default:
-                $this->view('menage/produits', ['title'=>'Produits Ménage - '.APP_NAME,'showNavbar'=>true,'produits'=>$model->getAllProduits($_GET['categorie'] ?? null, $_GET['section'] ?? null),'fournisseurs'=>$model->getFournisseursList(),'flash'=>$this->getFlash()], true);
+                $fm = new Fournisseur();
+                $this->view('menage/produits', [
+                    'title'=>'Produits Ménage - '.APP_NAME,'showNavbar'=>true,
+                    'produits'=>$model->getAllProduits($_GET['categorie'] ?? null, $_GET['section'] ?? null),
+                    'fournisseurs'=>$model->getFournisseursList(), // rétrocompat
+                    'produitFournisseurs' => [], // modal création : aucun lien au départ
+                    'fournisseursDisponibles' => $fm->getAll('menage', null, true),
+                    'flash'=>$this->getFlash()
+                ], true);
         }
     }
 
@@ -617,47 +633,166 @@ class MenageController extends Controller {
     // =================================================================
 
     public function commandes($action = null, $id = null) {
-        $this->requireAuth(); $this->requireRole(self::ROLES_MANAGER);
+        $this->requireAuth();
+        $this->requireRole(self::ROLES_MANAGER);
+        $cm = new Commande();
         $model = $this->model('Menage');
+        $fm    = new Fournisseur();
+        $modulePath = 'menage';
+
         switch ($action) {
             case 'create':
                 $residences = $this->getUserResidences();
-                $this->view('menage/commande_form', ['title'=>'Nouvelle Commande - '.APP_NAME,'showNavbar'=>true,'commande'=>null,'residences'=>$residences,'fournisseurs'=>$model->getFournisseursList(),'produits'=>$model->getAllProduits(null,null,true),'flash'=>$this->getFlash()], true); return;
+                $residenceId = (int)($_GET['residence_id'] ?? 0);
+                if (!$residenceId && count($residences) === 1) $residenceId = (int)$residences[0]['id'];
+                $this->view($modulePath . '/commande_form', [
+                    'title'             => 'Nouvelle commande - ' . APP_NAME,
+                    'showNavbar'        => true,
+                    'residences'        => $residences,
+                    'selectedResidence' => $residenceId,
+                    'fournisseurs'      => $residenceId ? $fm->getFournisseursResidence($residenceId, 'menage') : [],
+                    'produits'          => $model->getAllProduits(null, null, true),
+                    'flash'             => $this->getFlash()
+                ], true);
+                return;
+
             case 'store':
                 $this->verifyCsrf();
                 try {
-                    $lignes = [];
-                    foreach ($_POST['lignes'] ?? [] as $l) { if (!empty($l['produit_id']) && !empty($l['quantite_commandee'])) { $p = $model->getProduit((int)$l['produit_id']); $lignes[] = ['produit_id'=>(int)$l['produit_id'],'designation'=>$p['nom']??'','quantite_commandee'=>(float)$l['quantite_commandee'],'prix_unitaire_ht'=>(float)($l['prix_unitaire_ht']??0),'taux_tva'=>(float)($l['taux_tva']??20)]; } }
-                    if (empty($lignes)) throw new Exception("Au moins une ligne requise");
-                    $cmdId = $model->createCommande(['residence_id'=>(int)$_POST['residence_id'],'fournisseur_id'=>(int)$_POST['fournisseur_id'],'date_commande'=>$_POST['date_commande']??date('Y-m-d'),'date_livraison_prevue'=>$_POST['date_livraison_prevue']?:null,'statut'=>$_POST['statut']??'brouillon','notes'=>trim($_POST['notes']??'')], $lignes);
-                    $this->setFlash('success','Commande créée'); $this->redirect('menage/commandes/show/'.$cmdId);
-                } catch (Exception $e) { $this->setFlash('error','Erreur : '.$e->getMessage()); $this->redirect('menage/commandes/create'); } return;
+                    $lignes = $this->buildLignesFromPost($_POST['lignes'] ?? [], $model);
+                    if (empty($lignes)) throw new Exception("Au moins une ligne est requise");
+                    $cmdId = $cm->create('menage', [
+                        'residence_id'          => (int)$_POST['residence_id'],
+                        'fournisseur_id'        => (int)$_POST['fournisseur_id'],
+                        'date_commande'         => $_POST['date_commande'] ?? date('Y-m-d'),
+                        'date_livraison_prevue' => $_POST['date_livraison_prevue'] ?? null,
+                        'statut'                => $_POST['statut'] ?? 'brouillon',
+                        'notes'                 => $_POST['notes'] ?? '',
+                        'created_by'            => (int)$_SESSION['user_id'],
+                    ], $lignes);
+                    $this->setFlash('success', 'Commande créée');
+                    $this->redirect($modulePath . '/commandes/show/' . $cmdId);
+                } catch (Exception $e) {
+                    $this->setFlash('error', 'Erreur : ' . $e->getMessage());
+                    $this->redirect($modulePath . '/commandes/create?residence_id=' . ($_POST['residence_id'] ?? ''));
+                }
+                return;
+
             case 'show':
-                $cmd = $model->getCommande($id); if (!$cmd) { $this->setFlash('error','Introuvable'); $this->redirect('menage/commandes'); return; }
-                $this->view('menage/commande_show', ['title'=>'Commande '.$cmd['numero_commande'].' - '.APP_NAME,'showNavbar'=>true,'commande'=>$cmd,'flash'=>$this->getFlash()], true); return;
-            case 'envoyer': $model->updateCommandeStatut($id,'envoyee'); $this->setFlash('success','Envoyée'); $this->redirect('menage/commandes/show/'.$id); return;
+                $cmd = $cm->get((int)$id);
+                if (!$cmd || $cmd['module'] !== 'menage') { $this->setFlash('error', 'Commande introuvable'); $this->redirect($modulePath . '/commandes'); return; }
+                $this->view($modulePath . '/commande_show', [
+                    'title' => 'Commande ' . $cmd['numero_commande'] . ' - ' . APP_NAME,
+                    'showNavbar' => true, 'commande' => $cmd, 'flash' => $this->getFlash()
+                ], true);
+                return;
+
+            case 'envoyer':
+                $cm->updateStatut((int)$id, 'envoyee');
+                $this->setFlash('success', 'Commande envoyée au fournisseur');
+                $this->redirect($modulePath . '/commandes/show/' . (int)$id);
+                return;
+
             case 'receptionner':
                 $this->verifyCsrf();
-                if ($model->receptionnerCommande($id, $_POST['quantites_recues'] ?? [])) { $this->setFlash('success','Réceptionnée — stock mis à jour'); }
-                else { $this->setFlash('error','Erreur'); }
-                $this->redirect('menage/commandes/show/'.$id); return;
-            case 'delete': $model->deleteCommande($id); $this->setFlash('success','Supprimée'); $this->redirect('menage/commandes'); return;
+                try {
+                    $qtes = array_map('floatval', $_POST['quantites_recues'] ?? []);
+                    $cm->receptionner((int)$id, $qtes, (int)$_SESSION['user_id']);
+                    $this->setFlash('success', 'Commande réceptionnée — stock mis à jour');
+                } catch (Exception $e) { $this->setFlash('error', 'Erreur : ' . $e->getMessage()); }
+                $this->redirect($modulePath . '/commandes/show/' . (int)$id);
+                return;
+
+            case 'facturer':
+                $cm->updateStatut((int)$id, 'facturee');
+                $this->setFlash('success', 'Commande marquée comme facturée');
+                $this->redirect($modulePath . '/commandes/show/' . (int)$id);
+                return;
+
+            case 'delete':
+                $result = $cm->deleteOrCancel((int)$id);
+                $this->setFlash('success', $result === 'deleted' ? 'Commande supprimée' : 'Commande annulée');
+                $this->redirect($modulePath . '/commandes');
+                return;
+
             default:
-                $residences = $this->getUserResidences(); $residenceIds = array_column($residences,'id');
-                $this->view('menage/commandes', ['title'=>'Commandes Ménage - '.APP_NAME,'showNavbar'=>true,'commandes'=>$model->getCommandes($residenceIds,$_GET['statut']??null),'statut'=>$_GET['statut']??null,'flash'=>$this->getFlash()], true);
+                $residences = $this->getUserResidences();
+                $this->view($modulePath . '/commandes', [
+                    'title'      => 'Commandes Ménage - ' . APP_NAME,
+                    'showNavbar' => true,
+                    'commandes'  => $cm->getAll('menage', array_column($residences, 'id'), $_GET['statut'] ?? null),
+                    'statut'     => $_GET['statut'] ?? null,
+                    'flash'      => $this->getFlash()
+                ], true);
         }
     }
 
+    private function buildLignesFromPost(array $postLignes, $model): array {
+        $lignes = [];
+        foreach ($postLignes as $l) {
+            if (empty($l['produit_id']) || empty($l['quantite_commandee'])) continue;
+            $p = $model->getProduit((int)$l['produit_id']);
+            if (!$p) continue;
+            $lignes[] = [
+                'produit_id'         => (int)$l['produit_id'],
+                'designation'        => trim($l['designation'] ?? ($p['nom'] ?? '')),
+                'quantite_commandee' => (float)$l['quantite_commandee'],
+                'prix_unitaire_ht'   => (float)($l['prix_unitaire_ht'] ?? $p['prix_reference'] ?? 0),
+                'taux_tva'           => (float)($l['taux_tva'] ?? 20),
+            ];
+        }
+        return $lignes;
+    }
+
     // =================================================================
-    //  FOURNISSEURS MÉNAGE (réutilise table rest_fournisseur_residence)
+    //  FOURNISSEURS MÉNAGE (lecture-seule, pivot global fournisseur_residence)
+    //  Le CRUD (lier/modifier/délier un fournisseur à une résidence) est
+    //  centralisé dans /fournisseur/show/<id> — FournisseurController.
     // =================================================================
 
-    public function fournisseurs() {
+    public function fournisseurs($action = null, $id = null) {
         $this->requireAuth(); $this->requireRole(self::ROLES_MANAGER);
         $model = $this->model('Menage');
-        $residences = $this->getUserResidences(); $sel = (int)($_GET['residence_id'] ?? 0);
-        if (!$sel && count($residences) === 1) $sel = $residences[0]['id'];
-        $this->view('menage/fournisseurs', ['title'=>'Fournisseurs Ménage - '.APP_NAME,'showNavbar'=>true,'residences'=>$residences,'selectedResidence'=>$sel,'fournisseurs'=>$sel?$model->getFournisseursResidence($sel):[],'flash'=>$this->getFlash()], true);
+        $fm    = new Fournisseur();
+
+        switch ($action) {
+            case 'lier':
+                $this->verifyCsrf();
+                try {
+                    $fm->lier((int)$_POST['fournisseur_id'], (int)$_POST['residence_id'], $_POST);
+                    $this->setFlash('success', 'Fournisseur lié à la résidence');
+                } catch (Exception $e) { $this->setFlash('error', 'Erreur : ' . $e->getMessage()); }
+                $this->redirect('menage/fournisseurs?residence_id=' . ($_POST['residence_id'] ?? ''));
+                return;
+
+            case 'update':
+                $this->verifyCsrf();
+                try {
+                    $fm->updateLien((int)$id, $_POST);
+                    $this->setFlash('success', 'Lien modifié');
+                } catch (Exception $e) { $this->setFlash('error', 'Erreur : ' . $e->getMessage()); }
+                $this->redirect('menage/fournisseurs?residence_id=' . ($_POST['residence_id'] ?? $_GET['residence_id'] ?? ''));
+                return;
+
+            case 'delier':
+                $fm->delier((int)$id);
+                $this->setFlash('success', 'Lien désactivé');
+                $this->redirect('menage/fournisseurs?residence_id=' . ($_GET['residence_id'] ?? ''));
+                return;
+
+            default:
+                $residences = $this->getUserResidences(); $sel = (int)($_GET['residence_id'] ?? 0);
+                if (!$sel && count($residences) === 1) $sel = $residences[0]['id'];
+                $this->view('menage/fournisseurs', [
+                    'title'              => 'Fournisseurs Ménage - ' . APP_NAME,
+                    'showNavbar'         => true,
+                    'residences'         => $residences,
+                    'selectedResidence'  => $sel,
+                    'fournisseurs'       => $sel ? $model->getFournisseursResidence($sel) : [],
+                    'disponibles'        => $sel ? $fm->getFournisseursDisponibles($sel, 'menage') : [],
+                    'flash'              => $this->getFlash()
+                ], true);
+        }
     }
 
     // =================================================================

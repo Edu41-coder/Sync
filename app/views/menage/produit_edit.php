@@ -34,13 +34,13 @@ include __DIR__ . '/../partials/breadcrumb.php';
                         <div class="col-md-3"><label class="form-label">Prix réf.</label><input type="number" name="prix_reference" class="form-control" step="0.01" value="<?= $produit['prix_reference'] ?? '' ?>"></div>
                         <div class="col-md-3"><label class="form-label">Code-barres</label><input type="text" name="code_barre" class="form-control" value="<?= htmlspecialchars($produit['code_barre'] ?? '') ?>"></div>
                         <div class="col-md-3"><label class="form-label">Marque</label><input type="text" name="marque" class="form-control" value="<?= htmlspecialchars($produit['marque'] ?? '') ?>"></div>
-                        <div class="col-md-6"><label class="form-label">Fournisseur</label>
-                            <select name="fournisseur_id" class="form-select"><option value="">-- Aucun --</option>
-                                <?php foreach ($fournisseurs as $f): ?><option value="<?= $f['id'] ?>" <?= ($produit['fournisseur_id'] ?? 0)==$f['id']?'selected':'' ?>><?= htmlspecialchars($f['nom']) ?></option><?php endforeach; ?>
-                            </select></div>
                         <div class="col-md-6"><label class="form-label">Conditionnement</label><input type="text" name="conditionnement" class="form-control" value="<?= htmlspecialchars($produit['conditionnement'] ?? '') ?>"></div>
                         <div class="col-md-6"><label class="form-label">Notes</label><input type="text" name="notes" class="form-control" value="<?= htmlspecialchars($produit['notes'] ?? '') ?>"></div>
                         <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="actif" value="1" <?= $produit['actif']?'checked':'' ?>><label class="form-check-label">Actif</label></div></div>
+                        <div class="col-12">
+                            <label class="form-label mb-2"><i class="fas fa-truck-loading me-1"></i><strong>Fournisseurs</strong></label>
+                            <?php $widgetId = 'pfEdit'; include ROOT_PATH . '/app/views/partials/produit_fournisseurs_widget.php'; ?>
+                        </div>
                     </div>
                 </div>
                 <div class="card-footer d-flex justify-content-between">

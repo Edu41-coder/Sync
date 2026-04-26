@@ -419,11 +419,14 @@ class JardinageController extends Controller {
             case 'edit':
                 $produit = $model->getProduit((int)$id);
                 if (!$produit) { $this->redirect('jardinage/produits'); return; }
+                $fm = new Fournisseur();
                 $this->view('jardinage/produit_edit', [
                     'title'        => 'Modifier produit - ' . APP_NAME,
                     'showNavbar'   => true,
                     'produit'      => $produit,
                     'fournisseurs' => $model->getFournisseursList(),
+                    'produitFournisseurs'     => $fm->getFournisseursDuProduit('jardinage', (int)$id),
+                    'fournisseursDisponibles' => $fm->getAll('jardinage', null, true),
                     'flash'        => $this->getFlash()
                 ], true);
                 return;
@@ -461,11 +464,14 @@ class JardinageController extends Controller {
                 return;
 
             default:
+                $fm = new Fournisseur();
                 $this->view('jardinage/produits', [
                     'title'        => 'Produits Jardinage - ' . APP_NAME,
                     'showNavbar'   => true,
                     'produits'     => $model->getAllProduits($_GET['categorie'] ?? null, $_GET['type'] ?? null),
                     'fournisseurs' => $model->getFournisseursList(),
+                    'produitFournisseurs'     => [],
+                    'fournisseursDisponibles' => $fm->getAll('jardinage', null, true),
                     'filtreCategorie' => $_GET['categorie'] ?? null,
                     'filtreType'      => $_GET['type'] ?? null,
                     'flash'        => $this->getFlash()
@@ -862,21 +868,21 @@ class JardinageController extends Controller {
     public function commandes($action = null, $id = null) {
         $this->requireAuth();
         $this->requireRole(self::ROLES_MANAGER);
-        $model = $this->model('Jardinage');
+        $cm = new Commande();
+        $modulePath = 'jardinage';
 
         switch ($action) {
             case 'create':
                 $residences = $this->getUserResidences();
                 $residenceId = (int)($_GET['residence_id'] ?? 0);
                 if (!$residenceId && count($residences) === 1) $residenceId = (int)$residences[0]['id'];
-
-                $this->view('jardinage/commande_form', [
+                $this->view($modulePath . '/commande_form', [
                     'title'             => 'Nouvelle commande - ' . APP_NAME,
                     'showNavbar'        => true,
                     'residences'        => $residences,
                     'selectedResidence' => $residenceId,
-                    'fournisseurs'      => $residenceId ? $model->getFournisseursActifsResidence($residenceId) : [],
-                    'produits'          => $model->getAllProduits(null, null, true),
+                    'fournisseurs'      => $residenceId ? $this->model('Jardinage')->getFournisseursActifsResidence($residenceId) : [],
+                    'produits'          => $this->model('Jardinage')->getAllProduits(null, null, true),
                     'flash'             => $this->getFlash()
                 ], true);
                 return;
@@ -884,22 +890,9 @@ class JardinageController extends Controller {
             case 'store':
                 $this->verifyCsrf();
                 try {
-                    $lignes = [];
-                    foreach ($_POST['lignes'] ?? [] as $l) {
-                        if (empty($l['produit_id']) || empty($l['quantite_commandee'])) continue;
-                        $p = $model->getProduit((int)$l['produit_id']);
-                        if (!$p) continue;
-                        $lignes[] = [
-                            'produit_id'         => (int)$l['produit_id'],
-                            'designation'        => trim($l['designation'] ?? ($p['nom'] ?? '')),
-                            'quantite_commandee' => (float)$l['quantite_commandee'],
-                            'prix_unitaire_ht'   => (float)($l['prix_unitaire_ht'] ?? $p['prix_unitaire'] ?? 0),
-                            'taux_tva'           => (float)($l['taux_tva'] ?? 20),
-                        ];
-                    }
+                    $lignes = $this->buildLignesFromPost($_POST['lignes'] ?? [], $this->model('Jardinage'));
                     if (empty($lignes)) throw new Exception("Au moins une ligne est requise");
-
-                    $cmdId = $model->createCommande([
+                    $cmdId = $cm->create('jardinage', [
                         'residence_id'          => (int)$_POST['residence_id'],
                         'fournisseur_id'        => (int)$_POST['fournisseur_id'],
                         'date_commande'         => $_POST['date_commande'] ?? date('Y-m-d'),
@@ -909,74 +902,89 @@ class JardinageController extends Controller {
                         'created_by'            => (int)$_SESSION['user_id'],
                     ], $lignes);
                     $this->setFlash('success', 'Commande créée');
-                    $this->redirect('jardinage/commandes/show/' . $cmdId);
+                    $this->redirect($modulePath . '/commandes/show/' . $cmdId);
                 } catch (Exception $e) {
                     $this->setFlash('error', 'Erreur : ' . $e->getMessage());
-                    $this->redirect('jardinage/commandes/create?residence_id=' . ($_POST['residence_id'] ?? ''));
+                    $this->redirect($modulePath . '/commandes/create?residence_id=' . ($_POST['residence_id'] ?? ''));
                 }
                 return;
 
             case 'show':
-                $cmd = $model->getCommande((int)$id);
-                if (!$cmd) { $this->setFlash('error', 'Commande introuvable'); $this->redirect('jardinage/commandes'); return; }
-                $this->view('jardinage/commande_show', [
-                    'title'      => 'Commande ' . $cmd['numero_commande'] . ' - ' . APP_NAME,
-                    'showNavbar' => true,
-                    'commande'   => $cmd,
-                    'flash'      => $this->getFlash()
+                $cmd = $cm->get((int)$id);
+                if (!$cmd || $cmd['module'] !== 'jardinage') { $this->setFlash('error', 'Commande introuvable'); $this->redirect($modulePath . '/commandes'); return; }
+                $this->view($modulePath . '/commande_show', [
+                    'title' => 'Commande ' . $cmd['numero_commande'] . ' - ' . APP_NAME,
+                    'showNavbar' => true, 'commande' => $cmd, 'flash' => $this->getFlash()
                 ], true);
                 return;
 
             case 'envoyer':
-                $model->updateCommandeStatut((int)$id, 'envoyee');
+                $cm->updateStatut((int)$id, 'envoyee');
                 $this->setFlash('success', 'Commande envoyée au fournisseur');
-                $this->redirect('jardinage/commandes/show/' . (int)$id);
+                $this->redirect($modulePath . '/commandes/show/' . (int)$id);
                 return;
 
             case 'receptionner':
                 $this->verifyCsrf();
                 try {
-                    $qtes = $_POST['quantites_recues'] ?? [];
-                    $qtes = array_map('floatval', $qtes);
-                    $model->receptionnerCommande((int)$id, $qtes, (int)$_SESSION['user_id']);
+                    $qtes = array_map('floatval', $_POST['quantites_recues'] ?? []);
+                    $cm->receptionner((int)$id, $qtes, (int)$_SESSION['user_id']);
                     $this->setFlash('success', 'Commande réceptionnée — stock mis à jour');
                 } catch (Exception $e) { $this->setFlash('error', 'Erreur : ' . $e->getMessage()); }
-                $this->redirect('jardinage/commandes/show/' . (int)$id);
+                $this->redirect($modulePath . '/commandes/show/' . (int)$id);
                 return;
 
             case 'facturer':
-                $model->updateCommandeStatut((int)$id, 'facturee');
+                $cm->updateStatut((int)$id, 'facturee');
                 $this->setFlash('success', 'Commande marquée comme facturée');
-                $this->redirect('jardinage/commandes/show/' . (int)$id);
+                $this->redirect($modulePath . '/commandes/show/' . (int)$id);
                 return;
 
             case 'delete':
-                $result = $model->deleteOrCancelCommande((int)$id);
+                $result = $cm->deleteOrCancel((int)$id);
                 $this->setFlash('success', $result === 'deleted' ? 'Commande supprimée' : 'Commande annulée');
-                $this->redirect('jardinage/commandes');
+                $this->redirect($modulePath . '/commandes');
                 return;
 
             default:
                 $residences = $this->getUserResidences();
-                $residenceIds = array_column($residences, 'id');
-                $this->view('jardinage/commandes', [
+                $this->view($modulePath . '/commandes', [
                     'title'      => 'Commandes Jardinage - ' . APP_NAME,
                     'showNavbar' => true,
-                    'commandes'  => $model->getCommandes($residenceIds, $_GET['statut'] ?? null),
+                    'commandes'  => $cm->getAll('jardinage', array_column($residences, 'id'), $_GET['statut'] ?? null),
                     'statut'     => $_GET['statut'] ?? null,
                     'flash'      => $this->getFlash()
                 ], true);
         }
     }
 
+    private function buildLignesFromPost(array $postLignes, $model): array {
+        $lignes = [];
+        foreach ($postLignes as $l) {
+            if (empty($l['produit_id']) || empty($l['quantite_commandee'])) continue;
+            $p = $model->getProduit((int)$l['produit_id']);
+            if (!$p) continue;
+            $lignes[] = [
+                'produit_id'         => (int)$l['produit_id'],
+                'designation'        => trim($l['designation'] ?? ($p['nom'] ?? '')),
+                'quantite_commandee' => (float)$l['quantite_commandee'],
+                'prix_unitaire_ht'   => (float)($l['prix_unitaire_ht'] ?? $p['prix_unitaire'] ?? $p['prix_reference'] ?? 0),
+                'taux_tva'           => (float)($l['taux_tva'] ?? 20),
+            ];
+        }
+        return $lignes;
+    }
+
     // =================================================================
-    //  FOURNISSEURS JARDINERIE (pivot jardin_fournisseur_residence)
+    //  FOURNISSEURS JARDINAGE (lecture-seule, pivot global fournisseur_residence)
+    //  CRUD (lier/modifier/délier) centralisé dans /fournisseur/show/<id>
     // =================================================================
 
     public function fournisseurs($action = null, $id = null) {
         $this->requireAuth();
         $this->requireRole(self::ROLES_MANAGER);
         $model = $this->model('Jardinage');
+        $fm    = new Fournisseur();
 
         switch ($action) {
             case 'lier':
@@ -985,7 +993,7 @@ class JardinageController extends Controller {
                     $fournId = (int)($_POST['fournisseur_id'] ?? 0);
                     $resId   = (int)($_POST['residence_id'] ?? 0);
                     if (!$fournId || !$resId) throw new Exception("Fournisseur et résidence requis");
-                    $model->lierFournisseurResidence($fournId, $resId, $_POST);
+                    $fm->lier($fournId, $resId, $_POST);
                     $this->setFlash('success', 'Fournisseur lié à la résidence');
                 } catch (Exception $e) { $this->setFlash('error', 'Erreur : ' . $e->getMessage()); }
                 $this->redirect('jardinage/fournisseurs?residence_id=' . ($_POST['residence_id'] ?? ''));
@@ -994,14 +1002,14 @@ class JardinageController extends Controller {
             case 'update':
                 $this->verifyCsrf();
                 try {
-                    $model->updateLienFournisseur((int)$id, $_POST);
+                    $fm->updateLien((int)$id, $_POST);
                     $this->setFlash('success', 'Lien fournisseur modifié');
                 } catch (Exception $e) { $this->setFlash('error', 'Erreur : ' . $e->getMessage()); }
-                $this->redirect('jardinage/fournisseurs?residence_id=' . ($_POST['residence_id'] ?? ''));
+                $this->redirect('jardinage/fournisseurs?residence_id=' . ($_POST['residence_id'] ?? $_GET['residence_id'] ?? ''));
                 return;
 
             case 'delier':
-                $model->delierFournisseurResidence((int)$id);
+                $fm->delier((int)$id);
                 $this->setFlash('success', 'Lien fournisseur désactivé');
                 $this->redirect('jardinage/fournisseurs?residence_id=' . ($_GET['residence_id'] ?? ''));
                 return;
@@ -1017,7 +1025,7 @@ class JardinageController extends Controller {
                     'residences'        => $residences,
                     'selectedResidence' => $selectedResidence,
                     'fournisseurs'      => $selectedResidence ? $model->getFournisseursResidence($selectedResidence) : [],
-                    'disponibles'       => $selectedResidence ? $model->getFournisseursDisponibles($selectedResidence) : [],
+                    'disponibles'       => $selectedResidence ? $fm->getFournisseursDisponibles($selectedResidence, 'jardinage') : [],
                     'flash'             => $this->getFlash()
                 ], true);
         }

@@ -144,13 +144,7 @@ $uniteLabels = [
                             </select></div>
                         <div class="col-md-3"><label class="form-label">Prix unitaire (€)</label>
                             <input type="number" step="0.01" min="0" name="prix_unitaire" class="form-control"></div>
-                        <div class="col-md-6"><label class="form-label">Fournisseur</label>
-                            <select name="fournisseur_id" class="form-select">
-                                <option value="">— Aucun —</option>
-                                <?php foreach ($fournisseurs as $f): ?>
-                                <option value="<?= $f['id'] ?>"><?= htmlspecialchars($f['nom']) ?></option>
-                                <?php endforeach; ?>
-                            </select></div>
+                        <div class="col-md-6"></div>
                         <div class="col-md-3 d-flex align-items-end">
                             <div class="form-check"><input type="checkbox" class="form-check-input" name="bio" value="1" id="fieldBio">
                                 <label class="form-check-label" for="fieldBio">Produit BIO</label></div>
@@ -161,6 +155,10 @@ $uniteLabels = [
                             <input type="file" name="photo" class="form-control" accept="image/jpeg,image/png,image/webp"></div>
                         <div class="col-12"><label class="form-label">Notes</label>
                             <textarea name="notes" class="form-control" rows="2"></textarea></div>
+                        <div class="col-12">
+                            <label class="form-label mb-2"><i class="fas fa-truck-loading me-1"></i><strong>Fournisseurs</strong> <small class="text-muted">(optionnel)</small></label>
+                            <?php $widgetId = 'pfCreate'; include ROOT_PATH . '/app/views/partials/produit_fournisseurs_widget.php'; ?>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">

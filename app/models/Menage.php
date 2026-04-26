@@ -74,7 +74,7 @@ class Menage extends Model {
         try {
             $stmt = $this->db->prepare("SELECT COUNT(*) FROM menage_inventaire WHERE quantite_stock <= seuil_alerte AND seuil_alerte > 0 AND residence_id IN ($ph)");
             $stmt->execute($ids); $stats['alertes_stock'] = (int)$stmt->fetchColumn();
-            $stmt = $this->db->prepare("SELECT COUNT(*) FROM menage_commandes WHERE statut IN ('brouillon','envoyee','livree_partiel') AND residence_id IN ($ph)");
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM commandes WHERE module = 'menage' AND statut IN ('brouillon','envoyee','livree_partiel') AND residence_id IN ($ph)");
             $stmt->execute($ids); $stats['commandes_en_cours'] = (int)$stmt->fetchColumn();
             $stmt = $this->db->prepare("SELECT COUNT(*) FROM menage_laverie_demandes WHERE statut IN ('demandee','en_cours') AND residence_id IN ($ph)");
             $stmt->execute($ids); $stats['laverie_en_attente'] = (int)$stmt->fetchColumn();
@@ -739,7 +739,15 @@ class Menage extends Model {
     // ─────────────────────────────────────────────────���───────────
 
     public function getAllProduits(?string $categorie = null, ?string $section = null, bool $actifsOnly = false): array {
-        $sql = "SELECT p.*, f.nom as fournisseur_nom FROM menage_produits p LEFT JOIN fournisseurs f ON p.fournisseur_id = f.id WHERE 1=1";
+        // LEFT JOIN sur produit_fournisseurs pour récupérer le fournisseur préféré
+        $sql = "SELECT p.*,
+                       pf_pref.fournisseur_id as fournisseur_id,
+                       f.nom as fournisseur_nom
+                FROM menage_produits p
+                LEFT JOIN produit_fournisseurs pf_pref
+                    ON pf_pref.produit_module='menage' AND pf_pref.produit_id=p.id AND pf_pref.fournisseur_prefere=1
+                LEFT JOIN fournisseurs f ON f.id = pf_pref.fournisseur_id
+                WHERE 1=1";
         $params = [];
         if ($actifsOnly) $sql .= " AND p.actif = 1";
         if ($categorie) { $sql .= " AND p.categorie = ?"; $params[] = $categorie; }
@@ -750,22 +758,69 @@ class Menage extends Model {
     }
 
     public function getProduit(int $id): ?array {
-        try { $stmt = $this->db->prepare("SELECT p.*, f.nom as fournisseur_nom FROM menage_produits p LEFT JOIN fournisseurs f ON p.fournisseur_id = f.id WHERE p.id = ?"); $stmt->execute([$id]); return $stmt->fetch(PDO::FETCH_ASSOC) ?: null; }
-        catch (PDOException $e) { $this->logError($e->getMessage()); return null; }
+        try {
+            $sql = "SELECT p.*,
+                           pf_pref.fournisseur_id as fournisseur_id,
+                           f.nom as fournisseur_nom
+                    FROM menage_produits p
+                    LEFT JOIN produit_fournisseurs pf_pref
+                        ON pf_pref.produit_module='menage' AND pf_pref.produit_id=p.id AND pf_pref.fournisseur_prefere=1
+                    LEFT JOIN fournisseurs f ON f.id = pf_pref.fournisseur_id
+                    WHERE p.id = ?";
+            $stmt = $this->db->prepare($sql); $stmt->execute([$id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (PDOException $e) { $this->logError($e->getMessage()); return null; }
     }
 
     public function createProduit(array $d): int {
-        $sql = "INSERT INTO menage_produits (nom, categorie, section, unite, prix_reference, fournisseur_id, marque, conditionnement, actif, notes) VALUES (?,?,?,?,?,?,?,?,?,?)";
-        $this->db->prepare($sql)->execute([$d['nom'], $d['categorie'], $d['section'] ?? 'commun', $d['unite'], !empty($d['prix_reference']) ? (float)$d['prix_reference'] : null, !empty($d['fournisseur_id']) ? (int)$d['fournisseur_id'] : null, $d['marque'] ?: null, $d['conditionnement'] ?: null, isset($d['actif']) ? 1 : 0, $d['notes'] ?: null]);
-        return (int)$this->db->lastInsertId();
+        $sql = "INSERT INTO menage_produits (nom, categorie, section, unite, prix_reference, marque, conditionnement, actif, notes) VALUES (?,?,?,?,?,?,?,?,?)";
+        $this->db->prepare($sql)->execute([$d['nom'], $d['categorie'], $d['section'] ?? 'commun', $d['unite'], !empty($d['prix_reference']) ? (float)$d['prix_reference'] : null, $d['marque'] ?: null, $d['conditionnement'] ?: null, isset($d['actif']) ? 1 : 0, $d['notes'] ?: null]);
+        $newId = (int)$this->db->lastInsertId();
+        $this->syncProduitFournisseurs($newId, $d);
+        return $newId;
     }
 
     public function updateProduit(int $id, array $d): bool {
-        $sql = "UPDATE menage_produits SET nom=?, categorie=?, section=?, unite=?, prix_reference=?, fournisseur_id=?, marque=?, conditionnement=?, actif=?, notes=?, updated_at=NOW() WHERE id=?";
-        return $this->db->prepare($sql)->execute([$d['nom'], $d['categorie'], $d['section'] ?? 'commun', $d['unite'], !empty($d['prix_reference']) ? (float)$d['prix_reference'] : null, !empty($d['fournisseur_id']) ? (int)$d['fournisseur_id'] : null, $d['marque'] ?: null, $d['conditionnement'] ?: null, isset($d['actif']) ? 1 : 0, $d['notes'] ?: null, $id]);
+        $sql = "UPDATE menage_produits SET nom=?, categorie=?, section=?, unite=?, prix_reference=?, marque=?, conditionnement=?, actif=?, notes=?, updated_at=NOW() WHERE id=?";
+        $ok = $this->db->prepare($sql)->execute([$d['nom'], $d['categorie'], $d['section'] ?? 'commun', $d['unite'], !empty($d['prix_reference']) ? (float)$d['prix_reference'] : null, $d['marque'] ?: null, $d['conditionnement'] ?: null, isset($d['actif']) ? 1 : 0, $d['notes'] ?: null, $id]);
+        $this->syncProduitFournisseurs($id, $d);
+        return $ok;
     }
 
-    public function deleteProduit(int $id): bool { return $this->db->prepare("UPDATE menage_produits SET actif=0 WHERE id=?")->execute([$id]); }
+    public function deleteProduit(int $id): bool {
+        // Purger les liens fournisseurs + soft delete
+        (new Fournisseur())->purgeForProduit('menage', $id);
+        return $this->db->prepare("UPDATE menage_produits SET actif=0 WHERE id=?")->execute([$id]);
+    }
+
+    /**
+     * Interprète $d pour gérer multi-select fournisseurs (via $d['fournisseurs']) OU
+     * rétrocompat champ simple (via $d['fournisseur_id']).
+     */
+    private function syncProduitFournisseurs(int $produitId, array $d): void {
+        $fm = new Fournisseur();
+        if (isset($d['fournisseurs']) && is_array($d['fournisseurs'])) {
+            $data = [];
+            foreach ($d['fournisseurs'] as $fid => $row) {
+                $fid = (int)$fid;
+                if (!$fid) continue;
+                $data[] = [
+                    'fournisseur_id' => $fid,
+                    'prix_unitaire_specifique' => $row['prix'] ?? null,
+                    'reference_fournisseur'    => $row['ref'] ?? null,
+                    'fournisseur_prefere'      => !empty($d['fournisseur_prefere_id']) && (int)$d['fournisseur_prefere_id'] === $fid ? 1 : 0,
+                    'notes'                    => $row['notes'] ?? null,
+                ];
+            }
+            $fm->syncFournisseursForProduit('menage', $produitId, $data);
+        } elseif (!empty($d['fournisseur_id'])) {
+            // rétrocompat : un seul fournisseur = préféré
+            $fm->syncFournisseursForProduit('menage', $produitId, [[
+                'fournisseur_id' => (int)$d['fournisseur_id'],
+                'fournisseur_prefere' => 1,
+            ]]);
+        }
+    }
 
     public function getFournisseursList(): array {
         try { return $this->db->query("SELECT id, nom FROM fournisseurs WHERE actif=1 ORDER BY nom")->fetchAll(PDO::FETCH_ASSOC); }
@@ -777,8 +832,14 @@ class Menage extends Model {
     // ─────────────────────────────────────────────────────────────
 
     public function getInventaire(int $residenceId, ?string $section = null, bool $alertesOnly = false): array {
-        $sql = "SELECT i.*, p.nom as produit_nom, p.categorie as produit_categorie, p.section, p.unite, p.marque, f.nom as fournisseur_nom
-                FROM menage_inventaire i JOIN menage_produits p ON i.produit_id = p.id LEFT JOIN fournisseurs f ON p.fournisseur_id = f.id WHERE i.residence_id = ?";
+        $sql = "SELECT i.*, p.nom as produit_nom, p.categorie as produit_categorie, p.section, p.unite, p.marque,
+                       f.nom as fournisseur_nom
+                FROM menage_inventaire i
+                JOIN menage_produits p ON i.produit_id = p.id
+                LEFT JOIN produit_fournisseurs pf_pref
+                    ON pf_pref.produit_module='menage' AND pf_pref.produit_id=p.id AND pf_pref.fournisseur_prefere=1
+                LEFT JOIN fournisseurs f ON f.id = pf_pref.fournisseur_id
+                WHERE i.residence_id = ?";
         $params = [$residenceId];
         if ($section) { $sql .= " AND (p.section = ? OR p.section = 'commun')"; $params[] = $section; }
         if ($alertesOnly) $sql .= " AND i.quantite_stock <= i.seuil_alerte AND i.seuil_alerte > 0";
@@ -831,82 +892,31 @@ class Menage extends Model {
     //  COMMANDES FOURNISSEURS MÉNAGE
     // ─────────────────────────────────────────────────────────────
 
-    public function generateNumeroCommande(): string {
-        $a = date('Y'); $m = date('m');
-        try { $c = $this->db->query("SELECT COUNT(*) FROM menage_commandes WHERE YEAR(date_commande)=$a")->fetchColumn(); } catch (PDOException $e) { $c = 0; }
-        return 'MEN-' . $a . $m . '-' . str_pad($c + 1, 4, '0', STR_PAD_LEFT);
-    }
-
-    public function getCommandes(array $residenceIds, ?string $statut = null): array {
-        if (empty($residenceIds)) return [];
-        $ph = implode(',', array_fill(0, count($residenceIds), '?')); $params = array_values($residenceIds);
-        $sql = "SELECT c.*, f.nom as fournisseur_nom, res.nom as residence_nom, (SELECT COUNT(*) FROM menage_commande_lignes WHERE commande_id=c.id) as nb_lignes
-                FROM menage_commandes c JOIN fournisseurs f ON c.fournisseur_id=f.id JOIN coproprietees res ON c.residence_id=res.id WHERE c.residence_id IN ($ph)";
-        if ($statut) { $sql .= " AND c.statut=?"; $params[] = $statut; }
-        $sql .= " ORDER BY c.date_commande DESC";
-        try { $stmt = $this->db->prepare($sql); $stmt->execute($params); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
-        catch (PDOException $e) { return []; }
-    }
-
-    public function getCommande(int $id): ?array {
-        try {
-            $stmt = $this->db->prepare("SELECT c.*, f.nom as fournisseur_nom, f.email as fournisseur_email, f.telephone as fournisseur_telephone, res.nom as residence_nom FROM menage_commandes c JOIN fournisseurs f ON c.fournisseur_id=f.id JOIN coproprietees res ON c.residence_id=res.id WHERE c.id=?");
-            $stmt->execute([$id]); $cmd = $stmt->fetch(PDO::FETCH_ASSOC); if (!$cmd) return null;
-            $stmtL = $this->db->prepare("SELECT cl.*, p.nom as produit_nom, p.unite FROM menage_commande_lignes cl JOIN menage_produits p ON cl.produit_id=p.id WHERE cl.commande_id=? ORDER BY cl.id");
-            $stmtL->execute([$id]); $cmd['lignes'] = $stmtL->fetchAll(PDO::FETCH_ASSOC);
-            return $cmd;
-        } catch (PDOException $e) { return null; }
-    }
-
-    public function createCommande(array $data, array $lignes): int {
-        $numero = $this->generateNumeroCommande();
-        $totalHt = 0; $totalTva = 0;
-        foreach ($lignes as $l) { $lht = ($l['quantite_commandee'] ?? 0) * ($l['prix_unitaire_ht'] ?? 0); $totalHt += $lht; $totalTva += $lht * (($l['taux_tva'] ?? 20) / 100); }
-        $this->db->prepare("INSERT INTO menage_commandes (residence_id, fournisseur_id, numero_commande, date_commande, date_livraison_prevue, statut, montant_total_ht, montant_tva, montant_total_ttc, notes, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
-            ->execute([$data['residence_id'], $data['fournisseur_id'], $numero, $data['date_commande'] ?? date('Y-m-d'), $data['date_livraison_prevue'] ?: null, $data['statut'] ?? 'brouillon', round($totalHt,2), round($totalTva,2), round($totalHt+$totalTva,2), $data['notes'] ?: null, $_SESSION['user_id'] ?? null]);
-        $cmdId = (int)$this->db->lastInsertId();
-        $stmtL = $this->db->prepare("INSERT INTO menage_commande_lignes (commande_id, produit_id, designation, quantite_commandee, prix_unitaire_ht, taux_tva) VALUES (?,?,?,?,?,?)");
-        foreach ($lignes as $l) { if (!empty($l['produit_id']) && !empty($l['quantite_commandee'])) $stmtL->execute([$cmdId, (int)$l['produit_id'], $l['designation'] ?? '', (float)$l['quantite_commandee'], (float)($l['prix_unitaire_ht'] ?? 0), (float)($l['taux_tva'] ?? 20)]); }
-        return $cmdId;
-    }
-
-    public function updateCommandeStatut(int $id, string $statut): bool {
-        $sql = "UPDATE menage_commandes SET statut=?, updated_at=NOW()"; $params = [$statut];
-        if ($statut === 'livree') $sql .= ", date_livraison_effective=CURDATE()";
-        $sql .= " WHERE id=?"; $params[] = $id;
-        return $this->db->prepare($sql)->execute($params);
-    }
-
-    public function receptionnerCommande(int $commandeId, array $quantitesRecues): bool {
-        try {
-            $this->db->beginTransaction();
-            $cmd = $this->getCommande($commandeId); if (!$cmd) throw new Exception("Commande introuvable");
-            $toutRecu = true;
-            foreach ($cmd['lignes'] as $l) {
-                $qte = (float)($quantitesRecues[$l['id']] ?? 0);
-                $this->db->prepare("UPDATE menage_commande_lignes SET quantite_recue=? WHERE id=?")->execute([$qte, $l['id']]);
-                if ($qte < $l['quantite_commandee']) $toutRecu = false;
-                if ($qte > 0) { $invId = $this->addToInventaire($l['produit_id'], $cmd['residence_id']); $this->mouvementStock($invId, 'entree', $qte, 'livraison', $commandeId, "Commande $cmd[numero_commande]"); }
-            }
-            $this->updateCommandeStatut($commandeId, $toutRecu ? 'livree' : 'livree_partiel');
-            $this->db->commit(); return true;
-        } catch (Exception $e) { if ($this->db->inTransaction()) $this->db->rollBack(); $this->logError($e->getMessage()); return false; }
-    }
-
-    public function deleteCommande(int $id): bool { return $this->db->prepare("DELETE FROM menage_commandes WHERE id=? AND statut='brouillon'")->execute([$id]); }
+    // Les méthodes generateNumeroCommande, getCommandes, getCommande, createCommande,
+    // updateCommandeStatut, receptionnerCommande, deleteCommande ont été centralisées
+    // dans app/models/Commande.php (table unifiée `commandes` polymorphe).
 
     // ─────────────────────────────────────────────────────────────
     //  FOURNISSEURS MÉNAGE (via table partagée)
     // ─────────────────────────────────────────────────────────────
 
+    /**
+     * Fournisseurs liés à une résidence (via pivot global fournisseur_residence),
+     * filtrés par type_service='menage', enrichis avec stats commandes ménage.
+     */
     public function getFournisseursResidence(int $residenceId): array {
-        $sql = "SELECT f.*, fr.statut as lien_statut, fr.contact_local, fr.telephone_local, fr.jour_livraison,
-                   (SELECT COUNT(*) FROM menage_commandes c WHERE c.fournisseur_id=f.id AND c.residence_id=?) as nb_commandes,
-                   (SELECT COALESCE(SUM(c2.montant_total_ttc),0) FROM menage_commandes c2 WHERE c2.fournisseur_id=f.id AND c2.residence_id=? AND c2.statut!='annulee') as total_commandes
+        $sql = "SELECT f.*, fr.id as pivot_id, fr.statut as lien_statut,
+                       fr.contact_local, fr.telephone_local, fr.jour_livraison, fr.delai_livraison_jours,
+                       fr.notes as pivot_notes,
+                       (SELECT COUNT(*) FROM commandes c WHERE c.module='menage' AND c.fournisseur_id=f.id AND c.residence_id=?) as nb_commandes,
+                       (SELECT COALESCE(SUM(c2.montant_total_ttc),0) FROM commandes c2 WHERE c2.module='menage' AND c2.fournisseur_id=f.id AND c2.residence_id=? AND c2.statut!='annulee') as total_commandes,
+                       (SELECT MAX(c3.date_commande) FROM commandes c3 WHERE c3.module='menage' AND c3.fournisseur_id=f.id AND c3.residence_id=?) as derniere_commande
                 FROM fournisseurs f
-                JOIN rest_fournisseur_residence fr ON fr.fournisseur_id=f.id AND fr.residence_id=?
-                WHERE fr.statut='actif' ORDER BY f.nom";
-        try { $stmt = $this->db->prepare($sql); $stmt->execute([$residenceId, $residenceId, $residenceId]); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
+                JOIN fournisseur_residence fr ON fr.fournisseur_id = f.id AND fr.residence_id = ?
+                WHERE fr.statut = 'actif' AND f.actif = 1
+                  AND FIND_IN_SET('menage', f.type_service) > 0
+                ORDER BY f.nom";
+        try { $stmt = $this->db->prepare($sql); $stmt->execute([$residenceId, $residenceId, $residenceId, $residenceId]); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
         catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
     }
 
@@ -952,7 +962,7 @@ class Menage extends Model {
         if (empty($residenceIds)) return [];
         $ph = implode(',', array_fill(0, count($residenceIds), '?')); $params = array_merge(array_values($residenceIds), [$annee]);
         $sql = "SELECT f.id as fournisseur_id, f.nom as fournisseur_nom, COUNT(c.id) as nb_commandes, COALESCE(SUM(c.montant_total_ht),0) as total_ht, COALESCE(SUM(c.montant_total_ttc),0) as total_ttc
-                FROM menage_commandes c JOIN fournisseurs f ON c.fournisseur_id=f.id WHERE c.residence_id IN ($ph) AND YEAR(c.date_commande)=? AND c.statut!='annulee'";
+                FROM commandes c JOIN fournisseurs f ON c.fournisseur_id=f.id WHERE c.module='menage' AND c.residence_id IN ($ph) AND YEAR(c.date_commande)=? AND c.statut!='annulee'";
         if ($mois) { $sql .= " AND MONTH(c.date_commande)=?"; $params[] = $mois; }
         $sql .= " GROUP BY f.id, f.nom ORDER BY total_ttc DESC";
         try { $stmt = $this->db->prepare($sql); $stmt->execute($params); return $stmt->fetchAll(PDO::FETCH_ASSOC); }

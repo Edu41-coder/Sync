@@ -80,13 +80,13 @@ include __DIR__ . '/../partials/breadcrumb.php';
                         <div class="col-md-3"><label class="form-label">Prix réf. (€)</label><input type="number" name="prix_reference" class="form-control" step="0.01" min="0"></div>
                         <div class="col-md-3"><label class="form-label">Code-barres</label><input type="text" name="code_barre" class="form-control"></div>
                         <div class="col-md-3"><label class="form-label">Marque</label><input type="text" name="marque" class="form-control"></div>
-                        <div class="col-md-3"><label class="form-label">Fournisseur</label>
-                            <select name="fournisseur_id" class="form-select"><option value="">-- Aucun --</option>
-                                <?php foreach ($fournisseurs as $f): ?><option value="<?= $f['id'] ?>"><?= htmlspecialchars($f['nom']) ?></option><?php endforeach; ?>
-                            </select></div>
                         <div class="col-md-6"><label class="form-label">Conditionnement</label><input type="text" name="conditionnement" class="form-control" placeholder="Pack de 6, carton de 12..."></div>
                         <div class="col-md-6"><label class="form-label">Notes</label><input type="text" name="notes" class="form-control"></div>
                         <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="actif" value="1" checked><label class="form-check-label">Produit actif</label></div></div>
+                        <div class="col-12">
+                            <label class="form-label mb-2"><i class="fas fa-truck-loading me-1"></i><strong>Fournisseurs</strong> <small class="text-muted">(optionnel)</small></label>
+                            <?php $widgetId = 'pfCreate'; include ROOT_PATH . '/app/views/partials/produit_fournisseurs_widget.php'; ?>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button><button type="submit" class="btn btn-warning"><i class="fas fa-save me-2"></i>Créer</button></div>

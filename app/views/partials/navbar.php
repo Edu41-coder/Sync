@@ -122,7 +122,23 @@
                         </a></li>
                     </ul>
                 </li>
-                
+
+                <!-- Menu Fournisseurs (global, admin + directeur_residence) -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navFournisseurs" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-truck-loading me-1 text-primary"></i> Fournisseurs
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navFournisseurs">
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/fournisseur/index">
+                            <i class="fas fa-list me-2 text-info"></i> Liste
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/fournisseur/create">
+                            <i class="fas fa-plus me-2 text-success"></i> Nouveau fournisseur
+                        </a></li>
+                    </ul>
+                </li>
+
                 <!-- Menu Comptabilité -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navComptabilite" role="button" 

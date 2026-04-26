@@ -133,7 +133,7 @@ include __DIR__ . '/../partials/breadcrumb.php';
                             ?>
                             <tr>
                                 <td>
-                                    <a href="<?= BASE_URL ?>/restauration/fournisseurs/show/<?= $df['fournisseur_id'] ?>" class="text-decoration-none">
+                                    <a href="<?= BASE_URL ?>/fournisseur/show/<?= $df['fournisseur_id'] ?>" class="text-decoration-none">
                                         <strong><?= htmlspecialchars($df['fournisseur_nom']) ?></strong>
                                     </a>
                                 </td>

@@ -1,6 +1,8 @@
 🌐 APPLICATION MVC - URLs D'ACCÈS
 =====================================
-
+ git add .
+ git commit -m "Module Jardinage complet + rename jardineriejardinag" 
+ git push origin main
 
 🔐 PAGE DE CONNEXION (COMMENCER ICI) :
 http://localhost/Synd_Gest/public/auth/login
