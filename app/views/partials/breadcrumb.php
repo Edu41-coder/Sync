@@ -6,8 +6,8 @@
  * <?php
  * $breadcrumb = [
  *     ['icon' => 'fas fa-home', 'text' => 'Accueil', 'url' => BASE_URL],
- *     ['icon' => 'fas fa-building', 'text' => 'Copropriétés', 'url' => BASE_URL . '/copropriete/index'],
- *     ['icon' => 'fas fa-plus', 'text' => 'Nouvelle copropriété', 'url' => null] // null = page actuelle
+ *     ['icon' => 'fas fa-building', 'text' => 'Résidences', 'url' => BASE_URL . '/admin/residences'],
+ *     ['icon' => 'fas fa-plus', 'text' => 'Nouvelle résidence', 'url' => null] // null = page actuelle
  * ];
  * include '../app/views/partials/breadcrumb.php';
  * ?>

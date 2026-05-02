@@ -255,9 +255,12 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times me-1"></i>Annuler
                 </button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
-                    <i class="fas fa-trash me-1"></i>Supprimer définitivement
-                </button>
+                <form method="POST" action="" id="formDeleteResidence" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Supprimer définitivement
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -273,16 +276,11 @@ let residenceIdToDelete = null;
 function confirmDelete(id) {
     <?php if (!$canManageResidences): ?>return;<?php endif; ?>
     residenceIdToDelete = id;
+    <?php if ($canManageResidences): ?>
+    document.getElementById('formDeleteResidence').action = '<?= BASE_URL ?>/admin/deleteResidence/' + id;
+    <?php endif; ?>
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
-
-<?php if ($canManageResidences): ?>
-document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-    if (residenceIdToDelete) {
-        window.location.href = '<?= BASE_URL ?>/admin/deleteResidence/' + residenceIdToDelete;
-    }
-});
-<?php endif; ?>
 
 function exportExcel() {
     <?php if (!$canExportResidences): ?>return;<?php endif; ?>

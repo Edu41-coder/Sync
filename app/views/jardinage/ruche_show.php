@@ -393,7 +393,7 @@ $alerteVisite = $ruche['statut'] === 'active' && ($derniereVisite === null || $j
                             <?php if (!empty($ruche['photo'])): ?>
                             <div class="mb-2">
                                 <img src="<?= BASE_URL . '/' . htmlspecialchars($ruche['photo']) ?>" alt="" class="rounded me-2" style="width:120px;height:90px;object-fit:cover">
-                                <a href="<?= BASE_URL ?>/jardinage/ruches/photoDelete/<?= $ruche['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette photo ?')"><i class="fas fa-trash me-1"></i>Supprimer</a>
+                                <button type="submit" form="formDeletePhotoRuche" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i>Supprimer</button>
                             </div>
                             <?php endif; ?>
                             <input type="file" name="photo" class="form-control" accept="image/jpeg,image/png,image/webp">
@@ -407,6 +407,13 @@ $alerteVisite = $ruche['statut'] === 'active' && ($derniereVisite === null || $j
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Enregistrer</button>
                 </div>
             </form>
+
+            <?php if (!empty($ruche['photo'])): ?>
+            <!-- Form séparé pour suppression photo ruche (HTML interdit le form nesting) -->
+            <form id="formDeletePhotoRuche" method="POST" action="<?= BASE_URL ?>/jardinage/ruches/photoDelete/<?= (int)$ruche['id'] ?>" onsubmit="return confirm('Supprimer cette photo ?')" style="display:none">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+            </form>
+            <?php endif; ?>
         </div>
     </div>
 </div>

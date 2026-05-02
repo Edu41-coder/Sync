@@ -689,6 +689,7 @@ class AdminController extends Controller {
     public function deleteResidence($id) {
         $this->requireAuth();
         $this->requireRole('admin');
+        $this->requirePostCsrf();
 
         $resModel = $this->model('Residence');
         $residence = $resModel->find($id);
@@ -1163,7 +1164,7 @@ class AdminController extends Controller {
     private function deleteUser($id) {
         $this->requireAuth();
         $this->requireRole(['admin']);
-        $this->verifyCsrf();
+        $this->requirePostCsrf();
 
         if ($id == $_SESSION['user_id']) {
             $this->setFlash('error', "Vous ne pouvez pas supprimer votre propre compte");
@@ -1206,7 +1207,7 @@ class AdminController extends Controller {
     private function toggleUser($id) {
         $this->requireAuth();
         $this->requireRole(['admin']);
-        $this->verifyCsrf();
+        $this->requirePostCsrf();
 
         if ($id == $_SESSION['user_id']) {
             $this->setFlash('error', "Vous ne pouvez pas désactiver votre propre compte");

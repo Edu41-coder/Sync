@@ -132,16 +132,4 @@ class HomeController extends Controller {
 
         return $activities;
     }
-
-    /**
-     * Test de connexion à la base de données
-     */
-    public function test() {
-        echo "<h1>Test MVC</h1>";
-        echo "<p>✅ Le routeur fonctionne !</p>";
-        echo "<p>✅ Le contrôleur HomeController fonctionne !</p>";
-        echo "<p>URL: http://localhost/Synd_Gest/public/home/test</p>";
-        echo "<p><a href='" . BASE_URL . "'>Retour à l'accueil</a></p>";
-        echo "<p><a href='" . BASE_URL . "/auth/login'>Page de connexion</a></p>";
-    }
 }

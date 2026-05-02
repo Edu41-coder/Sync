@@ -279,6 +279,57 @@ class Fournisseur extends Model {
     }
 
     /**
+     * Statistiques agrégées d'un fournisseur pour la page détail.
+     * Retourne KPIs globaux + répartition CA par module.
+     */
+    public function getStatsFournisseur(int $fournisseurId): array {
+        $kpis = [
+            'nb_total'          => 0,
+            'nb_en_cours'       => 0,
+            'ca_total_ttc'      => 0.0,
+            'delai_moyen_jours' => null,
+            'par_module'        => [],
+        ];
+
+        // KPIs globaux
+        $sql = "SELECT
+                    COUNT(*) AS nb_total,
+                    SUM(CASE WHEN statut IN ('envoyee','livree_partiel') THEN 1 ELSE 0 END) AS nb_en_cours,
+                    SUM(CASE WHEN statut NOT IN ('annulee','brouillon') THEN montant_total_ttc ELSE 0 END) AS ca_total_ttc,
+                    AVG(CASE WHEN date_livraison_effective IS NOT NULL
+                                  AND date_commande IS NOT NULL
+                                  AND statut NOT IN ('annulee')
+                             THEN DATEDIFF(date_livraison_effective, date_commande)
+                             ELSE NULL END) AS delai_moyen_jours
+                FROM commandes WHERE fournisseur_id = ?";
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$fournisseurId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) {
+                $kpis['nb_total']          = (int)$row['nb_total'];
+                $kpis['nb_en_cours']       = (int)$row['nb_en_cours'];
+                $kpis['ca_total_ttc']      = (float)$row['ca_total_ttc'];
+                $kpis['delai_moyen_jours'] = $row['delai_moyen_jours'] !== null ? round((float)$row['delai_moyen_jours'], 1) : null;
+            }
+        } catch (PDOException $e) { $this->logError($e->getMessage(), $sql); }
+
+        // Répartition CA par module (commandes valides uniquement)
+        $sql2 = "SELECT module, COUNT(*) AS nb, SUM(montant_total_ttc) AS total_ttc
+                 FROM commandes
+                 WHERE fournisseur_id = ? AND statut NOT IN ('annulee','brouillon')
+                 GROUP BY module
+                 ORDER BY total_ttc DESC";
+        try {
+            $stmt = $this->db->prepare($sql2);
+            $stmt->execute([$fournisseurId]);
+            $kpis['par_module'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) { $this->logError($e->getMessage(), $sql2); }
+
+        return $kpis;
+    }
+
+    /**
      * Liste simple des résidences (pour la modal "lier").
      */
     public function getAllResidences(): array {

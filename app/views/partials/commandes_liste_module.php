@@ -68,9 +68,15 @@ $statutColors = Commande::STATUTS_COLORS;
                         <td class="text-end">
                             <a href="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/commandes/show/<?= (int)$c['id'] ?>" class="btn btn-sm btn-outline-info" title="Voir"><i class="fas fa-eye"></i></a>
                             <?php if ($c['statut'] === 'brouillon'): ?>
-                            <a href="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/commandes/delete/<?= (int)$c['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer ce brouillon ?')" title="Supprimer"><i class="fas fa-trash"></i></a>
+                            <form method="POST" action="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/commandes/delete/<?= (int)$c['id'] ?>" class="d-inline" onsubmit="return confirm('Supprimer ce brouillon ?')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="fas fa-trash"></i></button>
+                            </form>
                             <?php elseif (!in_array($c['statut'], ['annulee','livree','facturee'])): ?>
-                            <a href="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/commandes/delete/<?= (int)$c['id'] ?>" class="btn btn-sm btn-outline-dark" onclick="return confirm('Annuler cette commande ? (statut → annulée)')" title="Annuler"><i class="fas fa-ban"></i></a>
+                            <form method="POST" action="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/commandes/delete/<?= (int)$c['id'] ?>" class="d-inline" onsubmit="return confirm('Annuler cette commande ? (statut → annulée)')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-dark" title="Annuler"><i class="fas fa-ban"></i></button>
+                            </form>
                             <?php endif; ?>
                         </td>
                     </tr>

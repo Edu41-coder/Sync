@@ -90,7 +90,8 @@ $uniteLabels = [
                         <td class="text-center" data-sort="<?= $p['actif'] ? 1 : 0 ?>"><span class="badge bg-<?= $p['actif'] ? 'success' : 'secondary' ?>"><?= $p['actif'] ? 'Actif' : 'Inactif' ?></span></td>
                         <td class="text-end">
                             <a href="<?= BASE_URL ?>/jardinage/produits/edit/<?= $p['id'] ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
-                            <form method="GET" action="<?= BASE_URL ?>/jardinage/produits/delete/<?= $p['id'] ?>" class="d-inline" onsubmit="return confirm('Désactiver ce produit ?')">
+                            <form method="POST" action="<?= BASE_URL ?>/jardinage/produits/delete/<?= $p['id'] ?>" class="d-inline" onsubmit="return confirm('Désactiver ce produit ?')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                 <button class="btn btn-sm btn-outline-danger"><i class="fas fa-times"></i></button>
                             </form>
                         </td>

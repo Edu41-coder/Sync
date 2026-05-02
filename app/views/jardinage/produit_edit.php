@@ -59,7 +59,7 @@ $uniteLabels = ['kg','g','litre','ml','sac','piece','rouleau','bidon','autre'];
                         <?php if (!empty($produit['photo'])): ?>
                         <div class="mb-2">
                             <img src="<?= BASE_URL . '/' . htmlspecialchars($produit['photo']) ?>" alt="" class="rounded me-2" style="width:120px;height:90px;object-fit:cover;cursor:zoom-in" ondblclick="showPhotoViewer('<?= BASE_URL . '/' . htmlspecialchars($produit['photo']) ?>', <?= htmlspecialchars(json_encode($produit['nom']), ENT_QUOTES) ?>)" title="Double-clic pour agrandir">
-                            <a href="<?= BASE_URL ?>/jardinage/produits/photoDelete/<?= (int)$produit['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette photo ?')"><i class="fas fa-trash me-1"></i>Supprimer la photo</a>
+                            <button type="submit" form="formDeletePhotoProduit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i>Supprimer la photo</button>
                         </div>
                         <?php endif; ?>
                         <input type="file" name="photo" class="form-control" accept="image/jpeg,image/png,image/webp">
@@ -80,6 +80,13 @@ $uniteLabels = ['kg','g','litre','ml','sac','piece','rouleau','bidon','autre'];
                     <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>Enregistrer</button>
                 </div>
             </form>
+
+            <?php if (!empty($produit['photo'])): ?>
+            <!-- Form séparé pour suppression photo (HTML interdit le form nesting) -->
+            <form id="formDeletePhotoProduit" method="POST" action="<?= BASE_URL ?>/jardinage/produits/photoDelete/<?= (int)$produit['id'] ?>" onsubmit="return confirm('Supprimer cette photo ?')" style="display:none">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+            </form>
+            <?php endif; ?>
         </div>
     </div>
 </div>

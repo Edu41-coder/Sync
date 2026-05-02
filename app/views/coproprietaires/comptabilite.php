@@ -233,6 +233,11 @@ include __DIR__ . '/../partials/breadcrumb.php';
     let history = [];
     let isLoading = false;
 
+    function jsonHeaders() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return { 'Content-Type': 'application/json', 'X-CSRF-Token': meta ? meta.content : '' };
+    }
+
     function addMessage(role, content) {
         const isUser = role === 'user';
         const div = document.createElement('div');
@@ -305,7 +310,7 @@ include __DIR__ . '/../partials/breadcrumb.php';
         try {
             const response = await fetch(baseUrl + '/coproprietaire/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: jsonHeaders(),
                 body: JSON.stringify({
                     message: message,
                     history: history

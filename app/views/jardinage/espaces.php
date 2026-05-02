@@ -93,10 +93,19 @@ $typeIcons = [
                         <td class="text-end">
                             <?php if ($isManager): ?>
                             <button class="btn btn-sm btn-outline-primary" onclick='editEspace(<?= json_encode($e) ?>)'><i class="fas fa-edit"></i></button>
-                            <form method="GET" action="<?= BASE_URL ?>/jardinage/espaces/delete/<?= $e['id'] ?>" class="d-inline" onsubmit="return confirm('Désactiver cet espace ?')">
+                            <?php if ($e['actif']): ?>
+                            <form method="POST" action="<?= BASE_URL ?>/jardinage/espaces/delete/<?= $e['id'] ?>" class="d-inline" onsubmit="return confirm('Désactiver cet espace ?')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                 <input type="hidden" name="residence_id" value="<?= $selectedResidence ?>">
-                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-times"></i></button>
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Désactiver"><i class="fas fa-times"></i></button>
                             </form>
+                            <?php else: ?>
+                            <form method="POST" action="<?= BASE_URL ?>/jardinage/espaces/activate/<?= $e['id'] ?>" class="d-inline" onsubmit="return confirm('Réactiver cet espace ?')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <input type="hidden" name="residence_id" value="<?= $selectedResidence ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Réactiver"><i class="fas fa-check"></i></button>
+                            </form>
+                            <?php endif; ?>
                             <?php endif; ?>
                             <a href="<?= BASE_URL ?>/jardinage/espaces/taches/<?= $e['id'] ?>" class="btn btn-sm btn-outline-info"><i class="fas fa-tasks"></i></a>
                         </td>
@@ -151,7 +160,7 @@ $typeIcons = [
                         <label class="form-label">Photo <small class="text-muted">(JPG, PNG, WEBP · max 5 Mo)</small></label>
                         <div id="currentPhotoBlock" class="mb-2" style="display:none">
                             <img id="currentPhotoImg" src="" alt="" class="rounded me-2" style="width:120px;height:90px;object-fit:cover">
-                            <a id="btnDeletePhoto" href="#" class="btn btn-sm btn-outline-danger" onclick="return confirmDeletePhoto(event)"><i class="fas fa-trash me-1"></i>Supprimer la photo</a>
+                            <button type="submit" form="formDeletePhotoEspace" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i>Supprimer la photo</button>
                         </div>
                         <input type="file" name="photo" class="form-control" accept="image/jpeg,image/png,image/webp">
                     </div>
@@ -168,6 +177,12 @@ $typeIcons = [
         </div>
     </div>
 </div>
+
+<!-- Form séparé pour suppression photo (HTML interdit le form nesting dans formEspace) -->
+<form id="formDeletePhotoEspace" method="POST" action="" onsubmit="return confirm('Supprimer cette photo ?')" style="display:none">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+    <input type="hidden" name="residence_id" value="<?= (int)$selectedResidence ?>">
+</form>
 
 <script>
 function resetEspaceModal() {
@@ -200,15 +215,13 @@ function editEspace(e) {
     const block = document.getElementById('currentPhotoBlock');
     if (e.photo) {
         document.getElementById('currentPhotoImg').src = '<?= BASE_URL ?>/' + e.photo;
-        document.getElementById('btnDeletePhoto').href = '<?= BASE_URL ?>/jardinage/espaces/photoDelete/' + e.id + '?residence_id=<?= $selectedResidence ?>';
+        document.getElementById('formDeletePhotoEspace').action = '<?= BASE_URL ?>/jardinage/espaces/photoDelete/' + e.id;
         block.style.display = 'block';
     } else {
         block.style.display = 'none';
     }
     new bootstrap.Modal(document.getElementById('modalEspace')).show();
 }
-
-function confirmDeletePhoto(ev) { return confirm('Supprimer cette photo ?'); }
 </script>
 <?php endif; ?>
 

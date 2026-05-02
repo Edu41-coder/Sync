@@ -42,7 +42,13 @@ class OccupationController extends Controller {
         ]);
     }
 
+    /**
+     * Alias public de details() — auth dupliquée pour defense in depth
+     * (un refactor de details() ne doit pas pouvoir exposer cette route).
+     */
     public function show($id) {
+        $this->requireAuth();
+        $this->requireRole(['admin', 'directeur_residence', 'exploitant', 'locataire_permanent']);
         $this->details($id);
     }
 
@@ -147,20 +153,6 @@ class OccupationController extends Controller {
                 throw new Exception("Ce lot est déjà occupé.");
             }
 
-            // Vérifier les règles d'occupation par type de lot
-            $lotType = $occupationModel->getLotType($lotId);
-            $typesLogement = ['studio','t2','t2_bis','t3'];
-
-            if (in_array($lotType, $typesLogement)) {
-                if ($occupationModel->residentHasLogement($residentId)) {
-                    throw new Exception("Ce résident a déjà un logement actif. Un seul logement par résident.");
-                }
-            } else {
-                if ($occupationModel->residentHasAnnexe($residentId, $lotType)) {
-                    throw new Exception("Ce résident a déjà un(e) $lotType actif(ve).");
-                }
-            }
-
             $exploitantId = $occupationModel->getLotExploitant($lotId);
 
             $data = [
@@ -246,20 +238,6 @@ class OccupationController extends Controller {
             $occupationModel = $this->model('Occupation');
 
             $newResidentId = (int)($_POST['resident_id'] ?? 0);
-            if ($newResidentId > 0) {
-                $occLotType = $occupationModel->getOccupationLotType($id);
-                $typesLogement = ['studio','t2','t2_bis','t3'];
-
-                if (in_array($occLotType, $typesLogement)) {
-                    if ($occupationModel->residentHasLogement($newResidentId, (int)$id)) {
-                        throw new Exception("Ce résident a déjà un logement actif.");
-                    }
-                } else {
-                    if ($occupationModel->residentHasAnnexe($newResidentId, $occLotType, (int)$id)) {
-                        throw new Exception("Ce résident a déjà un(e) $occLotType.");
-                    }
-                }
-            }
 
             $data = [
                 'resident_id' => $newResidentId ?: null,
@@ -305,17 +283,16 @@ class OccupationController extends Controller {
     public function terminer($id) {
         $this->requireAuth();
         $this->requireRole(['admin', 'directeur_residence', 'exploitant']);
+        $this->requirePostCsrf();
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $occupationModel = $this->model('Occupation');
+        $occupationModel = $this->model('Occupation');
 
-            if ($occupationModel->terminerOccupation($id, $_POST['date_fin'], $_POST['motif_fin'] ?? null)) {
-                $this->setFlash('success', 'Occupation terminée avec succès');
-            } else {
-                $this->setFlash('error', 'Erreur lors de la terminaison');
-            }
-
-            $this->redirect('occupation/details/' . $id);
+        if ($occupationModel->terminerOccupation($id, $_POST['date_fin'], $_POST['motif_fin'] ?? null)) {
+            $this->setFlash('success', 'Occupation terminée avec succès');
+        } else {
+            $this->setFlash('error', 'Erreur lors de la terminaison');
         }
+
+        $this->redirect('occupation/details/' . $id);
     }
 }

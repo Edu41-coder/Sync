@@ -172,12 +172,48 @@ class Controller {
             if (!isset($_POST['csrf_token']) || !Security::verifyToken($_POST['csrf_token'])) {
                 // Logger la violation CSRF
                 Logger::logCsrfViolation();
-                
+
                 http_response_code(403);
                 $this->setFlash('error', 'Token CSRF invalide. Veuillez recharger la page et réessayer.');
                 $this->redirect($_SERVER['HTTP_REFERER'] ?? 'home');
             }
         }
+    }
+
+    /**
+     * Vérifier le token CSRF transmis dans l'en-tête HTTP X-CSRF-Token.
+     * À utiliser sur les endpoints AJAX/JSON où le token ne peut pas être dans le body POST.
+     * Réponse 403 + JSON si invalide.
+     */
+    protected function verifyCsrfHeader() {
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        if (!$token || !Security::verifyToken($token)) {
+            Logger::logCsrfViolation();
+            http_response_code(403);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => 'Token CSRF invalide ou expiré']);
+            exit;
+        }
+    }
+
+    /**
+     * Exiger une requête POST + token CSRF valide.
+     * À utiliser sur toutes les actions destructives (delete, désactivation, suppression photo, etc.)
+     * pour empêcher les attaques CSRF par lien GET (img src, href piégé...).
+     *
+     * Comportement : un GET sur l'URL renvoie 403, le token CSRF est obligatoire.
+     */
+    protected function requirePostCsrf() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            Logger::logUnauthorizedAccess(
+                $_SERVER['REQUEST_URI'] ?? 'unknown',
+                'Méthode HTTP invalide pour action destructive (POST requis)'
+            );
+            http_response_code(405);
+            header('Allow: POST');
+            die('Méthode non autorisée. Cette action requiert une requête POST.');
+        }
+        $this->verifyCsrf();
     }
     
     /**

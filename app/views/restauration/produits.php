@@ -41,10 +41,13 @@ include __DIR__ . '/../partials/breadcrumb.php';
                         <td class="text-end"><?= $p['prix_reference'] ? number_format($p['prix_reference'],2,',',' ').' €' : '-' ?></td>
                         <td class="text-center"><span class="badge bg-<?= $p['actif'] ? 'success' : 'danger' ?>"><?= $p['actif'] ? 'Actif' : 'Inactif' ?></span></td>
                         <td class="text-end">
-                            <div class="btn-group btn-group-sm" role="group">
-                                <a href="<?= BASE_URL ?>/restauration/produits/edit/<?= $p['id'] ?>" class="btn btn-outline-primary" title="Modifier" data-bs-toggle="tooltip"><i class="fas fa-edit"></i></a>
-                                <?php if ($p['actif']): ?><a href="<?= BASE_URL ?>/restauration/produits/delete/<?= $p['id'] ?>" class="btn btn-outline-danger" title="Désactiver" data-bs-toggle="tooltip" onclick="return confirm('Désactiver ?')"><i class="fas fa-times"></i></a><?php endif; ?>
-                            </div>
+                            <a href="<?= BASE_URL ?>/restauration/produits/edit/<?= $p['id'] ?>" class="btn btn-sm btn-outline-primary" title="Modifier" data-bs-toggle="tooltip"><i class="fas fa-edit"></i></a>
+                            <?php if ($p['actif']): ?>
+                            <form method="POST" action="<?= BASE_URL ?>/restauration/produits/delete/<?= $p['id'] ?>" class="d-inline" onsubmit="return confirm('Désactiver ?')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Désactiver" data-bs-toggle="tooltip"><i class="fas fa-times"></i></button>
+                            </form>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; endif; ?>

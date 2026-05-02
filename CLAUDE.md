@@ -37,6 +37,25 @@ $this->verifyCsrf();           // sur tous les POST uniquement
 - `htmlspecialchars()` sur **toute** donnée affichée en vue
 - `Security.php` : CSRF tokens, sanitize, rate limiting, password hashing, security headers
 
+## Stockage fichiers — convention `uploads/` privé vs `public/uploads/`
+
+**Deux répertoires distincts par design** :
+
+| Type de fichier | Dossier | Accès |
+|---|---|---|
+| **Sensible / personnel** (GED, certifications, justificatifs fiscaux) | `uploads/` à la racine du projet (HORS `public/`) | Stream via controller authentifié — vérif rôle + ownership |
+| **Illustration publique** (photos profil, photos catalogues, photos avant/après interventions) | `public/uploads/...` | Accessible directement par URL `<img src="<?= BASE_URL ?>/uploads/...">` |
+
+**Exemples** :
+- `uploads/coproprietaires/{user_id}/...` ← GED propriétaire (PDF privés, controller `download()`)
+- `uploads/residents/{user_id}/...` ← GED résident
+- `uploads/maintenance/certifs/{user_id}/...` ← Certifications pro
+- `public/uploads/photos/user_X.jpg` ← Photos profil utilisateurs
+- `public/uploads/jardinage/espaces/...` ← Photos espaces jardin
+- `public/uploads/maintenance/photos/...` ← Photos avant/après interventions
+
+**Règle** : si la fuite du fichier compromet la vie privée ou viole le RGPD, c'est `uploads/` racine. Sinon `public/uploads/`.
+
 ## Conventions code
 
 ### Controllers
@@ -123,7 +142,6 @@ Chaque rôle a ses propres boutons — ne jamais mélanger les privilèges entre
 - Module Restauration → @.claude/modules/restauration.md
 - Module Ménage → @.claude/modules/menage.md
 - Module Jardinage ✅ → @.claude/modules/jardinage.md
-- Module Entretien Technique (à créer) → @.claude/modules/entretien.md
-- Module Travaux (proposition) → @.claude/modules/travaux.md
+- Module Maintenance Technique ✅ (piscine, ascenseur, travaux/chantiers, plomberie, électricité, peinture) → @.claude/modules/maintenance.md
 - Module Comptabilité (à créer) → @.claude/modules/comptabilite.md
 - Module Messagerie interne → @.claude/modules/messagerie.md

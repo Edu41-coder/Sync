@@ -44,12 +44,102 @@ $residencesNonLiees = $residencesNonLiees ?? [];
             <a href="<?= BASE_URL ?>/fournisseur/index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Retour</a>
             <a href="<?= BASE_URL ?>/fournisseur/edit/<?= (int)$fournisseur['id'] ?>" class="btn btn-primary"><i class="fas fa-edit me-1"></i>Modifier</a>
             <?php if ($fournisseur['actif']): ?>
-            <a href="<?= BASE_URL ?>/fournisseur/delete/<?= (int)$fournisseur['id'] ?>" class="btn btn-outline-danger" onclick="return confirm('Désactiver ce fournisseur ?')"><i class="fas fa-times me-1"></i>Désactiver</a>
+            <form method="POST" action="<?= BASE_URL ?>/fournisseur/delete/<?= (int)$fournisseur['id'] ?>" class="d-inline" onsubmit="return confirm('Désactiver ce fournisseur ?')">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                <button type="submit" class="btn btn-outline-danger"><i class="fas fa-times me-1"></i>Désactiver</button>
+            </form>
             <?php else: ?>
-            <a href="<?= BASE_URL ?>/fournisseur/activate/<?= (int)$fournisseur['id'] ?>" class="btn btn-outline-success"><i class="fas fa-check me-1"></i>Réactiver</a>
+            <form method="POST" action="<?= BASE_URL ?>/fournisseur/activate/<?= (int)$fournisseur['id'] ?>" class="d-inline" onsubmit="return confirm('Réactiver ce fournisseur ?')">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                <button type="submit" class="btn btn-outline-success"><i class="fas fa-check me-1"></i>Réactiver</button>
+            </form>
             <?php endif; ?>
         </div>
     </div>
+
+    <!-- KPIs synthèse -->
+    <?php $stats = $stats ?? ['nb_total' => 0, 'nb_en_cours' => 0, 'ca_total_ttc' => 0, 'delai_moyen_jours' => null, 'par_module' => []]; ?>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body py-3">
+                    <div class="text-muted small text-uppercase"><i class="fas fa-truck me-1"></i>Commandes</div>
+                    <div class="fs-3 fw-bold mb-0"><?= (int)$stats['nb_total'] ?></div>
+                    <small class="text-muted">total historique</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body py-3">
+                    <div class="text-muted small text-uppercase"><i class="fas fa-spinner me-1"></i>En cours</div>
+                    <div class="fs-3 fw-bold text-info mb-0"><?= (int)$stats['nb_en_cours'] ?></div>
+                    <small class="text-muted">envoyée / livrée partiel</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body py-3">
+                    <div class="text-muted small text-uppercase"><i class="fas fa-euro-sign me-1"></i>CA total TTC</div>
+                    <div class="fs-3 fw-bold text-success mb-0"><?= number_format((float)$stats['ca_total_ttc'], 0, ',', ' ') ?> €</div>
+                    <small class="text-muted">hors annulées/brouillons</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body py-3">
+                    <div class="text-muted small text-uppercase"><i class="fas fa-clock me-1"></i>Délai livraison</div>
+                    <div class="fs-3 fw-bold text-primary mb-0">
+                        <?= $stats['delai_moyen_jours'] !== null ? number_format((float)$stats['delai_moyen_jours'], 1, ',', ' ') . ' j' : '—' ?>
+                    </div>
+                    <small class="text-muted">moyenne réalisée</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Répartition CA par module (si commandes) -->
+    <?php if (!empty($stats['par_module'])): ?>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header"><h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Répartition CA par module</h6></div>
+        <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Module</th>
+                        <th class="text-center">Nombre</th>
+                        <th class="text-end">Total TTC</th>
+                        <th>Part</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $totalCa = (float)$stats['ca_total_ttc'];
+                    foreach ($stats['par_module'] as $m):
+                        $part = $totalCa > 0 ? ((float)$m['total_ttc'] / $totalCa) * 100 : 0;
+                        $color = $typeColors[$m['module']] ?? 'secondary';
+                    ?>
+                    <tr>
+                        <td><span class="badge bg-<?= $color ?>"><?= $moduleLabels[$m['module']] ?? $m['module'] ?></span></td>
+                        <td class="text-center"><?= (int)$m['nb'] ?></td>
+                        <td class="text-end"><strong><?= number_format((float)$m['total_ttc'], 2, ',', ' ') ?> €</strong></td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height:8px">
+                                    <div class="progress-bar bg-<?= $color ?>" style="width:<?= number_format($part, 1, '.', '') ?>%"></div>
+                                </div>
+                                <small class="text-muted" style="min-width:50px"><?= number_format($part, 1, ',', ' ') ?>%</small>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <div class="row g-4 mb-4">
         <div class="col-lg-4">
@@ -111,7 +201,10 @@ $residencesNonLiees = $residencesNonLiees ?? [];
                                 <td class="text-end">
                                     <button class="btn btn-sm btn-outline-primary" onclick='editLien(<?= json_encode($r) ?>)' title="Modifier"><i class="fas fa-edit"></i></button>
                                     <?php if ($r['statut'] === 'actif'): ?>
-                                    <a href="<?= BASE_URL ?>/fournisseur/delier/<?= (int)$r['pivot_id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Délier ce fournisseur de la résidence ?')" title="Délier"><i class="fas fa-unlink"></i></a>
+                                    <form method="POST" action="<?= BASE_URL ?>/fournisseur/delier/<?= (int)$r['pivot_id'] ?>" class="d-inline" onsubmit="return confirm('Délier ce fournisseur de la résidence ?')">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Délier"><i class="fas fa-unlink"></i></button>
+                                    </form>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -122,6 +215,71 @@ $residencesNonLiees = $residencesNonLiees ?? [];
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Produits liés (multi-modules) -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h6 class="mb-0"><i class="fas fa-boxes me-2"></i>Produits référencés — <?= count($produits ?? []) ?> au total</h6>
+            <?php if (!empty($produits)): ?>
+            <input type="text" id="produitsSearch" class="form-control form-control-sm" style="max-width:280px" placeholder="Rechercher un produit...">
+            <?php endif; ?>
+        </div>
+        <div class="card-body p-0">
+            <?php if (empty($produits)): ?>
+            <p class="text-center text-muted p-4 mb-0">
+                Aucun produit lié. Les produits sont associés depuis les modules
+                <a href="<?= BASE_URL ?>/jardinage/produits" class="text-decoration-none">Jardinage</a>,
+                <a href="<?= BASE_URL ?>/menage/produits" class="text-decoration-none">Ménage</a>
+                et <a href="<?= BASE_URL ?>/restauration/produits" class="text-decoration-none">Restauration</a>.
+            </p>
+            <?php else: ?>
+            <table class="table table-sm table-hover mb-0" id="produitsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Produit</th>
+                        <th>Module</th>
+                        <th>Référence fournisseur</th>
+                        <th class="text-end">Prix négocié HT</th>
+                        <th class="text-center no-sort">Préféré</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($produits as $p): ?>
+                    <tr>
+                        <td>
+                            <strong><?= htmlspecialchars($p['produit_nom'] ?? '— produit supprimé —') ?></strong>
+                            <?php if (!empty($p['unite'])): ?><small class="text-muted">/<?= htmlspecialchars($p['unite']) ?></small><?php endif; ?>
+                            <?php if (!empty($p['pivot_notes'])): ?>
+                            <br><small class="text-muted"><i class="fas fa-comment-dots me-1"></i><?= htmlspecialchars(mb_strimwidth($p['pivot_notes'], 0, 80, '…')) ?></small>
+                            <?php endif; ?>
+                        </td>
+                        <td data-sort="<?= htmlspecialchars($p['produit_module']) ?>">
+                            <span class="badge bg-<?= $typeColors[$p['produit_module']] ?? 'secondary' ?>"><?= $moduleLabels[$p['produit_module']] ?? $p['produit_module'] ?></span>
+                        </td>
+                        <td class="small"><?= !empty($p['reference_fournisseur']) ? htmlspecialchars($p['reference_fournisseur']) : '<span class="text-muted">—</span>' ?></td>
+                        <td class="text-end" data-sort="<?= (float)($p['prix_unitaire_specifique'] ?? 0) ?>">
+                            <?= !empty($p['prix_unitaire_specifique']) ? '<strong>' . number_format((float)$p['prix_unitaire_specifique'], 2, ',', ' ') . ' €</strong>' : '<span class="text-muted">—</span>' ?>
+                        </td>
+                        <td class="text-center">
+                            <?php if (!empty($p['fournisseur_prefere'])): ?>
+                            <span class="badge bg-warning text-dark" title="Fournisseur préféré pour ce produit"><i class="fas fa-star"></i></span>
+                            <?php else: ?>
+                            <span class="text-muted">—</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php endif; ?>
+        </div>
+        <?php if (!empty($produits) && count($produits) > 10): ?>
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <div class="text-muted small" id="produitsTableInfo"></div>
+            <nav><ul class="pagination pagination-sm mb-0" id="produitsPagination"></ul></nav>
+        </div>
+        <?php endif; ?>
     </div>
 
     <!-- Commandes passées (multi-modules) -->
@@ -261,3 +419,23 @@ function editLien(r) {
     new bootstrap.Modal(document.getElementById('modalEditLien')).show();
 }
 </script>
+
+<?php if (!empty($produits)): ?>
+<script src="<?= BASE_URL ?>/assets/js/datatable.js"></script>
+<?php if (count($produits) > 10): ?>
+<script src="<?= BASE_URL ?>/assets/js/datatable-pagination.js"></script>
+<script>
+new DataTableWithPagination('produitsTable', {
+    rowsPerPage: 15,
+    searchInputId: 'produitsSearch',
+    excludeColumns: [4],
+    paginationId: 'produitsPagination',
+    infoId: 'produitsTableInfo'
+});
+</script>
+<?php else: ?>
+<script>
+new DataTable('produitsTable', { searchInputId: 'produitsSearch', excludeColumns: [4] });
+</script>
+<?php endif; ?>
+<?php endif; ?>

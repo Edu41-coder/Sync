@@ -66,7 +66,10 @@ $pct = $totalItems > 0 ? round(($itemsFaits / $totalItems) * 100) : 0;
                             <a href="<?= BASE_URL ?>/menage/interieur/demarrer/<?= $tache['id'] ?>" class="btn btn-primary"><i class="fas fa-play me-2"></i>Démarrer</a>
                             <?php endif; ?>
                             <?php if ($tache['statut'] === 'en_cours'): ?>
-                            <a href="<?= BASE_URL ?>/menage/interieur/terminer/<?= $tache['id'] ?>" class="btn btn-success" onclick="return confirm('Terminer cette tâche ?')"><i class="fas fa-check me-2"></i>Terminer</a>
+                            <form method="POST" action="<?= BASE_URL ?>/menage/interieur/terminer/<?= $tache['id'] ?>" class="d-inline" onsubmit="return confirm('Terminer cette tâche ?')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <button type="submit" class="btn btn-success"><i class="fas fa-check me-2"></i>Terminer</button>
+                            </form>
                             <?php endif; ?>
                             <?php if (in_array($tache['statut'], ['a_faire', 'en_cours']) && $tache['hote_id']): ?>
                             <a href="<?= BASE_URL ?>/menage/interieur/pasDeranger/<?= $tache['id'] ?>" class="btn btn-secondary"><i class="fas fa-moon me-2"></i>Pas déranger</a>
@@ -133,6 +136,11 @@ $pct = $totalItems > 0 ? round(($itemsFaits / $totalItems) * 100) : 0;
 </div>
 
 <script>
+function jsonHeaders() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return { 'Content-Type': 'application/json', 'X-CSRF-Token': meta ? meta.content : '' };
+}
+
 // AJAX checklist toggle
 document.querySelectorAll('.checklist-item').forEach(cb => {
     cb.addEventListener('change', function() {
@@ -141,7 +149,7 @@ document.querySelectorAll('.checklist-item').forEach(cb => {
 
         fetch('<?= BASE_URL ?>/menage/interieur/cocherItem', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: jsonHeaders(),
             body: JSON.stringify({ item_id: parseInt(itemId), fait: fait })
         })
         .then(r => r.json())

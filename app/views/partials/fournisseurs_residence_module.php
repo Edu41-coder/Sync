@@ -107,7 +107,8 @@
                         <td class="text-end">
                             <a href="<?= BASE_URL ?>/fournisseur/show/<?= (int)$f['id'] ?>" class="btn btn-sm btn-outline-info" title="Détail global"><i class="fas fa-eye"></i></a>
                             <button class="btn btn-sm btn-outline-primary" onclick='editLien(<?= json_encode($f) ?>)' title="Modifier le lien"><i class="fas fa-edit"></i></button>
-                            <form method="GET" action="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/fournisseurs/delier/<?= (int)$f['pivot_id'] ?>" class="d-inline" onsubmit="return confirm('Délier ce fournisseur de la résidence ? (statut → inactif)')">
+                            <form method="POST" action="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/fournisseurs/delier/<?= (int)$f['pivot_id'] ?>" class="d-inline" onsubmit="return confirm('Délier ce fournisseur de la résidence ? (statut → inactif)')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                 <input type="hidden" name="residence_id" value="<?= (int)$selectedResidence ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Délier"><i class="fas fa-unlink"></i></button>
                             </form>

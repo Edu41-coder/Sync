@@ -120,12 +120,15 @@ class CoproprietaireController extends Controller {
                     $this->calGetEvents($model, $proprioId);
                     break;
                 case 'save':
+                    $this->verifyCsrfHeader();
                     $this->calSaveEvent($model, $proprioId);
                     break;
                 case 'move':
+                    $this->verifyCsrfHeader();
                     $this->calMoveEvent($model, $proprioId);
                     break;
                 case 'delete':
+                    $this->verifyCsrfHeader();
                     $this->calDeleteEvent($model, $proprioId);
                     break;
                 default:
@@ -374,6 +377,7 @@ class CoproprietaireController extends Controller {
     public function chat() {
         $this->requireAuth();
         $this->requireRole(['proprietaire']);
+        $this->verifyCsrfHeader();
 
         header('Content-Type: application/json; charset=utf-8');
 
@@ -551,6 +555,7 @@ RÈGLES : Réponds en français, clair et pédagogique. Explique les formulaires
     public function chatDeclaration() {
         $this->requireAuth();
         $this->requireRole(['proprietaire']);
+        $this->verifyCsrfHeader();
 
         header('Content-Type: application/json; charset=utf-8');
 

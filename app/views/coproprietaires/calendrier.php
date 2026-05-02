@@ -173,6 +173,11 @@ include __DIR__ . '/../partials/breadcrumb.php';
 const BASE = '<?= BASE_URL ?>';
 const CATEGORIES = <?= json_encode($categories) ?>;
 
+function jsonHeaders() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return { 'Content-Type': 'application/json', 'X-CSRF-Token': meta ? meta.content : '' };
+}
+
 // Calendriers TUI = 1 par catégorie
 const calendarData = CATEGORIES.map(c => ({
     id: c.slug,
@@ -226,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (changes && (changes.start || changes.end)) {
             calendar.updateSchedule(schedule.id, schedule.calendarId, changes);
             fetch(BASE + '/coproprietaire/calendarAjax/move', {
-                method: 'POST', headers: {'Content-Type':'application/json'},
+                method: 'POST', headers: jsonHeaders(),
                 body: JSON.stringify({ id: schedule.id, start: formatISO(changes.start || schedule.start), end: formatISO(changes.end || schedule.end) })
             });
         }
@@ -260,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!confirm('Supprimer cet événement ?')) return;
         const id = document.getElementById('eventId').value;
         fetch(BASE + '/coproprietaire/calendarAjax/delete', {
-            method: 'POST', headers: {'Content-Type':'application/json'},
+            method: 'POST', headers: jsonHeaders(),
             body: JSON.stringify({ id: parseInt(id) })
         }).then(() => { modal.hide(); reloadEvents(); });
     });
@@ -354,7 +359,7 @@ function saveEvent() {
     if (!data.title || !data.start || !data.end) { alert('Titre et dates requis'); return; }
 
     fetch(BASE + '/coproprietaire/calendarAjax/save', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
+        method: 'POST', headers: jsonHeaders(),
         body: JSON.stringify(data)
     }).then(r => r.json()).then(resp => {
         if (resp.success) { modal.hide(); reloadEvents(); }

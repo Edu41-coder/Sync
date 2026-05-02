@@ -245,6 +245,11 @@ include __DIR__ . '/../partials/breadcrumb.php';
     let isLoading = false;
     let pendingDocIds = [];
 
+    function jsonHeaders() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return { 'Content-Type': 'application/json', 'X-CSRF-Token': meta ? meta.content : '' };
+    }
+
     // === UPLOAD ===
     document.getElementById('uploadBtn').addEventListener('click', async function() {
         const file = document.getElementById('uploadFile').files[0];
@@ -360,7 +365,7 @@ include __DIR__ . '/../partials/breadcrumb.php';
         try {
             const resp = await fetch(BASE + '/coproprietaire/chatDeclaration', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: jsonHeaders(),
                 body: JSON.stringify({
                     message: message,
                     history: history,
@@ -418,7 +423,7 @@ include __DIR__ . '/../partials/breadcrumb.php';
         try {
             const resp = await fetch(BASE + '/coproprietaire/chatDeclaration', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: jsonHeaders(),
                 body: JSON.stringify({
                     message: recapMessage,
                     history: history,

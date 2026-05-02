@@ -194,6 +194,7 @@ class MenageController extends Controller {
 
                 case 'save':
                     $this->requireRole(self::ROLES_MANAGER);
+                    $this->verifyCsrfHeader();
                     $input = json_decode(file_get_contents('php://input'), true);
                     if (!$input) { echo json_encode(['success' => false, 'message' => 'Données invalides']); break; }
                     $saveUserId = (int)($input['userId'] ?? 0);
@@ -214,6 +215,7 @@ class MenageController extends Controller {
 
                 case 'move':
                     $this->requireRole(self::ROLES_MANAGER);
+                    $this->verifyCsrfHeader();
                     $input = json_decode(file_get_contents('php://input'), true);
                     if (!$input || empty($input['id'])) { echo json_encode(['success' => false, 'message' => 'Données invalides']); break; }
                     $planningModel->moveShift((int)$input['id'], $input['start'], $input['end']);
@@ -222,6 +224,7 @@ class MenageController extends Controller {
 
                 case 'delete':
                     $this->requireRole(self::ROLES_MANAGER);
+                    $this->verifyCsrfHeader();
                     $input = json_decode(file_get_contents('php://input'), true);
                     $deleteId = (int)($input['id'] ?? 0);
                     if (!$deleteId) { echo json_encode(['success' => false, 'message' => 'ID requis']); break; }
@@ -250,7 +253,7 @@ class MenageController extends Controller {
         switch ($action) {
             case 'create':  return $this->storeZone($model);
             case 'update':  return $this->updateZoneAction($model, $id);
-            case 'delete':  $model->deleteZone($id); $this->setFlash('success', 'Zone désactivée'); $this->redirect('menage/zones'); return;
+            case 'delete':  $this->requirePostCsrf(); $model->deleteZone($id); $this->setFlash('success', 'Zone désactivée'); $this->redirect('menage/zones'); return;
             default:        return $this->listZones($model);
         }
     }
@@ -409,6 +412,7 @@ class MenageController extends Controller {
     }
 
     private function terminerTacheAction(Menage $model, $id) {
+        $this->requirePostCsrf();
         $result = $model->terminerTache($id);
         $this->setFlash($result['success'] ? 'success' : 'error', $result['success'] ? 'Tâche terminée' : $result['message']);
         $this->redirect('menage/interieur/tache/' . $id);
@@ -433,6 +437,7 @@ class MenageController extends Controller {
      * AJAX : cocher/décocher un item de checklist
      */
     private function cocherItemAction(Menage $model) {
+        $this->verifyCsrfHeader();
         header('Content-Type: application/json');
         $input = json_decode(file_get_contents('php://input'), true);
         $itemId = (int)($input['item_id'] ?? 0);
@@ -460,7 +465,7 @@ class MenageController extends Controller {
             case 'distribuer':  return $this->distribuerTachesExt($model);
             case 'tache':       return $this->voirTache($model, $id);  // réutilise la même vue tache
             case 'demarrer':    $model->demarrerTache($id); $this->setFlash('success','Tâche démarrée'); $this->redirect('menage/exterieur/tache/'.$id); return;
-            case 'terminer':    $r = $model->terminerTache($id); $this->setFlash($r['success']?'success':'error', $r['success']?'Terminé':$r['message']); $this->redirect('menage/exterieur/tache/'.$id); return;
+            case 'terminer':    $this->requirePostCsrf(); $r = $model->terminerTache($id); $this->setFlash($r['success']?'success':'error', $r['success']?'Terminé':$r['message']); $this->redirect('menage/exterieur/tache/'.$id); return;
             case 'reassigner':  $this->requireRole(self::ROLES_MANAGER); $this->verifyCsrf(); $model->reassignerTache($id,(int)$_POST['employe_id']); $this->setFlash('success','Réassigné'); $this->redirect('menage/exterieur/tache/'.$id); return;
             case 'cocherItem':  return $this->cocherItemAction($model);
             default:            return $this->pageExterieur($model);
@@ -590,7 +595,7 @@ class MenageController extends Controller {
                     'flash'=>$this->getFlash()
                 ], true); return;
             case 'update':  $this->verifyCsrf(); $model->updateProduit($id, $_POST); $this->setFlash('success','Produit modifié'); $this->redirect('menage/produits'); return;
-            case 'delete':  $model->deleteProduit($id); $this->setFlash('success','Désactivé'); $this->redirect('menage/produits'); return;
+            case 'delete':  $this->requirePostCsrf(); $model->deleteProduit($id); $this->setFlash('success','Désactivé'); $this->redirect('menage/produits'); return;
             default:
                 $fm = new Fournisseur();
                 $this->view('menage/produits', [
@@ -688,6 +693,7 @@ class MenageController extends Controller {
                 return;
 
             case 'envoyer':
+                $this->requirePostCsrf();
                 $cm->updateStatut((int)$id, 'envoyee');
                 $this->setFlash('success', 'Commande envoyée au fournisseur');
                 $this->redirect($modulePath . '/commandes/show/' . (int)$id);
@@ -704,12 +710,14 @@ class MenageController extends Controller {
                 return;
 
             case 'facturer':
+                $this->requirePostCsrf();
                 $cm->updateStatut((int)$id, 'facturee');
                 $this->setFlash('success', 'Commande marquée comme facturée');
                 $this->redirect($modulePath . '/commandes/show/' . (int)$id);
                 return;
 
             case 'delete':
+                $this->requirePostCsrf();
                 $result = $cm->deleteOrCancel((int)$id);
                 $this->setFlash('success', $result === 'deleted' ? 'Commande supprimée' : 'Commande annulée');
                 $this->redirect($modulePath . '/commandes');
@@ -775,9 +783,10 @@ class MenageController extends Controller {
                 return;
 
             case 'delier':
+                $this->requirePostCsrf();
                 $fm->delier((int)$id);
                 $this->setFlash('success', 'Lien désactivé');
-                $this->redirect('menage/fournisseurs?residence_id=' . ($_GET['residence_id'] ?? ''));
+                $this->redirect('menage/fournisseurs?residence_id=' . ($_POST['residence_id'] ?? ''));
                 return;
 
             default:

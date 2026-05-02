@@ -246,6 +246,7 @@ class UserController extends Controller {
      */
     public function deletePhoto() {
         $this->requireAuth();
+        $this->requirePostCsrf();
 
         $userId = $this->getUserId();
         $db = $this->model('User')->getDb();

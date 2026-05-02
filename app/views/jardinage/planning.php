@@ -122,6 +122,11 @@ const AJAX_URL = BASE + '/jardinage/planningAjax';
 const canManage = <?= $canManage ? 'true' : 'false' ?>;
 const currentUserId = <?= $userId ?>;
 
+function jsonHeaders() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return { 'Content-Type': 'application/json', 'X-CSRF-Token': meta ? meta.content : '' };
+}
+
 const cal = new tui.Calendar('#calendar', {
     defaultView: 'week',
     taskView: false,
@@ -188,7 +193,7 @@ function openCreateModal(start, end, isAllDay) {
 
 cal.on('beforeCreateEvent', e => openCreateModal(e.start.toDate(), e.end.toDate(), e.isAllday));
 cal.on('beforeUpdateEvent', ({event, changes}) => {
-    fetch(AJAX_URL + '/move', { method: 'POST', headers: {'Content-Type':'application/json'},
+    fetch(AJAX_URL + '/move', { method: 'POST', headers: jsonHeaders(),
         body: JSON.stringify({ id: event.id, start: formatDT(changes.start?.toDate() || event.start.toDate()), end: formatDT(changes.end?.toDate() || event.end.toDate()) })
     }).then(() => loadEvents());
 });
@@ -207,14 +212,14 @@ function saveShift() {
         typeShift: 'travail',
         description: document.getElementById('shiftDescription').value
     };
-    fetch(AJAX_URL + '/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) })
+    fetch(AJAX_URL + '/save', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(body) })
         .then(r => r.json()).then(data => { bootstrap.Modal.getInstance(document.getElementById('shiftModal')).hide(); loadEvents(); });
 }
 
 function deleteShift() {
     if (!confirm('Supprimer ce shift ?')) return;
     const id = document.getElementById('shiftId').value;
-    fetch(AJAX_URL + '/delete', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: parseInt(id) }) })
+    fetch(AJAX_URL + '/delete', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ id: parseInt(id) }) })
         .then(() => { bootstrap.Modal.getInstance(document.getElementById('shiftModal')).hide(); loadEvents(); });
 }
 <?php endif; ?>

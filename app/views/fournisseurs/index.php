@@ -13,27 +13,60 @@ $typeColors = [
 ?>
 
 <div class="container-fluid py-4">
+    <?php
+    // Construire l'URL d'export en préservant les filtres en cours
+    $exportParams = array_filter([
+        'type_service'     => $typeFilter ?? null,
+        'q'                => $search ?? null,
+        'inclure_inactifs' => !$actifsOnly ? '1' : null,
+    ], fn($v) => $v !== null && $v !== '');
+    $exportUrl = BASE_URL . '/fournisseur/export' . (empty($exportParams) ? '' : '?' . http_build_query($exportParams));
+    ?>
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <h2 class="mb-0"><i class="fas fa-truck-loading me-2 text-primary"></i>Fournisseurs</h2>
-        <a href="<?= BASE_URL ?>/fournisseur/create" class="btn btn-success">
-            <i class="fas fa-plus me-1"></i>Nouveau fournisseur
-        </a>
+        <div class="d-flex gap-2">
+            <?php if (!empty($fournisseurs)): ?>
+            <a href="<?= htmlspecialchars($exportUrl) ?>" class="btn btn-outline-secondary" title="Exporter la liste filtrée en CSV">
+                <i class="fas fa-file-csv me-1"></i>Exporter CSV
+            </a>
+            <?php endif; ?>
+            <a href="<?= BASE_URL ?>/fournisseur/create" class="btn btn-success">
+                <i class="fas fa-plus me-1"></i>Nouveau fournisseur
+            </a>
+        </div>
     </div>
 
-    <!-- Filtres -->
+    <!-- Filtres visuels par type de service -->
+    <?php
+    // Préserver les autres params dans les liens des pills (sauf type_service qu'on remplace)
+    $baseQuery = array_filter([
+        'q'                => $search ?? null,
+        'inclure_inactifs' => !$actifsOnly ? '1' : null,
+    ], fn($v) => $v !== null && $v !== '');
+    $buildUrl = function(?string $type) use ($baseQuery) {
+        $params = $baseQuery;
+        if ($type !== null) $params['type_service'] = $type;
+        return BASE_URL . '/fournisseur/index' . (empty($params) ? '' : '?' . http_build_query($params));
+    };
+    ?>
     <div class="card shadow-sm mb-3">
-        <div class="card-body py-2">
-            <form method="GET" class="row g-2 align-items-center">
-                <div class="col-auto"><label class="text-muted small mb-0">Type :</label></div>
-                <div class="col-auto">
-                    <select name="type_service" class="form-select form-select-sm" onchange="this.form.submit()">
-                        <option value="">Tous types</option>
-                        <?php foreach ($typesLabels as $k => $l): ?>
-                        <option value="<?= $k ?>" <?= $typeFilter === $k ? 'selected' : '' ?>><?= $l ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-12 col-md-4">
+        <div class="card-body py-3">
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                <span class="text-muted small me-2"><i class="fas fa-filter me-1"></i>Filtrer par service :</span>
+                <a href="<?= htmlspecialchars($buildUrl(null)) ?>" class="badge text-decoration-none px-3 py-2 <?= empty($typeFilter) ? 'bg-primary' : 'bg-light text-dark border' ?>">
+                    <i class="fas fa-th-large me-1"></i>Tous
+                </a>
+                <?php foreach ($typesLabels as $k => $l): ?>
+                <a href="<?= htmlspecialchars($buildUrl($k)) ?>" class="badge text-decoration-none px-3 py-2 <?= $typeFilter === $k ? 'bg-' . ($typeColors[$k] ?? 'secondary') : 'bg-light text-dark border' ?>">
+                    <?= htmlspecialchars($l) ?>
+                </a>
+                <?php endforeach; ?>
+            </div>
+            <form method="GET" class="row g-2 align-items-center mt-1">
+                <?php if (!empty($typeFilter)): ?>
+                <input type="hidden" name="type_service" value="<?= htmlspecialchars($typeFilter) ?>">
+                <?php endif; ?>
+                <div class="col-12 col-md-5">
                     <input type="text" name="q" id="searchInput" class="form-control form-control-sm" placeholder="Rechercher (nom, ville, SIRET...)" value="<?= htmlspecialchars($search ?? '') ?>">
                 </div>
                 <div class="col-auto">
@@ -43,7 +76,7 @@ $typeColors = [
                     </div>
                 </div>
                 <div class="col-auto">
-                    <button class="btn btn-sm btn-outline-primary"><i class="fas fa-filter me-1"></i>Filtrer</button>
+                    <button class="btn btn-sm btn-outline-primary"><i class="fas fa-search me-1"></i>Rechercher</button>
                 </div>
             </form>
         </div>
@@ -94,9 +127,15 @@ $typeColors = [
                             <a href="<?= BASE_URL ?>/fournisseur/show/<?= (int)$f['id'] ?>" class="btn btn-sm btn-outline-info" title="Détail"><i class="fas fa-eye"></i></a>
                             <a href="<?= BASE_URL ?>/fournisseur/edit/<?= (int)$f['id'] ?>" class="btn btn-sm btn-outline-primary" title="Modifier"><i class="fas fa-edit"></i></a>
                             <?php if ($f['actif']): ?>
-                            <a href="<?= BASE_URL ?>/fournisseur/delete/<?= (int)$f['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Désactiver ce fournisseur ?')" title="Désactiver"><i class="fas fa-times"></i></a>
+                            <form method="POST" action="<?= BASE_URL ?>/fournisseur/delete/<?= (int)$f['id'] ?>" class="d-inline" onsubmit="return confirm('Désactiver ce fournisseur ?')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Désactiver"><i class="fas fa-times"></i></button>
+                            </form>
                             <?php else: ?>
-                            <a href="<?= BASE_URL ?>/fournisseur/activate/<?= (int)$f['id'] ?>" class="btn btn-sm btn-outline-success" title="Réactiver"><i class="fas fa-check"></i></a>
+                            <form method="POST" action="<?= BASE_URL ?>/fournisseur/activate/<?= (int)$f['id'] ?>" class="d-inline" onsubmit="return confirm('Réactiver ce fournisseur ?')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Réactiver"><i class="fas fa-check"></i></button>
+                            </form>
                             <?php endif; ?>
                         </td>
                     </tr>

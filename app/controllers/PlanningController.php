@@ -49,12 +49,15 @@ class PlanningController extends Controller {
                     $this->ajaxGetEvent($model);
                     break;
                 case 'save':
+                    $this->verifyCsrfHeader();
                     $this->ajaxSave($model);
                     break;
                 case 'move':
+                    $this->verifyCsrfHeader();
                     $this->ajaxMove($model);
                     break;
                 case 'delete':
+                    $this->verifyCsrfHeader();
                     $this->ajaxDelete($model);
                     break;
                 default:

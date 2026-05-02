@@ -24,9 +24,10 @@ $canAnnuler      = in_array($commande['statut'], ['brouillon', 'envoyee']);
         <div class="d-flex gap-2 flex-wrap">
             <a href="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/commandes" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Retour</a>
             <?php if ($canEnvoyer): ?>
-            <a href="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/commandes/envoyer/<?= (int)$commande['id'] ?>" class="btn btn-info" onclick="return confirm('Marquer cette commande comme envoyée au fournisseur ?')">
-                <i class="fas fa-paper-plane me-1"></i>Envoyer
-            </a>
+            <form method="POST" action="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/commandes/envoyer/<?= (int)$commande['id'] ?>" class="d-inline" onsubmit="return confirm('Marquer cette commande comme envoyée au fournisseur ?')">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                <button type="submit" class="btn btn-info"><i class="fas fa-paper-plane me-1"></i>Envoyer</button>
+            </form>
             <?php endif; ?>
             <?php if ($canReceptionner): ?>
             <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalReception">
@@ -34,14 +35,16 @@ $canAnnuler      = in_array($commande['statut'], ['brouillon', 'envoyee']);
             </button>
             <?php endif; ?>
             <?php if ($canFacturer): ?>
-            <a href="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/commandes/facturer/<?= (int)$commande['id'] ?>" class="btn btn-primary" onclick="return confirm('Marquer cette commande comme facturée ?')">
-                <i class="fas fa-file-invoice-dollar me-1"></i>Facturer
-            </a>
+            <form method="POST" action="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/commandes/facturer/<?= (int)$commande['id'] ?>" class="d-inline" onsubmit="return confirm('Marquer cette commande comme facturée ?')">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-file-invoice-dollar me-1"></i>Facturer</button>
+            </form>
             <?php endif; ?>
             <?php if ($canAnnuler): ?>
-            <a href="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/commandes/delete/<?= (int)$commande['id'] ?>" class="btn btn-outline-danger" onclick="return confirm('<?= $commande['statut'] === 'brouillon' ? 'Supprimer ce brouillon' : 'Annuler cette commande' ?> ?')">
-                <i class="fas fa-<?= $commande['statut'] === 'brouillon' ? 'trash' : 'ban' ?> me-1"></i><?= $commande['statut'] === 'brouillon' ? 'Supprimer' : 'Annuler' ?>
-            </a>
+            <form method="POST" action="<?= BASE_URL ?>/<?= htmlspecialchars($modulePath) ?>/commandes/delete/<?= (int)$commande['id'] ?>" class="d-inline" onsubmit="return confirm('<?= $commande['statut'] === 'brouillon' ? 'Supprimer ce brouillon' : 'Annuler cette commande' ?> ?')">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                <button type="submit" class="btn btn-outline-danger"><i class="fas fa-<?= $commande['statut'] === 'brouillon' ? 'trash' : 'ban' ?> me-1"></i><?= $commande['statut'] === 'brouillon' ? 'Supprimer' : 'Annuler' ?></button>
+            </form>
             <?php endif; ?>
         </div>
     </div>

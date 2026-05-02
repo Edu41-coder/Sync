@@ -168,7 +168,13 @@ include __DIR__ . '/../partials/breadcrumb.php';
                             <td><i class="fas <?= $serviceIcons[$r['type_service']] ?? 'fa-utensils' ?> me-1"></i><small><?= str_replace('_',' ',$r['type_service']) ?></small></td>
                             <td><span class="badge bg-<?= $r['mode_facturation'] === 'pension_complete' ? 'success' : ($r['mode_facturation'] === 'menu' ? 'warning text-dark' : 'info') ?>"><?= str_replace('_',' ',$r['mode_facturation']) ?></span></td>
                             <td class="text-end" data-sort="<?= $r['mode_facturation'] === 'pension_complete' ? 0 : (float)$r['montant'] ?>"><?= $r['mode_facturation'] === 'pension_complete' ? '<span class="text-success">inclus</span>' : number_format($r['montant'],2,',',' ').' €' ?></td>
-                            <td><a href="<?= BASE_URL ?>/restauration/service/supprimer/<?= $r['id'] ?>?residence_id=<?= $selectedResidence ?>" class="btn btn-sm btn-outline-danger py-0" onclick="return confirm('Supprimer ?')"><i class="fas fa-times"></i></a></td>
+                            <td>
+                                <form method="POST" action="<?= BASE_URL ?>/restauration/service/supprimer/<?= $r['id'] ?>" class="d-inline" onsubmit="return confirm('Supprimer ?')">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                    <input type="hidden" name="residence_id" value="<?= (int)$selectedResidence ?>">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0"><i class="fas fa-times"></i></button>
+                                </form>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                         </tbody>

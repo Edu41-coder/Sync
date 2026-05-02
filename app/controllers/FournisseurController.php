@@ -11,6 +11,16 @@ class FournisseurController extends Controller {
 
     private const ROLES_MANAGER = ['admin', 'directeur_residence'];
 
+    /**
+     * Rôles autorisés à interroger la map produits-fournisseur d'un module donné.
+     * Doit rester aligné avec les `commandes()` de chaque controller de module.
+     */
+    private const MODULE_ROLES = [
+        'jardinage'    => ['admin', 'directeur_residence', 'jardinier_manager'],
+        'menage'       => ['admin', 'directeur_residence', 'entretien_manager'],
+        'restauration' => ['admin', 'restauration_manager'],
+    ];
+
     public function index() {
         $this->requireAuth();
         $this->requireRole(self::ROLES_MANAGER);
@@ -29,6 +39,56 @@ class FournisseurController extends Controller {
             'actifsOnly'   => $actifsOnly,
             'flash'        => $this->getFlash()
         ], true);
+    }
+
+    /**
+     * Export CSV de la liste des fournisseurs (respecte les filtres en cours).
+     * Format français : BOM UTF-8, séparateur `;`, dates et nombres au format FR.
+     */
+    public function export() {
+        $this->requireAuth();
+        $this->requireRole(self::ROLES_MANAGER);
+
+        $model = $this->model('Fournisseur');
+        $typeFilter = $_GET['type_service'] ?? null;
+        $search     = $_GET['q'] ?? null;
+        $actifsOnly = !isset($_GET['inclure_inactifs']);
+        $fournisseurs = $model->getAll($typeFilter, $search, $actifsOnly);
+
+        $typesLabels = Fournisseur::TYPES_SERVICE;
+        $suffix = $typeFilter ? '_' . $typeFilter : '';
+        $filename = 'fournisseurs' . $suffix . '_' . date('Y-m-d') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        $out = fopen('php://output', 'w');
+        fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8 pour Excel
+        fputcsv($out, [
+            'Nom', 'SIRET', 'Services', 'Contact', 'Téléphone',
+            'Email', 'Adresse', 'CP', 'Ville', 'IBAN',
+            'Nb résidences liées', 'Statut'
+        ], ';');
+
+        foreach ($fournisseurs as $f) {
+            $types = $f['type_service'] ? explode(',', $f['type_service']) : [];
+            $servicesLabel = implode(', ', array_map(fn($t) => $typesLabels[$t] ?? $t, $types));
+            fputcsv($out, [
+                $f['nom'] ?? '',
+                $f['siret'] ?? '',
+                $servicesLabel,
+                $f['contact_nom'] ?? '',
+                $f['telephone'] ?? '',
+                $f['email'] ?? '',
+                $f['adresse'] ?? '',
+                $f['code_postal'] ?? '',
+                $f['ville'] ?? '',
+                $f['iban'] ?? '',
+                (int)($f['nb_residences'] ?? 0),
+                $f['actif'] ? 'Actif' : 'Inactif'
+            ], ';');
+        }
+        fclose($out);
+        exit;
     }
 
     public function show($id) {
@@ -55,8 +115,44 @@ class FournisseurController extends Controller {
             'residences'         => $residences,
             'residencesNonLiees' => $residencesNonLiees,
             'commandes'          => $model->getCommandesDuFournisseur((int)$id, 50),
+            'produits'           => $model->getProduitsDuFournisseur((int)$id),
+            'stats'              => $model->getStatsFournisseur((int)$id),
             'flash'              => $this->getFlash()
         ], true);
+    }
+
+    /**
+     * Endpoint AJAX (GET, JSON) pour le formulaire de création de commande :
+     * retourne la map des produits liés à ce fournisseur dans le module donné,
+     * avec leur prix négocié et leur statut "préféré".
+     *
+     * URL : GET /fournisseur/produitsForCommande/{id}?module=jardinage
+     * Output : { success: true, produits: { produit_id: {prix, prefere, ref}, ... } }
+     */
+    public function produitsForCommande($id) {
+        $this->requireAuth();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $module = $_GET['module'] ?? '';
+        if (!isset(self::MODULE_ROLES[$module])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Module invalide']);
+            exit;
+        }
+        $this->requireRole(self::MODULE_ROLES[$module]);
+
+        $produits = $this->model('Fournisseur')->getProduitsDuFournisseur((int)$id, $module);
+
+        $map = [];
+        foreach ($produits as $p) {
+            $map[(int)$p['produit_id']] = [
+                'prix'    => $p['prix_unitaire_specifique'] !== null ? (float)$p['prix_unitaire_specifique'] : null,
+                'prefere' => (bool)($p['fournisseur_prefere'] ?? false),
+                'ref'     => $p['reference_fournisseur'] ?? null,
+            ];
+        }
+        echo json_encode(['success' => true, 'produits' => $map]);
+        exit;
     }
 
     public function create() {
@@ -130,6 +226,7 @@ class FournisseurController extends Controller {
     public function delete($id) {
         $this->requireAuth();
         $this->requireRole(self::ROLES_MANAGER);
+        $this->requirePostCsrf();
 
         $model = $this->model('Fournisseur');
         $nbActives = $model->countCommandesActives((int)$id);
@@ -146,6 +243,7 @@ class FournisseurController extends Controller {
     public function activate($id) {
         $this->requireAuth();
         $this->requireRole(self::ROLES_MANAGER);
+        $this->requirePostCsrf();
         $this->model('Fournisseur')->activate((int)$id);
         $this->setFlash('success', 'Fournisseur réactivé');
         $this->redirect('fournisseur/show/' . (int)$id);
@@ -186,6 +284,7 @@ class FournisseurController extends Controller {
     public function delier($pivotId) {
         $this->requireAuth();
         $this->requireRole(self::ROLES_MANAGER);
+        $this->requirePostCsrf();
         $model = $this->model('Fournisseur');
         $lien  = $model->getLien((int)$pivotId);
         if (!$lien) { $this->setFlash('error', 'Lien introuvable'); $this->redirect('fournisseur/index'); return; }

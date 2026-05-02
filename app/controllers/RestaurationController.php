@@ -266,6 +266,7 @@ class RestaurationController extends Controller {
 
                 case 'save':
                     $this->requireRole(self::ROLES_MANAGER);
+                    $this->verifyCsrfHeader();
                     $input = json_decode(file_get_contents('php://input'), true);
                     if (!$input) {
                         echo json_encode(['success' => false, 'message' => 'Données invalides']);
@@ -301,6 +302,7 @@ class RestaurationController extends Controller {
 
                 case 'move':
                     $this->requireRole(self::ROLES_MANAGER);
+                    $this->verifyCsrfHeader();
                     $input = json_decode(file_get_contents('php://input'), true);
                     if (!$input || empty($input['id'])) {
                         echo json_encode(['success' => false, 'message' => 'Données invalides']);
@@ -312,6 +314,7 @@ class RestaurationController extends Controller {
 
                 case 'delete':
                     $this->requireRole(self::ROLES_MANAGER);
+                    $this->verifyCsrfHeader();
                     $input = json_decode(file_get_contents('php://input'), true);
                     $deleteId = (int)($input['id'] ?? 0);
                     if (!$deleteId) {
@@ -422,6 +425,7 @@ class RestaurationController extends Controller {
     }
 
     private function deletePlat(Restauration $model, $id) {
+        $this->requirePostCsrf();
         $model->deletePlat($id);
         $this->setFlash('success', 'Plat désactivé');
         $this->redirect('restauration/plats');
@@ -647,6 +651,7 @@ class RestaurationController extends Controller {
 
     private function deleteMenuAction(Restauration $model, $id) {
         $this->requireRole(self::ROLES_MANAGER);
+        $this->requirePostCsrf();
         $model->deleteMenu($id);
         $this->setFlash('success', 'Menu supprimé');
         $this->redirect('restauration/menus');
@@ -802,9 +807,10 @@ class RestaurationController extends Controller {
     }
 
     private function supprimerRepas(Restauration $model, $id) {
+        $this->requirePostCsrf();
         $model->supprimerRepas($id);
         $this->setFlash('success', 'Repas supprimé');
-        $this->redirect('restauration/service?residence_id=' . ($_GET['residence_id'] ?? ''));
+        $this->redirect('restauration/service?residence_id=' . ($_POST['residence_id'] ?? ''));
     }
 
     // =================================================================
@@ -964,7 +970,7 @@ class RestaurationController extends Controller {
             case 'create':  return $this->storeProduit($model);
             case 'edit':    return $this->editProduit($model, $id);
             case 'update':  return $this->updateProduitAction($model, $id);
-            case 'delete':  $model->deleteProduit($id); $this->setFlash('success','Produit désactivé'); $this->redirect('restauration/produits'); return;
+            case 'delete':  $this->requirePostCsrf(); $model->deleteProduit($id); $this->setFlash('success','Produit désactivé'); $this->redirect('restauration/produits'); return;
             default:        return $this->listProduits($model);
         }
     }
@@ -1162,6 +1168,7 @@ class RestaurationController extends Controller {
                 return;
 
             case 'envoyer':
+                $this->requirePostCsrf();
                 $cm->updateStatut((int)$id, 'envoyee');
                 $this->setFlash('success', 'Commande envoyée au fournisseur');
                 $this->redirect($modulePath . '/commandes/show/' . (int)$id);
@@ -1178,12 +1185,14 @@ class RestaurationController extends Controller {
                 return;
 
             case 'facturer':
+                $this->requirePostCsrf();
                 $cm->updateStatut((int)$id, 'facturee');
                 $this->setFlash('success', 'Commande marquée comme facturée');
                 $this->redirect($modulePath . '/commandes/show/' . (int)$id);
                 return;
 
             case 'delete':
+                $this->requirePostCsrf();
                 $result = $cm->deleteOrCancel((int)$id);
                 $this->setFlash('success', $result === 'deleted' ? 'Commande supprimée' : 'Commande annulée');
                 $this->redirect($modulePath . '/commandes');
@@ -1398,9 +1407,10 @@ class RestaurationController extends Controller {
                 return;
 
             case 'delier':
+                $this->requirePostCsrf();
                 $fm->delier((int)$id);
                 $this->setFlash('success', 'Lien fournisseur désactivé');
-                $this->redirect('restauration/fournisseurs?residence_id=' . ($_GET['residence_id'] ?? ''));
+                $this->redirect('restauration/fournisseurs?residence_id=' . ($_POST['residence_id'] ?? ''));
                 return;
 
             default:

@@ -100,7 +100,10 @@ function formatFenetre(int $md, int $mf, array $moisNoms): string {
                         <td class="text-center" data-sort="<?= $t['actif'] ?>"><span class="badge bg-<?= $t['actif'] ? 'success' : 'secondary' ?>"><?= $t['actif'] ? 'Actif' : 'Inactif' ?></span></td>
                         <td class="text-end">
                             <button class="btn btn-sm btn-outline-primary" onclick='editTrait(<?= json_encode($t) ?>)' title="Modifier"><i class="fas fa-edit"></i></button>
-                            <a href="<?= BASE_URL ?>/jardinage/traitements/delete/<?= (int)$t['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Désactiver ce traitement ?')" title="Désactiver"><i class="fas fa-times"></i></a>
+                            <form method="POST" action="<?= BASE_URL ?>/jardinage/traitements/delete/<?= (int)$t['id'] ?>" class="d-inline" onsubmit="return confirm('Désactiver ce traitement ?')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Désactiver"><i class="fas fa-times"></i></button>
+                            </form>
                         </td>
                     </tr>
                     <?php endforeach; ?>

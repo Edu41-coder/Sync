@@ -69,9 +69,10 @@ $freqLabels = ['quotidien'=>'Quotidien','hebdomadaire'=>'Hebdomadaire','bihebdom
                         <td class="text-center"><?= $z['priorite'] ?></td>
                         <td class="text-center"><span class="badge bg-<?= $z['actif'] ? 'success' : 'danger' ?>"><?= $z['actif'] ? 'Actif' : 'Inactif' ?></span></td>
                         <td class="text-end">
-                            <div class="btn-group btn-group-sm" role="group">
-                                <a href="<?= BASE_URL ?>/menage/zones/delete/<?= $z['id'] ?>" class="btn btn-outline-danger" title="Désactiver" data-bs-toggle="tooltip" onclick="return confirm('Désactiver cette zone ?')"><i class="fas fa-times"></i></a>
-                            </div>
+                            <form method="POST" action="<?= BASE_URL ?>/menage/zones/delete/<?= $z['id'] ?>" class="d-inline" onsubmit="return confirm('Désactiver cette zone ?')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Désactiver" data-bs-toggle="tooltip"><i class="fas fa-times"></i></button>
+                            </form>
                         </td>
                     </tr>
                     <?php endforeach; endif; ?>

@@ -17,10 +17,9 @@ TempResident123!
 http://localhost/Synd_Gest/public/
 
 📋 AUTRES URLS DISPONIBLES :
-- Test MVC : http://localhost/Synd_Gest/public/home/test
 - Déconnexion : http://localhost/Synd_Gest/public/auth/logout
 - Dashboard : http://localhost/Synd_Gest/public/
-- Copropriétés : http://localhost/Synd_Gest/public/copropriete/index
+- Résidences (admin) : http://localhost/Synd_Gest/public/admin/residences
 - Lots : http://localhost/Synd_Gest/public/lot/index
 
 ⚠️ Ne PAS utiliser : http://localhost/Synd_Gest/ (ancien système)
@@ -80,3 +79,14 @@ Premium (inclus), confort (payant 6€), essentiel (payant 12€)
 Pour tester
 chef_menage / Menage1234 → Ménage > Intérieur > Générer > Distribuer
 menage_int1 / Menage1234 → voir "Mes lots du jour" + cocher la checklist
+
+
+
+peut tu creer le fichier pour letest automatisé pour requireAuth()?
+Oui, en pratique, si la discipline tient, c'est suffisant. Le risque n'est pas théorique, il est humain : un dev pressé ajoute une méthode publique exportData() sans requireAuth(), ça passe en code review, et 6 mois plus tard quelqu'un trouve l'URL. C'est la classe de failles la plus fréquente dans les apps PHP "à la main".
+
+deux ns de rendre la discipline vérifiable (par ordre d'effort) :
+
+
+Test automatisé — un script PHPUnit/script CLI qui parcourt app/controllers/, liste toutes les méthodes publiques, et vérifie via reflection que la première instruction est requireAuth() ou requireRole(). Très rentable, ~30 lignes.
+Pattern centralisé — un BeforeAction dans Controller::__call() qui force l'auth par défaut sauf opt-out explicite. Plus invasif, refactor non-trivial.

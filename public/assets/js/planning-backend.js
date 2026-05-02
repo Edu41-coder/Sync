@@ -8,6 +8,18 @@ class PlanningBackend {
     }
 
     /**
+     * Headers JSON + token CSRF (X-CSRF-Token) lu depuis <meta name="csrf-token">.
+     * Requis par le serveur sur les endpoints state-changing (save/move/delete).
+     */
+    jsonHeaders() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': meta ? meta.content : ''
+        };
+    }
+
+    /**
      * Charger les shifts pour une période
      */
     loadEvents(start, end, filters, callback) {
@@ -60,7 +72,7 @@ class PlanningBackend {
 
         fetch(`${this.baseUrl}/planning/ajax/save`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: this.jsonHeaders(),
             body: JSON.stringify(formatted)
         })
         .then(r => r.json())
@@ -83,7 +95,7 @@ class PlanningBackend {
 
         fetch(`${this.baseUrl}/planning/ajax/move`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: this.jsonHeaders(),
             body: JSON.stringify(formatted)
         })
         .then(r => r.json())
@@ -97,7 +109,7 @@ class PlanningBackend {
     deleteEvent(id, callback) {
         fetch(`${this.baseUrl}/planning/ajax/delete`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: this.jsonHeaders(),
             body: JSON.stringify({ id: id })
         })
         .then(r => r.json())

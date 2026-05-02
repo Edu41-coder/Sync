@@ -145,9 +145,10 @@ $showRecapBtn = $showRecapBtn ?? false;
             const pendingIds = window[CHAT_ID]._pendingDocIds || [];
             if (pendingIds.length) body.documentIds = pendingIds;
 
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
             const resp = await fetch(ENDPOINT, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfMeta ? csrfMeta.content : '' },
                 body: JSON.stringify(body)
             });
             const data = await resp.json();

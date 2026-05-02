@@ -246,6 +246,11 @@ class Jardinage extends Model {
         $stmt->execute([$id]);
     }
 
+    public function activateEspace(int $id): void {
+        $stmt = $this->db->prepare("UPDATE jardin_espaces SET actif = 1 WHERE id = ?");
+        $stmt->execute([$id]);
+    }
+
     public function updateEspacePhoto(int $id, ?string $path): void {
         $stmt = $this->db->prepare("UPDATE jardin_espaces SET photo = ? WHERE id = ?");
         $stmt->execute([$path, $id]);

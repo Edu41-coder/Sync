@@ -52,6 +52,26 @@
 | `assemblees_generales` | AG |
 | `baux` | Baux |
 
+## Maintenance technique (migration 019)
+| Table | Description |
+|-------|-------------|
+| `specialites` | Référentiel 6 spécialités (piscine, ascenseur, travaux, plomberie, electricite, peinture) |
+| `user_specialites` | Pivot user × spécialité (niveau `debutant`/`confirme`/`expert`) |
+| `user_certifications` | Certifications pro avec date_obtention, date_expiration, fichier preuve |
+| `maintenance_interventions` | Interventions courantes — workflow 4 statuts, photos avant/après |
+| `chantiers` | Chantiers travaux — workflow 9 phases, FK `ag_id` |
+| `chantier_devis` | Devis multi-prestataires |
+| `chantier_jalons` | Jalons d'avancement (% complétion) |
+| `chantier_documents` | Devis, plans, photos, PV, factures, garanties |
+| `chantier_receptions` | PV de réception avec/sans réserves |
+| `chantier_garanties` | Parfait achèvement / biennale / décennale |
+| `chantier_lots_impactes` | Quote-part propriétaires (chantier × lot) |
+| `maintenance_produits` | Catalogue (consommable, pièce détachée, outillage, EPI, chimique) |
+| `maintenance_inventaire` | Stock par résidence |
+| `maintenance_inventaire_mouvements` | Historique avec lien intervention OU chantier |
+
+`coproprietees.piscine` + `coproprietees.ascenseur` (TINYINT) ajoutés pour masquer les sections inutiles.
+
 ## Logs
 | Table | Description |
 |-------|-------------|
@@ -69,6 +89,6 @@ coproprietees ──> lots (1:N)
 lots ──> occupations_residents (1:N, 1 active max)
 lots ──> contrats_gestion (1:N, 1 actif max)
 
-residents_seniors ──> occupations_residents (1:3 max)
+residents_seniors ──> occupations_residents (N illimité)
 occupations_residents ──> occupation_services (pivot)
 ```

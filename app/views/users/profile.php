@@ -58,10 +58,12 @@ if (!isset($user) || !is_object($user)) {
                             </label>
                         </form>
                         <?php if (!empty($user->photo_profil)): ?>
-                        <a href="<?= BASE_URL ?>/user/deletePhoto" class="btn btn-sm btn-outline-danger ms-1"
-                           onclick="return confirm('Supprimer la photo ?')">
-                            <i class="fas fa-trash"></i>
-                        </a>
+                        <form method="POST" action="<?= BASE_URL ?>/user/deletePhoto" class="d-inline" onsubmit="return confirm('Supprimer la photo ?')">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                            <button type="submit" class="btn btn-sm btn-outline-danger ms-1">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
                         <?php endif; ?>
                         <br><small class="text-muted">JPG, PNG, WEBP — max 2 Mo</small>
                     </div>

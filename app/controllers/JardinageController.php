@@ -175,6 +175,7 @@ class JardinageController extends Controller {
 
                 case 'save':
                     $this->requireRole(self::ROLES_MANAGER);
+                    $this->verifyCsrfHeader();
                     $input = json_decode(file_get_contents('php://input'), true);
                     if (!$input) { echo json_encode(['success' => false, 'message' => 'Données invalides']); break; }
                     $saveUserId = (int)($input['userId'] ?? 0);
@@ -202,6 +203,7 @@ class JardinageController extends Controller {
 
                 case 'move':
                     $this->requireRole(self::ROLES_MANAGER);
+                    $this->verifyCsrfHeader();
                     $input = json_decode(file_get_contents('php://input'), true);
                     if (!$input || empty($input['id'])) { echo json_encode(['success' => false, 'message' => 'Données invalides']); break; }
                     $planningModel->moveShift((int)$input['id'], $input['start'], $input['end']);
@@ -210,6 +212,7 @@ class JardinageController extends Controller {
 
                 case 'delete':
                     $this->requireRole(self::ROLES_MANAGER);
+                    $this->verifyCsrfHeader();
                     $input = json_decode(file_get_contents('php://input'), true);
                     $deleteId = (int)($input['id'] ?? 0);
                     if (!$deleteId) { echo json_encode(['success' => false, 'message' => 'ID requis']); break; }
@@ -269,21 +272,31 @@ class JardinageController extends Controller {
 
             case 'photoDelete':
                 $this->requireRole(self::ROLES_MANAGER);
+                $this->requirePostCsrf();
                 $old = $model->getEspacePhoto((int)$id);
                 if ($old) { $oldPath = '../public/' . $old; if (file_exists($oldPath)) @unlink($oldPath); }
                 $model->updateEspacePhoto((int)$id, null);
                 $this->setFlash('success', 'Photo supprimée');
-                $this->redirect('jardinage/espaces?residence_id=' . ($_GET['residence_id'] ?? ''));
+                $this->redirect('jardinage/espaces?residence_id=' . ($_POST['residence_id'] ?? ''));
                 return;
 
             case 'delete':
                 $this->requireRole(self::ROLES_MANAGER);
+                $this->requirePostCsrf();
                 // Supprimer aussi le fichier photo associé
                 $old = $model->getEspacePhoto((int)$id);
                 if ($old) { $oldPath = '../public/' . $old; if (file_exists($oldPath)) @unlink($oldPath); }
                 $model->deleteEspace((int)$id);
                 $this->setFlash('success', 'Espace désactivé');
-                $this->redirect('jardinage/espaces?residence_id=' . ($_GET['residence_id'] ?? ''));
+                $this->redirect('jardinage/espaces?residence_id=' . ($_POST['residence_id'] ?? ''));
+                return;
+
+            case 'activate':
+                $this->requireRole(self::ROLES_MANAGER);
+                $this->requirePostCsrf();
+                $model->activateEspace((int)$id);
+                $this->setFlash('success', 'Espace réactivé');
+                $this->redirect('jardinage/espaces?residence_id=' . ($_POST['residence_id'] ?? ''));
                 return;
 
             case 'taches':
@@ -447,6 +460,7 @@ class JardinageController extends Controller {
                 return;
 
             case 'photoDelete':
+                $this->requirePostCsrf();
                 $old = $model->getProduitPhoto((int)$id);
                 if ($old) { $oldPath = '../public/' . $old; if (file_exists($oldPath)) @unlink($oldPath); }
                 $model->updateProduitPhoto((int)$id, null);
@@ -455,6 +469,7 @@ class JardinageController extends Controller {
                 return;
 
             case 'delete':
+                $this->requirePostCsrf();
                 $old = $model->getProduitPhoto((int)$id);
                 if ($old) { $oldPath = '../public/' . $old; if (file_exists($oldPath)) @unlink($oldPath); }
                 $model->updateProduitPhoto((int)$id, null);
@@ -585,6 +600,7 @@ class JardinageController extends Controller {
                 return;
 
             case 'delete':
+                $this->requirePostCsrf();
                 $model->deleteTraitementCalendrier((int)$id);
                 $this->setFlash('success', 'Traitement désactivé');
                 $this->redirect('jardinage/traitements');
@@ -649,22 +665,24 @@ class JardinageController extends Controller {
 
             case 'photoDelete':
                 $this->requireRole(self::ROLES_MANAGER);
+                $this->requirePostCsrf();
                 $old = $model->getRuchePhoto((int)$id);
                 if ($old) { $oldPath = '../public/' . $old; if (file_exists($oldPath)) @unlink($oldPath); }
                 $model->updateRuchePhoto((int)$id, null);
                 $this->setFlash('success', 'Photo supprimée');
-                $back = $_GET['residence_id'] ?? '';
+                $back = $_POST['residence_id'] ?? '';
                 $this->redirect($back ? 'jardinage/ruches?residence_id=' . $back : 'jardinage/ruches/show/' . (int)$id);
                 return;
 
             case 'delete':
                 $this->requireRole(self::ROLES_MANAGER);
+                $this->requirePostCsrf();
                 $old = $model->getRuchePhoto((int)$id);
                 if ($old) { $oldPath = '../public/' . $old; if (file_exists($oldPath)) @unlink($oldPath); }
                 $model->updateRuchePhoto((int)$id, null);
                 $model->setRucheStatut((int)$id, 'inactive', 'Désactivation via liste ruches', (int)$_SESSION['user_id']);
                 $this->setFlash('success', 'Ruche désactivée');
-                $this->redirect('jardinage/ruches?residence_id=' . ($_GET['residence_id'] ?? ''));
+                $this->redirect('jardinage/ruches?residence_id=' . ($_POST['residence_id'] ?? ''));
                 return;
 
             case 'show':
@@ -789,9 +807,10 @@ class JardinageController extends Controller {
                 return;
 
             case 'delete':
+                $this->requirePostCsrf();
                 $model->deleteEcriture((int)$id);
                 $this->setFlash('success', 'Écriture supprimée');
-                $this->redirect('jardinage/comptabilite?residence_id=' . ($_GET['residence_id'] ?? '') . '&annee=' . ($_GET['annee'] ?? date('Y')));
+                $this->redirect('jardinage/comptabilite?residence_id=' . ($_POST['residence_id'] ?? '') . '&annee=' . ($_POST['annee'] ?? date('Y')));
                 return;
 
             case 'export':
@@ -919,6 +938,7 @@ class JardinageController extends Controller {
                 return;
 
             case 'envoyer':
+                $this->requirePostCsrf();
                 $cm->updateStatut((int)$id, 'envoyee');
                 $this->setFlash('success', 'Commande envoyée au fournisseur');
                 $this->redirect($modulePath . '/commandes/show/' . (int)$id);
@@ -935,12 +955,14 @@ class JardinageController extends Controller {
                 return;
 
             case 'facturer':
+                $this->requirePostCsrf();
                 $cm->updateStatut((int)$id, 'facturee');
                 $this->setFlash('success', 'Commande marquée comme facturée');
                 $this->redirect($modulePath . '/commandes/show/' . (int)$id);
                 return;
 
             case 'delete':
+                $this->requirePostCsrf();
                 $result = $cm->deleteOrCancel((int)$id);
                 $this->setFlash('success', $result === 'deleted' ? 'Commande supprimée' : 'Commande annulée');
                 $this->redirect($modulePath . '/commandes');
@@ -1009,9 +1031,10 @@ class JardinageController extends Controller {
                 return;
 
             case 'delier':
+                $this->requirePostCsrf();
                 $fm->delier((int)$id);
                 $this->setFlash('success', 'Lien fournisseur désactivé');
-                $this->redirect('jardinage/fournisseurs?residence_id=' . ($_GET['residence_id'] ?? ''));
+                $this->redirect('jardinage/fournisseurs?residence_id=' . ($_POST['residence_id'] ?? ''));
                 return;
 
             default:

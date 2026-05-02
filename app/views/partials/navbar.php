@@ -22,6 +22,54 @@
                     </a>
                 </li>
 
+                <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'locataire_permanent'): ?>
+                <!-- Résident senior : menus spécifiques -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navResidentEspace" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle me-1" style="color:#6610f2"></i> Mon espace
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navResidentEspace">
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/resident/monEspace">
+                            <i class="fas fa-tachometer-alt me-2 text-info"></i> Tableau de bord
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/resident/mesLots">
+                            <i class="fas fa-door-open me-2 text-primary"></i> Mes lots
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/resident/mesOccupations">
+                            <i class="fas fa-clipboard-list me-2 text-secondary"></i> Mes occupations
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/resident/mesResidences">
+                            <i class="fas fa-building me-2 text-info"></i> Résidences Domitys
+                        </a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<?php echo BASE_URL; ?>/resident/calendrier">
+                        <i class="fas fa-calendar-alt me-1 text-success"></i> Calendrier
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<?php echo BASE_URL; ?>/residentDocument/index">
+                        <i class="fas fa-folder-open me-1 text-warning"></i> Mes Documents
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navResidentCompta" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-calculator me-1 text-danger"></i> Comptabilité
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navResidentCompta">
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/resident/comptabilite">
+                            <i class="fas fa-chart-line me-2 text-success"></i> Mon budget
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/resident/declarationFiscale">
+                            <i class="fas fa-file-invoice me-2 text-primary"></i> Déclaration fiscale
+                        </a></li>
+                    </ul>
+                </li>
+                <?php endif; ?>
+
                 <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'proprietaire'): ?>
                 <!-- Propriétaire : menus spécifiques -->
                 <li class="nav-item dropdown">
@@ -157,13 +205,6 @@
                             <i class="fas fa-chart-bar me-2 text-success"></i> Balance
                         </a></li>
                     </ul>
-                </li>
-                
-                <!-- Menu Travaux -->
-                <li class="nav-item">
-                    <a class="nav-link" href="<?php echo BASE_URL; ?>/travaux/index">
-                        <i class="fas fa-tools me-1 text-warning"></i> Travaux
-                    </a>
                 </li>
                 
                 <!-- Menu Documents -->
@@ -302,6 +343,121 @@
                         </a></li>
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/menage/comptabilite">
                             <i class="fas fa-calculator me-2 text-success"></i> Comptabilité
+                        </a></li>
+                        <?php endif; ?>
+                    </ul>
+                </li>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin', 'directeur_residence', 'technicien_chef', 'technicien'])): ?>
+                <!-- Menu Maintenance Technique -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-hard-hat me-1 text-warning"></i> Maintenance
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/maintenance/index">
+                            <i class="fas fa-tachometer-alt me-2 text-info"></i> Dashboard
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/maintenance/interventions">
+                            <i class="fas fa-tools me-2 text-warning"></i> Interventions
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/maintenance/planning">
+                            <i class="fas fa-calendar-alt me-2 text-success"></i> Planning
+                        </a></li>
+                        <?php
+                        // Section Piscine : visible uniquement si l'user a la spécialité piscine (ou est manager)
+                        // ET s'il a au moins 1 résidence accessible avec piscine = 1
+                        $showPiscine = false;
+                        try {
+                            $pPdo = Database::getInstance()->getConnection();
+                            $isMgr = in_array($_SESSION['user_role'] ?? '', ['admin', 'directeur_residence', 'technicien_chef'], true);
+                            // Spécialité piscine (sauf manager)
+                            $hasPiscine = $isMgr;
+                            if (!$hasPiscine) {
+                                $stmtP = $pPdo->prepare("SELECT 1 FROM user_specialites us JOIN specialites s ON s.id=us.specialite_id WHERE us.user_id=? AND s.slug='piscine' LIMIT 1");
+                                $stmtP->execute([$_SESSION['user_id']]);
+                                $hasPiscine = (bool)$stmtP->fetchColumn();
+                            }
+                            if ($hasPiscine) {
+                                if ($_SESSION['user_role'] === 'admin') {
+                                    $showPiscine = (bool)$pPdo->query("SELECT 1 FROM coproprietees WHERE piscine=1 AND actif=1 LIMIT 1")->fetchColumn();
+                                } else {
+                                    $stmtR = $pPdo->prepare("SELECT 1 FROM user_residence ur JOIN coproprietees c ON ur.residence_id=c.id WHERE ur.user_id=? AND ur.statut='actif' AND c.piscine=1 AND c.actif=1 LIMIT 1");
+                                    $stmtR->execute([$_SESSION['user_id']]);
+                                    $showPiscine = (bool)$stmtR->fetchColumn();
+                                }
+                            }
+                        } catch (Exception $e) {}
+                        ?>
+                        <?php if ($showPiscine): ?>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/maintenance/piscine">
+                            <i class="fas fa-swimming-pool me-2 text-info"></i> Piscine
+                        </a></li>
+                        <?php endif; ?>
+                        <?php
+                        // Section Ascenseur : visible si user a la spécialité ascenseur (ou manager)
+                        // ET au moins 1 résidence accessible avec coproprietees.ascenseur = 1
+                        $showAscenseur = false;
+                        try {
+                            $aPdo = Database::getInstance()->getConnection();
+                            $isMgr = in_array($_SESSION['user_role'] ?? '', ['admin', 'directeur_residence', 'technicien_chef'], true);
+                            $hasAsc = $isMgr;
+                            if (!$hasAsc) {
+                                $stmtA = $aPdo->prepare("SELECT 1 FROM user_specialites us JOIN specialites s ON s.id=us.specialite_id WHERE us.user_id=? AND s.slug='ascenseur' LIMIT 1");
+                                $stmtA->execute([$_SESSION['user_id']]);
+                                $hasAsc = (bool)$stmtA->fetchColumn();
+                            }
+                            if ($hasAsc) {
+                                if (($_SESSION['user_role'] ?? '') === 'admin') {
+                                    // Admin : toujours afficher (même sans ascenseur, pour pouvoir en créer)
+                                    $showAscenseur = true;
+                                } else {
+                                    $stmtRA = $aPdo->prepare("SELECT 1 FROM user_residence ur JOIN coproprietees c ON ur.residence_id=c.id WHERE ur.user_id=? AND ur.statut='actif' AND c.ascenseur=1 AND c.actif=1 LIMIT 1");
+                                    $stmtRA->execute([$_SESSION['user_id']]);
+                                    $showAscenseur = (bool)$stmtRA->fetchColumn() || $isMgr;
+                                }
+                            }
+                        } catch (Exception $e) {}
+                        ?>
+                        <?php if ($showAscenseur): ?>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/maintenance/ascenseurs">
+                            <i class="fas fa-elevator me-2 text-secondary"></i> Ascenseurs
+                        </a></li>
+                        <?php endif; ?>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/chantier/index">
+                            <i class="fas fa-hammer me-2 text-warning"></i> Chantiers / Travaux
+                        </a></li>
+                        <?php if (in_array($_SESSION['user_role'] ?? '', ['admin', 'directeur_residence', 'technicien_chef'])): ?>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/maintenance/produits">
+                            <i class="fas fa-box me-2 text-warning"></i> Catalogue produits
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/maintenance/inventaire">
+                            <i class="fas fa-warehouse me-2 text-info"></i> Inventaire
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/maintenance/commandes">
+                            <i class="fas fa-truck me-2 text-success"></i> Commandes
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/maintenance/fournisseurs">
+                            <i class="fas fa-truck-loading me-2 text-primary"></i> Fournisseurs
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/maintenance/equipe">
+                            <i class="fas fa-users me-2 text-warning"></i> Équipe
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/maintenance/comptabilite">
+                            <i class="fas fa-calculator me-2 text-success"></i> Comptabilité
+                        </a></li>
+                        <?php endif; ?>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/maintenance/certifications">
+                            <i class="fas fa-certificate me-2 text-warning"></i> Mes certifications
+                        </a></li>
+                        <?php if (in_array($_SESSION['user_role'], ['admin', 'directeur_residence', 'technicien_chef'])): ?>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/maintenance/specialites">
+                            <i class="fas fa-users-cog me-2 text-primary"></i> Affecter spécialités
                         </a></li>
                         <?php endif; ?>
                     </ul>
@@ -471,12 +627,18 @@
                                 'proprietaire' => 'Propriétaire',
                                 'exploitant' => 'Exploitant',
                                 'comptable' => 'Comptable',
+                                'locataire_permanent' => 'Résident Senior',
                             ];
                             echo $roleNames[$role] ?? $role;
                             ?>
                         </small></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/user/profile">
+                        <?php
+                        $profileUrl = (($_SESSION['user_role'] ?? '') === 'locataire_permanent')
+                            ? BASE_URL . '/resident/profile'
+                            : BASE_URL . '/user/profile';
+                        ?>
+                        <li><a class="dropdown-item text-nowrap" href="<?= $profileUrl ?>">
                             <i class="fas fa-user me-2 text-info"></i> Mon profil
                         </a></li>
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/user/settings">

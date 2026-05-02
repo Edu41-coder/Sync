@@ -39,12 +39,13 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Fournisseur <span class="text-danger">*</span></label>
-                        <select name="fournisseur_id" class="form-select" required>
+                        <select name="fournisseur_id" id="selectFournisseur" class="form-select" required>
                             <option value="">— Sélectionner —</option>
                             <?php foreach ($fournisseurs as $f): ?>
                             <option value="<?= $f['id'] ?>"><?= htmlspecialchars($f['nom']) ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <small class="form-text text-muted">★ = fournisseur préféré pour ce produit · ✓ = produit référencé chez ce fournisseur</small>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Date commande</label>
@@ -151,12 +152,19 @@
 
     <script>
     let ligneIndex = 0;
+    const BASE_URL = '<?= BASE_URL ?>';
+    const MODULE_PATH = <?= json_encode($modulePath) ?>;
+    // Map produit_id -> {prix, prefere, ref} pour le fournisseur actuellement sélectionné
+    window.PRIX_NEGOCIES = {};
 
     function addLigne() {
         const tpl = document.getElementById('templateLigne').innerHTML.replace(/__INDEX__/g, ligneIndex++);
         const wrap = document.createElement('tbody');
         wrap.innerHTML = tpl;
-        document.getElementById('lignesBody').appendChild(wrap.firstElementChild);
+        const tr = wrap.firstElementChild;
+        document.getElementById('lignesBody').appendChild(tr);
+        // Marquer la nouvelle ligne avec les prix négociés en cours
+        applyPrixNegociesToSelect(tr.querySelector('select[name^="lignes["]'));
     }
 
     function removeLigne(btn) {
@@ -169,11 +177,60 @@
         const tr = sel.closest('tr');
         tr.querySelector('.ligne-designation').value = opt.dataset.nom || '';
         const prixInp = tr.querySelector('.ligne-prix');
-        if (!prixInp.value && opt.dataset.prix && parseFloat(opt.dataset.prix) > 0) {
-            prixInp.value = parseFloat(opt.dataset.prix).toFixed(2);
+        if (!prixInp.value) {
+            // Prix négocié si dispo, sinon prix catalogue
+            const prixNeg = parseFloat(opt.dataset.prixNegocie);
+            const prixCat = parseFloat(opt.dataset.prix);
+            const prix = (!isNaN(prixNeg) && prixNeg > 0) ? prixNeg : prixCat;
+            if (!isNaN(prix) && prix > 0) prixInp.value = prix.toFixed(2);
         }
         recalcTotaux();
     }
+
+    /**
+     * Applique les marqueurs visuels (★/✓) et le data-prix-negocie sur un <select> produit
+     * en fonction de window.PRIX_NEGOCIES.
+     */
+    function applyPrixNegociesToSelect(sel) {
+        if (!sel) return;
+        Array.from(sel.options).forEach(opt => {
+            if (!opt.value) return;
+            const pid = parseInt(opt.value);
+            if (!opt.dataset.baseLabel) opt.dataset.baseLabel = opt.textContent;
+            const info = window.PRIX_NEGOCIES[pid];
+            if (info && info.prix !== null && info.prix > 0) {
+                const marker = info.prefere ? '★' : '✓';
+                opt.textContent = marker + ' ' + opt.dataset.baseLabel + ' — ' + info.prix.toFixed(2).replace('.', ',') + ' €';
+                opt.dataset.prixNegocie = info.prix;
+            } else {
+                opt.textContent = opt.dataset.baseLabel;
+                delete opt.dataset.prixNegocie;
+            }
+        });
+    }
+
+    function redrawAllProduitSelects() {
+        document.querySelectorAll('#lignesBody select[name^="lignes["]').forEach(applyPrixNegociesToSelect);
+    }
+
+    async function loadFournisseurProduits() {
+        const fid = parseInt(document.getElementById('selectFournisseur').value);
+        if (!fid) {
+            window.PRIX_NEGOCIES = {};
+            redrawAllProduitSelects();
+            return;
+        }
+        try {
+            const r = await fetch(BASE_URL + '/fournisseur/produitsForCommande/' + fid + '?module=' + MODULE_PATH);
+            const data = await r.json();
+            window.PRIX_NEGOCIES = (data && data.success) ? data.produits : {};
+        } catch (e) {
+            window.PRIX_NEGOCIES = {};
+        }
+        redrawAllProduitSelects();
+    }
+
+    document.getElementById('selectFournisseur').addEventListener('change', loadFournisseurProduits);
 
     function recalcTotaux() {
         let totalHt = 0, totalTva = 0;

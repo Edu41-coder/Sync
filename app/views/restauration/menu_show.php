@@ -80,7 +80,10 @@ include __DIR__ . '/../partials/breadcrumb.php';
                     <div>
                         <?php if (in_array($_SESSION['user_role'] ?? '', ['admin', 'restauration_manager'])): ?>
                         <a href="<?= BASE_URL ?>/restauration/menus/edit/<?= $menu['id'] ?>" class="btn btn-primary"><i class="fas fa-edit me-2"></i>Modifier</a>
-                        <a href="<?= BASE_URL ?>/restauration/menus/delete/<?= $menu['id'] ?>" class="btn btn-danger" onclick="return confirm('Supprimer ce menu ?')"><i class="fas fa-trash me-2"></i>Supprimer</a>
+                        <form method="POST" action="<?= BASE_URL ?>/restauration/menus/delete/<?= $menu['id'] ?>" class="d-inline" onsubmit="return confirm('Supprimer ce menu ?')">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                            <button type="submit" class="btn btn-danger"><i class="fas fa-trash me-2"></i>Supprimer</button>
+                        </form>
                         <?php endif; ?>
                     </div>
                 </div>

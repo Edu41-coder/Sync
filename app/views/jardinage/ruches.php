@@ -115,7 +115,8 @@ $statutColors = ['active' => 'success', 'essaim_capture' => 'info', 'inactive' =
                             <a href="<?= BASE_URL ?>/jardinage/ruches/show/<?= $r['id'] ?>" class="btn btn-sm btn-outline-info" title="Détail + carnet"><i class="fas fa-book-open"></i></a>
                             <?php if ($isManager): ?>
                             <button class="btn btn-sm btn-outline-primary" onclick='editRuche(<?= json_encode($r) ?>)' title="Modifier"><i class="fas fa-edit"></i></button>
-                            <form method="GET" action="<?= BASE_URL ?>/jardinage/ruches/delete/<?= $r['id'] ?>" class="d-inline" onsubmit="return confirm('Désactiver cette ruche ?')">
+                            <form method="POST" action="<?= BASE_URL ?>/jardinage/ruches/delete/<?= $r['id'] ?>" class="d-inline" onsubmit="return confirm('Désactiver cette ruche ?')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                 <input type="hidden" name="residence_id" value="<?= $selectedResidence ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Désactiver"><i class="fas fa-times"></i></button>
                             </form>
@@ -194,7 +195,7 @@ $statutColors = ['active' => 'success', 'essaim_capture' => 'info', 'inactive' =
                             <label class="form-label">Photo <small class="text-muted">(JPG, PNG, WEBP · max 5 Mo)</small></label>
                             <div id="currentPhotoBlock" class="mb-2" style="display:none">
                                 <img id="currentPhotoImg" src="" alt="" class="rounded me-2" style="width:120px;height:90px;object-fit:cover">
-                                <a id="btnDeletePhoto" href="#" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette photo ?')"><i class="fas fa-trash me-1"></i>Supprimer la photo</a>
+                                <button type="submit" form="formDeletePhotoRucheList" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash me-1"></i>Supprimer la photo</button>
                             </div>
                             <input type="file" name="photo" class="form-control" accept="image/jpeg,image/png,image/webp">
                         </div>
@@ -212,6 +213,12 @@ $statutColors = ['active' => 'success', 'essaim_capture' => 'info', 'inactive' =
         </div>
     </div>
 </div>
+
+<!-- Form séparé pour suppression photo (HTML interdit le form nesting dans formRuche) -->
+<form id="formDeletePhotoRucheList" method="POST" action="" onsubmit="return confirm('Supprimer cette photo ?')" style="display:none">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+    <input type="hidden" name="residence_id" value="<?= (int)$selectedResidence ?>">
+</form>
 
 <script>
 let statutOriginal = 'active'; // Valeur à l'ouverture (create = 'active', edit = statut actuel de la ruche)
@@ -257,7 +264,7 @@ function editRuche(r) {
     const block = document.getElementById('currentPhotoBlock');
     if (r.photo) {
         document.getElementById('currentPhotoImg').src = '<?= BASE_URL ?>/' + r.photo;
-        document.getElementById('btnDeletePhoto').href = '<?= BASE_URL ?>/jardinage/ruches/photoDelete/' + r.id + '?residence_id=<?= $selectedResidence ?>';
+        document.getElementById('formDeletePhotoRucheList').action = '<?= BASE_URL ?>/jardinage/ruches/photoDelete/' + r.id;
         block.style.display = 'block';
     } else {
         block.style.display = 'none';

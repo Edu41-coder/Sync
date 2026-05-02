@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="description" content="<?php echo APP_NAME; ?> - Plateforme de gestion immobilière et syndic">
     <meta name="theme-color" content="#dc3545">
+    <meta name="csrf-token" content="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES); ?>">
     <title><?php echo $title ?? APP_NAME; ?></title>
     
     <!-- Favicon -->

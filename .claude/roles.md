@@ -10,6 +10,7 @@
 | staff | `employe_residence`, `technicien` | — | /dashboard |
 | staff jardin | `jardinier_chef`, `jardinier` | — | /dashboard |
 | staff entretien | `entretien_chef`, `entretien` | — | /dashboard |
+| staff maintenance | `technicien_chef`, `technicien` | — | /maintenance (sections selon spécialités assignées) |
 | staff ménage | `menage_chef`, `menage` | — | /dashboard |
 | staff restauration | `restauration_chef`, `restauration` | — | /dashboard |
 | staff laverie | `employe_laverie` | — | /dashboard |

@@ -243,7 +243,12 @@ $typeEspaceLabels = [
                         <td class="text-end" data-sort="<?= (float)$e['montant_tva'] ?>"><?= number_format($e['montant_tva'], 2, ',', ' ') ?> €</td>
                         <td class="text-end" data-sort="<?= (float)$e['montant_ttc'] ?>"><strong class="text-<?= $e['type_ecriture'] === 'recette' ? 'success' : 'danger' ?>"><?= number_format($e['montant_ttc'], 2, ',', ' ') ?> €</strong></td>
                         <td class="text-end">
-                            <a href="<?= BASE_URL ?>/jardinage/comptabilite/delete/<?= (int)$e['id'] ?>?residence_id=<?= (int)$selectedResidence ?>&annee=<?= $annee ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette écriture ?')" title="Supprimer"><i class="fas fa-trash"></i></a>
+                            <form method="POST" action="<?= BASE_URL ?>/jardinage/comptabilite/delete/<?= (int)$e['id'] ?>" class="d-inline" onsubmit="return confirm('Supprimer cette écriture ?')">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <input type="hidden" name="residence_id" value="<?= (int)$selectedResidence ?>">
+                                <input type="hidden" name="annee" value="<?= (int)$annee ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="fas fa-trash"></i></button>
+                            </form>
                         </td>
                     </tr>
                     <?php endforeach; ?>

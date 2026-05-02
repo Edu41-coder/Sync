@@ -222,6 +222,41 @@ class Occupation extends Model {
     }
     
     /**
+     * Toutes les occupations actives d'un résident (depuis migration 018,
+     * un résident peut avoir N lots dans N résidences).
+     */
+    public function getActivesByResident($residentId) {
+        try {
+            $sql = "SELECT
+                        o.*,
+                        l.numero_lot,
+                        l.type as lot_type,
+                        l.surface,
+                        l.nombre_pieces,
+                        l.etage,
+                        c.id as residence_id,
+                        c.nom as residence_nom,
+                        c.adresse,
+                        c.code_postal,
+                        c.ville,
+                        e.raison_sociale as exploitant_nom,
+                        e.telephone as exploitant_telephone
+                    FROM occupations_residents o
+                    INNER JOIN lots l ON o.lot_id = l.id
+                    INNER JOIN coproprietees c ON l.copropriete_id = c.id
+                    LEFT JOIN exploitants e ON o.exploitant_id = e.id
+                    WHERE o.resident_id = ? AND o.statut = 'actif'
+                    ORDER BY l.type, c.nom, l.numero_lot";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$residentId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $this->logError("Erreur getActivesByResident: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Récupérer l'historique des occupations d'un résident
      */
     public function getHistoryByResident($residentId) {
@@ -500,36 +535,21 @@ class Occupation extends Model {
     //  FORMULAIRES — RÉSIDENTS DISPONIBLES & LOTS LIBRES
     // ─────────────────────────────────────────────────────────────
 
-    private const TYPES_LOGEMENT = ['studio','t2','t2_bis','t3'];
-
     /**
-     * Résidents disponibles selon le type de lot
-     * Pour un logement : résidents sans logement actif
-     * Pour cave/parking : tous les résidents actifs
+     * Tous les résidents actifs (un résident peut louer plusieurs lots
+     * dans plusieurs résidences sans contrainte applicative — la seule
+     * contrainte est « 1 occupant actif max par lot » au niveau BDD).
+     * Le paramètre $lotType est conservé pour compatibilité avec les
+     * vues existantes mais n'est plus utilisé pour filtrer.
      */
-    public function getResidentsDisponibles(?string $lotType, ?int $excludeOccupationId = null): array {
+    public function getResidentsDisponibles(?string $lotType = null, ?int $excludeOccupationId = null): array {
+        unset($lotType, $excludeOccupationId); // signature gardée pour compat des vues existantes
         try {
-            $isLogement = $lotType && in_array($lotType, self::TYPES_LOGEMENT);
-
-            if ($isLogement) {
-                $excludeClause = $excludeOccupationId ? " AND o.id != $excludeOccupationId" : "";
-                $sql = "SELECT rs.id, rs.civilite, rs.nom, rs.prenom,
-                           CONCAT(rs.civilite, ' ', rs.prenom, ' ', rs.nom) as nom_complet
-                        FROM residents_seniors rs
-                        WHERE rs.actif = 1 AND rs.id NOT IN (
-                            SELECT o.resident_id FROM occupations_residents o
-                            JOIN lots l ON o.lot_id = l.id
-                            WHERE o.statut = 'actif' AND l.type IN ('studio','t2','t2_bis','t3')$excludeClause
-                        )
-                        ORDER BY rs.nom, rs.prenom";
-            } else {
-                $sql = "SELECT rs.id, rs.civilite, rs.nom, rs.prenom,
-                           CONCAT(rs.civilite, ' ', rs.prenom, ' ', rs.nom) as nom_complet
-                        FROM residents_seniors rs
-                        WHERE rs.actif = 1
-                        ORDER BY rs.nom, rs.prenom";
-            }
-
+            $sql = "SELECT rs.id, rs.civilite, rs.nom, rs.prenom,
+                       CONCAT(rs.civilite, ' ', rs.prenom, ' ', rs.nom) as nom_complet
+                    FROM residents_seniors rs
+                    WHERE rs.actif = 1
+                    ORDER BY rs.nom, rs.prenom";
             return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             $this->logError("Erreur getResidentsDisponibles: " . $e->getMessage());
@@ -585,42 +605,6 @@ class Occupation extends Model {
         } catch (PDOException $e) {
             $this->logError("Erreur getOccupationLotType: " . $e->getMessage());
             return null;
-        }
-    }
-
-    /**
-     * Vérifie si un résident a déjà un logement actif
-     */
-    public function residentHasLogement(int $residentId, ?int $excludeOccupationId = null): bool {
-        try {
-            $sql = "SELECT COUNT(*) FROM occupations_residents o
-                    JOIN lots l ON o.lot_id = l.id
-                    WHERE o.resident_id=? AND o.statut='actif' AND l.type IN ('studio','t2','t2_bis','t3')";
-            if ($excludeOccupationId) $sql .= " AND o.id != $excludeOccupationId";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$residentId]);
-            return $stmt->fetchColumn() > 0;
-        } catch (PDOException $e) {
-            $this->logError("Erreur residentHasLogement: " . $e->getMessage());
-            return true;
-        }
-    }
-
-    /**
-     * Vérifie si un résident a déjà une annexe du même type (cave/parking)
-     */
-    public function residentHasAnnexe(int $residentId, string $lotType, ?int $excludeOccupationId = null): bool {
-        try {
-            $sql = "SELECT COUNT(*) FROM occupations_residents o
-                    JOIN lots l ON o.lot_id = l.id
-                    WHERE o.resident_id=? AND o.statut='actif' AND l.type=?";
-            if ($excludeOccupationId) $sql .= " AND o.id != $excludeOccupationId";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$residentId, $lotType]);
-            return $stmt->fetchColumn() > 0;
-        } catch (PDOException $e) {
-            $this->logError("Erreur residentHasAnnexe: " . $e->getMessage());
-            return true;
         }
     }
 

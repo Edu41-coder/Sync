@@ -32,7 +32,7 @@ class LotController extends Controller {
 
     public function show($id) {
         $this->requireAuth();
-        $this->requireRole(['admin', 'directeur_residence', 'proprietaire']);
+        $this->requireRole(['admin', 'directeur_residence', 'proprietaire', 'locataire_permanent']);
 
         $lotModel = $this->model('Lot');
         $lot = $lotModel->findWithDetails($id);
@@ -40,6 +40,25 @@ class LotController extends Controller {
         if (!$lot) {
             $this->setFlash('error', 'Lot introuvable');
             $this->redirect('admin/residences');
+            return;
+        }
+
+        // Un résident ne peut consulter que les lots dont il a une occupation active
+        if (($_SESSION['user_role'] ?? null) === 'locataire_permanent') {
+            $residentModel = $this->model('ResidentSenior');
+            $resident = $residentModel->findByUserId($_SESSION['user_id'] ?? 0);
+            $autorise = false;
+            if ($resident) {
+                $occupationModel = $this->model('Occupation');
+                foreach ($occupationModel->getActivesByResident($resident->id) as $occ) {
+                    if ((int)$occ['lot_id'] === (int)$id) { $autorise = true; break; }
+                }
+            }
+            if (!$autorise) {
+                $this->setFlash('error', "Vous n'avez pas accès à ce lot.");
+                $this->redirect('resident/mesLots');
+                return;
+            }
         }
 
         $this->view('lots/show', [
@@ -184,6 +203,7 @@ class LotController extends Controller {
     public function delete($id) {
         $this->requireAuth();
         $this->requireRole(['admin']);
+        $this->requirePostCsrf();
 
         $this->setFlash('success', 'Lot supprimé avec succès');
         $this->redirect('lot/index');
