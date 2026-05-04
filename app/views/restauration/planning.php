@@ -1,9 +1,6 @@
 <?php $title = "Planning Restauration"; ?>
 
-<!-- TUI Calendar CSS -->
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-calendar.css">
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-date-picker.css">
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-time-picker.css">
+<?php include ROOT_PATH . '/app/views/partials/tui_calendar_assets.php'; ?>
 <style>
     #calendar { height: 700px; }
     .btn-group .btn.active { font-weight: bold; }
@@ -33,45 +30,30 @@ $canManage = in_array($userRole, ['admin', 'restauration_manager']);
     </div>
 
     <!-- Navigation + Filtres -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-body py-2">
-            <div class="row g-2 align-items-center">
-                <div class="col-auto">
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary" id="prev-btn"><i class="fas fa-chevron-left"></i></button>
-                        <button class="btn btn-outline-warning" id="today-btn">Aujourd'hui</button>
-                        <button class="btn btn-outline-secondary" id="next-btn"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <h5 class="mb-0" id="calendar-date-header">...</h5>
-                </div>
-                <div class="col-auto ms-auto">
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-dark" id="day-view">Jour</button>
-                        <button class="btn btn-outline-dark active" id="week-view">Semaine</button>
-                        <button class="btn btn-outline-dark" id="month-view">Mois</button>
-                    </div>
-                </div>
-                <div class="col-12 col-md-3">
-                    <select class="form-select form-select-sm" id="filterResidence">
-                        <option value="0">Toutes résidences</option>
-                        <?php foreach ($residences as $r): ?>
-                        <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nom']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-12 col-md-3">
-                    <select class="form-select form-select-sm" id="filterEmployee">
-                        <option value="0">Tout le staff</option>
-                        <?php foreach ($staff as $s): ?>
-                        <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['prenom'] . ' ' . $s['nom']) ?> (<?= $s['role_nom'] ?? $s['role'] ?>)</option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-        </div>
+    <?php
+    $tuiToolbarColor = 'warning';
+    ob_start();
+    ?>
+    <div class="col-12 col-md-3">
+        <select class="form-select form-select-sm" id="filterResidence">
+            <option value="0">Toutes résidences</option>
+            <?php foreach ($residences as $r): ?>
+            <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nom']) ?></option>
+            <?php endforeach; ?>
+        </select>
     </div>
+    <div class="col-12 col-md-3">
+        <select class="form-select form-select-sm" id="filterEmployee">
+            <option value="0">Tout le staff</option>
+            <?php foreach ($staff as $s): ?>
+            <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['prenom'] . ' ' . $s['nom']) ?> (<?= $s['role_nom'] ?? $s['role'] ?>)</option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <?php
+    $tuiToolbarExtra = ob_get_clean();
+    include ROOT_PATH . '/app/views/partials/tui_calendar_toolbar.php';
+    ?>
 
     <!-- Calendrier -->
     <div class="card shadow">
@@ -164,21 +146,11 @@ $canManage = in_array($userRole, ['admin', 'restauration_manager']);
 </div>
 <?php endif; ?>
 
-<!-- TUI Calendar JS -->
-<script src="<?= BASE_URL ?>/assets/js/tui-code-snippet.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/tui-time-picker.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/tui-date-picker.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/tui-calendar.js"></script>
-
 <script>
 const BASE = '<?= BASE_URL ?>';
 const CAN_MANAGE = <?= $canManage ? 'true' : 'false' ?>;
 let calendar, modal;
-
-function jsonHeaders() {
-    const meta = document.querySelector('meta[name="csrf-token"]');
-    return { 'Content-Type': 'application/json', 'X-CSRF-Token': meta ? meta.content : '' };
-}
+const jsonHeaders = TuiCalHelpers.jsonHeaders;
 
 document.addEventListener('DOMContentLoaded', function() {
     calendar = new tui.Calendar('#calendar', {
@@ -277,7 +249,7 @@ function changeView(v) {
 function updateHeader() {
     const d = calendar.getDate();
     const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-    document.getElementById('calendar-date-header').textContent = months[d.getMonth()] + ' ' + d.getFullYear();
+    document.getElementById('cal-header').textContent = months[d.getMonth()] + ' ' + d.getFullYear();
 }
 
 function reloadEvents() {

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta name="description" content="<?php echo APP_NAME; ?> - Plateforme de gestion immobilière et syndic">
+    <meta name="description" content="<?php echo APP_NAME; ?> - Plateforme de gestion de résidences seniors">
     <meta name="theme-color" content="#dc3545">
     <meta name="csrf-token" content="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES); ?>">
     <title><?php echo $title ?? APP_NAME; ?></title>

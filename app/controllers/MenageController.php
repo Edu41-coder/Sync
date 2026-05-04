@@ -820,6 +820,7 @@ class MenageController extends Controller {
         $annee = (int)($_GET['annee'] ?? date('Y')); $mois = !empty($_GET['mois']) ? (int)$_GET['mois'] : null;
 
         $totaux = $model->getTotauxAnnuels($filteredIds, $annee);
+        $tva = $model->getTVA($filteredIds, $annee, $mois);
         $synthese = $model->getSyntheseMensuelle($filteredIds, $annee);
         $depensesFourn = $model->getDepensesParFournisseur($filteredIds, $annee, $mois);
         $ecritures = $model->getEcritures($filteredIds, $annee, $mois);
@@ -831,7 +832,7 @@ class MenageController extends Controller {
         $this->view('menage/comptabilite', [
             'title'=>'Comptabilité Ménage - '.APP_NAME,'showNavbar'=>true,
             'residences'=>$residences,'selectedResidence'=>$sel,'annee'=>$annee,'mois'=>$mois,
-            'totaux'=>$totaux,'depensesFournisseurs'=>$depensesFourn,'ecritures'=>$ecritures,
+            'totaux'=>$totaux,'tva'=>$tva,'depensesFournisseurs'=>$depensesFourn,'ecritures'=>$ecritures,
             'moisLabels'=>json_encode($moisLabels),'recettesData'=>json_encode($recettesData),'depensesData'=>json_encode($depensesData),
             'flash'=>$this->getFlash()
         ], true);

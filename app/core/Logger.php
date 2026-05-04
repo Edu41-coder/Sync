@@ -287,6 +287,161 @@ class Logger {
         return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     }
     
+    // =================================================================
+    //  AUDIT TRAIL MÉTIER (Phase 11)
+    // =================================================================
+    //  Stocké en BDD (`logs_activite`) — distinct des logs de sécurité fichier.
+    //  Utilisé par les modules à enjeu réglementaire (compta, paie, AG, sinistres).
+    //  Les logs de sécurité (auth, CSRF, rate limit) restent en fichier plat.
+
+    /**
+     * Insère une entrée dans l'audit trail métier.
+     *
+     * Utilisation typique depuis un model :
+     *   Logger::audit('ecriture_create', 'ecritures_comptables', $id, [
+     *       'montant_ttc' => 120.50,
+     *       'module_source' => 'jardinage',
+     *   ]);
+     *
+     * @param string $action      Verbe métier (ex: 'ecriture_create', 'tva_declaree', 'exercice_cloture')
+     * @param string|null $table  Nom de la table impactée (peut être null pour actions transverses)
+     * @param int|null    $recordId  ID de la ligne impactée
+     * @param array       $details Données contextuelles (sérialisées en JSON)
+     * @param int|null    $userId  Si null, lit depuis $_SESSION['user_id']
+     * @return bool       true si insertion OK
+     */
+    public static function audit(string $action, ?string $table = null, ?int $recordId = null, array $details = [], ?int $userId = null): bool {
+        try {
+            $userId = $userId ?? ($_SESSION['user_id'] ?? null);
+            $ip     = self::getClientIp();
+            $ua     = mb_substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255);
+            $detailsJson = !empty($details) ? json_encode($details, JSON_UNESCAPED_UNICODE) : null;
+
+            $pdo = Database::getInstance()->getConnection();
+            $stmt = $pdo->prepare(
+                "INSERT INTO logs_activite (user_id, action, table_name, record_id, details, ip_address, user_agent)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+            );
+            $stmt->execute([
+                $userId,
+                mb_substr($action, 0, 100),
+                $table ? mb_substr($table, 0, 50) : null,
+                $recordId,
+                $detailsJson,
+                $ip,
+                $ua,
+            ]);
+            return true;
+        } catch (Throwable $e) {
+            // L'audit ne doit jamais bloquer une action métier — log silencieux dans security.log
+            self::write('security.log', [
+                'type' => 'AUDIT_FAILURE',
+                'action' => $action,
+                'error' => $e->getMessage(),
+                'timestamp' => date('Y-m-d H:i:s'),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Préfixes d'actions liés au domaine comptable (Phase 11).
+     * Tout ce qui ne commence pas par un de ces préfixes est exclu de la page
+     * /comptabilite/auditTrail — protection contre la pollution par d'autres
+     * sources qui pourraient écrire dans `logs_activite`.
+     */
+    public const COMPTA_ACTION_PREFIXES = [
+        'ecriture_', 'exercice_', 'bulletin_', 'tva_',
+        'bank_', 'salarie_', 'export_',
+    ];
+
+    /**
+     * Construit la clause SQL "AND (action LIKE ? OR action LIKE ? ...)" + remplit $params.
+     * Retourne string vide si la liste de préfixes est vide.
+     */
+    private static function buildPrefixesClause(array $prefixes, array &$params): string {
+        if (empty($prefixes)) return '';
+        $likes = [];
+        foreach ($prefixes as $p) {
+            $likes[] = 'action LIKE ?';
+            $params[] = $p . '%';
+        }
+        return ' AND (' . implode(' OR ', $likes) . ')';
+    }
+
+    /**
+     * Lecture filtrée des entrées d'audit (pour la page /comptabilite/auditTrail).
+     *
+     * @param array $filters  user_id, action (LIKE %), table, date_min, date_max, search (LIKE sur details),
+     *                        actions_prefixes (array — restreint à un domaine, ex: COMPTA_ACTION_PREFIXES)
+     * @param int   $limit    Limite de résultats (défaut 200)
+     * @return array          Lignes brutes avec join username
+     */
+    public static function getAuditTrail(array $filters = [], int $limit = 200): array {
+        try {
+            $sql = "SELECT l.*, u.username, u.role
+                    FROM logs_activite l
+                    LEFT JOIN users u ON u.id = l.user_id
+                    WHERE 1=1";
+            $params = [];
+            // Filtre whitelist par préfixes (utilisé par la page compta)
+            if (!empty($filters['actions_prefixes']) && is_array($filters['actions_prefixes'])) {
+                $sql .= self::buildPrefixesClause($filters['actions_prefixes'], $params);
+            }
+            if (!empty($filters['user_id']))  { $sql .= " AND l.user_id = ?";   $params[] = (int)$filters['user_id']; }
+            if (!empty($filters['action']))   { $sql .= " AND l.action LIKE ?"; $params[] = '%' . $filters['action'] . '%'; }
+            if (!empty($filters['table']))    { $sql .= " AND l.table_name = ?"; $params[] = $filters['table']; }
+            if (!empty($filters['date_min'])) { $sql .= " AND l.created_at >= ?"; $params[] = $filters['date_min'] . ' 00:00:00'; }
+            if (!empty($filters['date_max'])) { $sql .= " AND l.created_at <= ?"; $params[] = $filters['date_max'] . ' 23:59:59'; }
+            if (!empty($filters['search']))   { $sql .= " AND l.details LIKE ?"; $params[] = '%' . $filters['search'] . '%'; }
+
+            $sql .= " ORDER BY l.created_at DESC, l.id DESC LIMIT " . max(1, min(2000, $limit));
+
+            $stmt = Database::getInstance()->getConnection()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Liste distincte des actions présentes en BDD (pour le sélecteur de filtre).
+     * @param array $prefixes  Whitelist optionnelle de préfixes (mêmes règles que getAuditTrail).
+     */
+    public static function getAuditActions(array $prefixes = []): array {
+        try {
+            $sql = "SELECT DISTINCT action FROM logs_activite WHERE 1=1";
+            $params = [];
+            $sql .= self::buildPrefixesClause($prefixes, $params);
+            $sql .= " ORDER BY action ASC";
+            $stmt = Database::getInstance()->getConnection()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Liste distincte des tables présentes en BDD (pour le sélecteur de filtre).
+     * @param array $prefixes  Whitelist optionnelle de préfixes d'actions.
+     */
+    public static function getAuditTables(array $prefixes = []): array {
+        try {
+            $sql = "SELECT DISTINCT table_name FROM logs_activite
+                    WHERE table_name IS NOT NULL";
+            $params = [];
+            $sql .= self::buildPrefixesClause($prefixes, $params);
+            $sql .= " ORDER BY table_name ASC";
+            $stmt = Database::getInstance()->getConnection()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
     /**
      * Obtenir les derniers logs de sécurité
      * @param int $limit Nombre de lignes

@@ -89,6 +89,7 @@ Module unifié couvrant 6 spécialités techniques avec un système de permissio
 | 021 | `021_piscine_journal.sql` | Table piscine_journal (analyses + contrôles ARS + saisonniers) |
 | 022 | `022_ascenseurs.sql` | Tables ascenseurs + ascenseur_journal + **3 triggers** (auto-maintien `coproprietees.ascenseur`) |
 | 023 | `023_maintenance_stock.sql` | Étend ENUMs `commandes.module` + `produit_fournisseurs.produit_module` avec `'maintenance'` (utilise infrastructure unifiée) |
+| 027 | `027_chantiers_sinistre_link.sql` | `chantiers.sinistre_id` (NULLABLE, FK `sinistres(id)` ON DELETE SET NULL) — matérialise la relation 1→N sinistre → chantiers de réparation. Permet le bouton « Créer un chantier de réparation » depuis la fiche sinistre + la colonne « Origine » dans la liste des chantiers. Voir [sinistres.md § Intégration Maintenance](sinistres.md). |
 
 ### Fichiers du module
 
@@ -132,7 +133,7 @@ public/uploads/maintenance/
 
 ### Auto-logique
 - **`coproprietees.ascenseur`** : auto-maintenu par 3 triggers BDD (INSERT/UPDATE/DELETE sur `ascenseurs`) — vaut 1 si ≥ 1 ascenseur actif
-- **`chantiers.necessite_ag`** : auto-coché si `montant_estime > 5 000 € HT` (forçable manuellement via `necessite_ag_force` Oui/Non)
+- **`chantiers.necessite_ag`** : auto-coché si `montant_estime > 5 000 € HT` (forçable manuellement via `necessite_ag_force` Oui/Non). Liaison à une AG via `chantiers.ag_id` — voir @.claude/modules/ag.md § Intégration chantiers (chantiers en attente d'AG visibles sur fiche AG, alerte orange)
 - **`chantiers.montant_engage`** : mis à jour automatiquement quand un devis est retenu (transaction)
 - **3 garanties auto-créées à la réception** chantier : parfait achèvement (1 an), biennale (2 ans), décennale (10 ans)
 - **`ascenseur_journal.prochaine_echeance`** : auto-calculée selon périodicité (maintenance préventive +30j, visite annuelle +365j, contrôle quinquennal +5 ans). Recalcul JS au changement de date côté formulaire édition.

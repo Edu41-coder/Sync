@@ -1,6 +1,4 @@
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-calendar.css">
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-date-picker.css">
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-time-picker.css">
+<?php include ROOT_PATH . '/app/views/partials/tui_calendar_assets.php'; ?>
 <style>
     #calendar { height: 650px; }
     .btn-group .btn.active { font-weight: bold; }
@@ -152,19 +150,10 @@ include ROOT_PATH . '/app/views/partials/breadcrumb.php';
     </div>
 </div>
 
-<script src="<?= BASE_URL ?>/assets/js/tui-code-snippet.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/tui-time-picker.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/tui-date-picker.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/tui-calendar.js"></script>
-
 <script>
 const BASE = '<?= BASE_URL ?>';
 const CATEGORIES = <?= json_encode($categories, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
-
-function jsonHeaders() {
-    const meta = document.querySelector('meta[name="csrf-token"]');
-    return { 'Content-Type': 'application/json', 'X-CSRF-Token': meta ? meta.content : '' };
-}
+const jsonHeaders = TuiCalHelpers.jsonHeaders;
 
 const calendarData = CATEGORIES.map(c => ({
     id: c.slug,

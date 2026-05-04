@@ -166,34 +166,39 @@ $residencesNonLiees = $residencesNonLiees ?? [];
 
         <div class="col-lg-8">
             <div class="card shadow-sm h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h6 class="mb-0"><i class="fas fa-building me-2"></i>Résidences liées (<?= count(array_filter($residences, fn($r) => $r['statut'] === 'actif')) ?> actives / <?= count($residences) ?> total)</h6>
-                    <?php if (!empty($residencesNonLiees)): ?>
-                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalLier">
-                        <i class="fas fa-plus me-1"></i>Lier une résidence
-                    </button>
-                    <?php endif; ?>
+                    <div class="d-flex gap-2 align-items-center">
+                        <?php if (!empty($residences)): ?>
+                        <input type="text" id="searchResidencesShow" class="form-control form-control-sm" placeholder="Rechercher..." style="max-width:200px">
+                        <?php endif; ?>
+                        <?php if (!empty($residencesNonLiees)): ?>
+                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalLier">
+                            <i class="fas fa-plus me-1"></i>Lier une résidence
+                        </button>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div class="card-body p-0">
                     <?php if (empty($residences)): ?>
                     <p class="text-center text-muted p-4 mb-0">Aucune résidence liée.</p>
                     <?php else: ?>
-                    <table class="table table-sm mb-0">
+                    <table class="table table-sm mb-0" id="tableResidencesShow">
                         <thead class="table-light">
                             <tr><th>Résidence</th><th>Contact local</th><th>Livraison</th><th class="text-center">Statut</th><th class="text-end">Actions</th></tr>
                         </thead>
                         <tbody>
                             <?php foreach ($residences as $r): ?>
                             <tr class="<?= $r['statut'] === 'actif' ? '' : 'text-muted' ?>">
-                                <td>
+                                <td data-sort="<?= htmlspecialchars($r['nom']) ?>">
                                     <strong><?= htmlspecialchars($r['nom']) ?></strong>
                                     <?php if ($r['ville']): ?><br><small class="text-muted"><?= htmlspecialchars($r['ville']) ?></small><?php endif; ?>
                                 </td>
-                                <td class="small">
+                                <td class="small" data-sort="<?= htmlspecialchars($r['contact_local'] ?? '') ?>">
                                     <?= $r['contact_local'] ? htmlspecialchars($r['contact_local']) : '—' ?>
                                     <?php if ($r['telephone_local']): ?><br><i class="fas fa-phone me-1 text-muted"></i><?= htmlspecialchars($r['telephone_local']) ?><?php endif; ?>
                                 </td>
-                                <td class="small">
+                                <td class="small" data-sort="<?= htmlspecialchars($r['jour_livraison'] ?? '') ?>">
                                     <?php if ($r['jour_livraison']): ?><span class="badge bg-secondary"><?= htmlspecialchars($r['jour_livraison']) ?></span><?php endif; ?>
                                     <?php if ($r['delai_livraison_jours']): ?><br><small class="text-muted"><?= (int)$r['delai_livraison_jours'] ?> j délai</small><?php endif; ?>
                                 </td>
@@ -211,6 +216,10 @@ $residencesNonLiees = $residencesNonLiees ?? [];
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    <div class="p-2 d-flex justify-content-between align-items-center bg-light border-top">
+                        <small id="infoResidencesShow" class="text-muted"></small>
+                        <ul class="pagination pagination-sm mb-0" id="paginationResidencesShow"></ul>
+                    </div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -420,22 +429,31 @@ function editLien(r) {
 }
 </script>
 
-<?php if (!empty($produits)): ?>
+<?php if (!empty($produits) || !empty($residences)): ?>
 <script src="<?= BASE_URL ?>/assets/js/datatable.js"></script>
-<?php if (count($produits) > 10): ?>
 <script src="<?= BASE_URL ?>/assets/js/datatable-pagination.js"></script>
 <script>
-new DataTableWithPagination('produitsTable', {
-    rowsPerPage: 15,
-    searchInputId: 'produitsSearch',
-    excludeColumns: [4],
-    paginationId: 'produitsPagination',
-    infoId: 'produitsTableInfo'
-});
-</script>
-<?php else: ?>
-<script>
-new DataTable('produitsTable', { searchInputId: 'produitsSearch', excludeColumns: [4] });
-</script>
+<?php if (!empty($produits)): ?>
+    <?php if (count($produits) > 10): ?>
+    new DataTableWithPagination('produitsTable', {
+        rowsPerPage: 15,
+        searchInputId: 'produitsSearch',
+        excludeColumns: [4],
+        paginationId: 'produitsPagination',
+        infoId: 'produitsTableInfo'
+    });
+    <?php else: ?>
+    new DataTable('produitsTable', { searchInputId: 'produitsSearch', excludeColumns: [4] });
+    <?php endif; ?>
 <?php endif; ?>
+<?php if (!empty($residences)): ?>
+    new DataTableWithPagination('tableResidencesShow', {
+        rowsPerPage: 10,
+        searchInputId: 'searchResidencesShow',
+        paginationId: 'paginationResidencesShow',
+        infoId: 'infoResidencesShow',
+        excludeColumns: [4]
+    });
+<?php endif; ?>
+</script>
 <?php endif; ?>

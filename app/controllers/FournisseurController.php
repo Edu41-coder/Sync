@@ -197,12 +197,20 @@ class FournisseurController extends Controller {
             return;
         }
 
+        // Liens fournisseur ↔ résidences (gérés directement depuis cette page d'édition)
+        $residences = $model->getResidencesLiees((int)$id);
+        $dejaIds = array_column($residences, 'id');
+        $toutes = $model->getAllResidences();
+        $residencesNonLiees = array_values(array_filter($toutes, fn($r) => !in_array((int)$r['id'], $dejaIds, true)));
+
         $this->view('fournisseurs/form', [
-            'title'       => 'Modifier ' . $fournisseur['nom'] . ' - ' . APP_NAME,
-            'showNavbar'  => true,
-            'fournisseur' => $fournisseur,
-            'action'      => 'update/' . (int)$id,
-            'flash'       => $this->getFlash()
+            'title'              => 'Modifier ' . $fournisseur['nom'] . ' - ' . APP_NAME,
+            'showNavbar'         => true,
+            'fournisseur'        => $fournisseur,
+            'action'             => 'update/' . (int)$id,
+            'residences'         => $residences,
+            'residencesNonLiees' => $residencesNonLiees,
+            'flash'              => $this->getFlash()
         ], true);
     }
 
@@ -253,6 +261,11 @@ class FournisseurController extends Controller {
     //  Gestion des liens fournisseur ↔ résidence (depuis la page show)
     // ─────────────────────────────────────────────────────────────
 
+    /** Retourne 'edit' ou 'show' selon le paramètre back= passé en POST */
+    private function backTarget(): string {
+        return ($_POST['back'] ?? $_GET['back'] ?? 'show') === 'edit' ? 'edit' : 'show';
+    }
+
     public function lier($id) {
         $this->requireAuth();
         $this->requireRole(self::ROLES_MANAGER);
@@ -265,7 +278,7 @@ class FournisseurController extends Controller {
             $model->lier((int)$id, $residenceId, $_POST);
             $this->setFlash('success', 'Fournisseur lié à la résidence');
         } catch (Exception $e) { $this->setFlash('error', 'Erreur : ' . $e->getMessage()); }
-        $this->redirect('fournisseur/show/' . (int)$id);
+        $this->redirect('fournisseur/' . $this->backTarget() . '/' . (int)$id);
     }
 
     public function updateLien($pivotId) {
@@ -278,7 +291,7 @@ class FournisseurController extends Controller {
         if (!$lien) { $this->setFlash('error', 'Lien introuvable'); $this->redirect('fournisseur/index'); return; }
         $model->updateLien((int)$pivotId, $_POST);
         $this->setFlash('success', 'Lien modifié');
-        $this->redirect('fournisseur/show/' . (int)$lien['fournisseur_id']);
+        $this->redirect('fournisseur/' . $this->backTarget() . '/' . (int)$lien['fournisseur_id']);
     }
 
     public function delier($pivotId) {
@@ -290,6 +303,6 @@ class FournisseurController extends Controller {
         if (!$lien) { $this->setFlash('error', 'Lien introuvable'); $this->redirect('fournisseur/index'); return; }
         $model->delier((int)$pivotId);
         $this->setFlash('success', 'Lien désactivé');
-        $this->redirect('fournisseur/show/' . (int)$lien['fournisseur_id']);
+        $this->redirect('fournisseur/' . $this->backTarget() . '/' . (int)$lien['fournisseur_id']);
     }
 }

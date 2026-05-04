@@ -1,9 +1,6 @@
 <?php $title = "Planning Staff"; ?>
 
-<!-- TUI Calendar CSS -->
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-calendar.css">
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-date-picker.css">
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-time-picker.css">
+<?php include ROOT_PATH . '/app/views/partials/tui_calendar_assets.php'; ?>
 <style>
     #calendar { height: 700px; }
     .btn-group .btn.active { font-weight: bold; }
@@ -30,50 +27,30 @@ include __DIR__ . '/../partials/breadcrumb.php';
     </div>
 
     <!-- Barre de filtres + navigation -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-body py-2">
-            <div class="row g-2 align-items-center">
-                <!-- Navigation dates -->
-                <div class="col-auto">
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary" id="prev-btn"><i class="fas fa-chevron-left"></i></button>
-                        <button class="btn btn-outline-primary" id="today-btn">Aujourd'hui</button>
-                        <button class="btn btn-outline-secondary" id="next-btn"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <h5 class="mb-0" id="calendar-date-header">...</h5>
-                </div>
-
-                <!-- Vues -->
-                <div class="col-auto ms-auto">
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-dark" id="day-view">Jour</button>
-                        <button class="btn btn-outline-dark active" id="week-view">Semaine</button>
-                        <button class="btn btn-outline-dark" id="month-view">Mois</button>
-                    </div>
-                </div>
-
-                <!-- Filtres -->
-                <div class="col-12 col-md-3">
-                    <select class="form-select form-select-sm" id="filterResidence">
-                        <option value="">Toutes résidences</option>
-                        <?php foreach ($residences as $r): ?>
-                        <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nom']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-12 col-md-3">
-                    <select class="form-select form-select-sm" id="filterEmployee">
-                        <option value="">Tous employés</option>
-                        <?php foreach ($employees as $e): ?>
-                        <option value="<?= $e['id'] ?>"><?= htmlspecialchars($e['prenom'] . ' ' . $e['nom']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-        </div>
+    <?php
+    $tuiToolbarColor = 'primary';
+    ob_start();
+    ?>
+    <div class="col-12 col-md-3">
+        <select class="form-select form-select-sm" id="filterResidence">
+            <option value="">Toutes résidences</option>
+            <?php foreach ($residences as $r): ?>
+            <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nom']) ?></option>
+            <?php endforeach; ?>
+        </select>
     </div>
+    <div class="col-12 col-md-3">
+        <select class="form-select form-select-sm" id="filterEmployee">
+            <option value="">Tous employés</option>
+            <?php foreach ($employees as $e): ?>
+            <option value="<?= $e['id'] ?>"><?= htmlspecialchars($e['prenom'] . ' ' . $e['nom']) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <?php
+    $tuiToolbarExtra = ob_get_clean();
+    include ROOT_PATH . '/app/views/partials/tui_calendar_toolbar.php';
+    ?>
 
     <!-- Calendrier -->
     <div class="card shadow">
@@ -180,12 +157,6 @@ include __DIR__ . '/../partials/breadcrumb.php';
         </div>
     </div>
 </div>
-
-<!-- TUI Calendar JS -->
-<script src="<?= BASE_URL ?>/assets/js/tui-code-snippet.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/tui-time-picker.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/tui-date-picker.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/tui-calendar.js"></script>
 
 <!-- Planning JS -->
 <script src="<?= BASE_URL ?>/assets/js/planning-backend.js"></script>

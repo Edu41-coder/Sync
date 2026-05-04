@@ -9,7 +9,14 @@ $breadcrumb = [
 include ROOT_PATH . '/app/views/partials/breadcrumb.php';
 $csrf = Security::getToken();
 $action = BASE_URL . '/chantier/form' . ($isEdit ? '/' . (int)$chantier['id'] : '');
-$v = function($k, $def = '') use ($chantier, $isEdit) { return $isEdit ? htmlspecialchars((string)($chantier[$k] ?? $def)) : $def; };
+$prefill = $sinistrePrefill ?? null;
+// Helper : valeur d'un champ — priorité chantier (édition) → prefill sinistre (création) → default
+$v = function($k, $def = '') use ($chantier, $isEdit, $prefill) {
+    if ($isEdit) return htmlspecialchars((string)($chantier[$k] ?? $def));
+    if ($prefill && isset($prefill[$k]) && $prefill[$k] !== null) return htmlspecialchars((string)$prefill[$k]);
+    return htmlspecialchars((string)$def);
+};
+$linkedSinistreId = $isEdit ? (int)($chantier['sinistre_id'] ?? 0) : (int)($prefill['sinistre_id'] ?? 0);
 ?>
 
 <div class="container-fluid py-4">
@@ -19,8 +26,30 @@ $v = function($k, $def = '') use ($chantier, $isEdit) { return $isEdit ? htmlspe
         <?= $isEdit ? 'Modifier le chantier' : 'Nouveau chantier' ?>
     </h1>
 
+    <?php if ($prefill): ?>
+        <div class="alert alert-warning d-flex align-items-center justify-content-between">
+            <div>
+                <i class="fas fa-shield-alt me-2"></i>
+                <strong>Chantier de réparation issu d'un sinistre.</strong>
+                Le titre, la description, la résidence et le montant ont été pré-remplis depuis le sinistre
+                <a href="<?= BASE_URL ?>/sinistre/show/<?= (int)$prefill['sinistre_id'] ?>" class="alert-link">#<?= (int)$prefill['sinistre_id'] ?> — <?= htmlspecialchars($prefill['sinistre_titre']) ?></a>.
+                Vous pouvez les ajuster avant validation.
+            </div>
+            <a href="<?= BASE_URL ?>/sinistre/show/<?= (int)$prefill['sinistre_id'] ?>" class="btn btn-sm btn-outline-warning ms-3"><i class="fas fa-times me-1"></i>Annuler</a>
+        </div>
+    <?php elseif ($isEdit && $linkedSinistreId): ?>
+        <div class="alert alert-info">
+            <i class="fas fa-shield-alt me-2"></i>
+            Ce chantier est lié au sinistre
+            <a href="<?= BASE_URL ?>/sinistre/show/<?= $linkedSinistreId ?>" class="alert-link">#<?= $linkedSinistreId ?><?= !empty($chantier['sinistre_titre']) ? ' — ' . htmlspecialchars($chantier['sinistre_titre']) : '' ?></a>.
+        </div>
+    <?php endif; ?>
+
     <form method="POST" action="<?= $action ?>" class="row g-3">
         <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+        <?php if ($linkedSinistreId): ?>
+        <input type="hidden" name="sinistre_id" value="<?= $linkedSinistreId ?>">
+        <?php endif; ?>
 
         <!-- Identité & contexte -->
         <div class="col-12">
@@ -34,10 +63,15 @@ $v = function($k, $def = '') use ($chantier, $isEdit) { return $isEdit ? htmlspe
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Résidence <span class="text-danger">*</span></label>
+                            <?php
+                            $selectedResidenceId = $isEdit
+                                ? (int)$chantier['residence_id']
+                                : (int)($prefill['residence_id'] ?? 0);
+                            ?>
                             <select name="residence_id" class="form-select" required>
                                 <option value="">— Sélectionner —</option>
                                 <?php foreach ($residences as $r): ?>
-                                <option value="<?= (int)$r['id'] ?>" <?= $isEdit && (int)$chantier['residence_id'] === (int)$r['id'] ? 'selected' : '' ?>>
+                                <option value="<?= (int)$r['id'] ?>" <?= $selectedResidenceId === (int)$r['id'] ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($r['nom']) ?> (<?= htmlspecialchars($r['ville']) ?>)
                                 </option>
                                 <?php endforeach; ?>

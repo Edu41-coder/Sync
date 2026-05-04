@@ -168,4 +168,57 @@ class MessageController extends Controller {
         echo json_encode(['count' => $model->getUnreadCount((int)$_SESSION['user_id'])]);
         exit;
     }
+
+    /**
+     * Supprimer (archive côté destinataire) un message de la boîte de réception.
+     * Soft delete : le message reste pour les autres destinataires + l'expéditeur.
+     */
+    public function delete($id) {
+        $this->requireAuth();
+        $this->requirePostCsrf();
+
+        $model = $this->model('Message');
+        // archiveForUser renvoie false si l'utilisateur n'est pas destinataire (ou déjà archivé)
+        if ($model->archiveForUser((int)$id, (int)$_SESSION['user_id'])) {
+            $this->setFlash('success', 'Message supprimé de votre boîte de réception.');
+        } else {
+            $this->setFlash('error', "Impossible de supprimer ce message (introuvable ou non autorisé).");
+        }
+        $this->redirect('message/index');
+    }
+
+    /**
+     * Boîte d'envoi : messages que l'utilisateur a envoyés et non archivés.
+     */
+    public function sent() {
+        $this->requireAuth();
+
+        $model = $this->model('Message');
+        $userId = (int)$_SESSION['user_id'];
+
+        $this->view('messages/sent', [
+            'title'      => 'Messages envoyés - ' . APP_NAME,
+            'showNavbar' => true,
+            'messages'   => $model->getSent($userId),
+            'nonLus'     => $model->getUnreadCount($userId),
+            'flash'      => $this->getFlash()
+        ], true);
+    }
+
+    /**
+     * Supprimer (archive côté expéditeur) un message de la boîte d'envoi.
+     * Soft delete : la copie chez les destinataires reste intacte.
+     */
+    public function deleteSent($id) {
+        $this->requireAuth();
+        $this->requirePostCsrf();
+
+        $model = $this->model('Message');
+        if ($model->archiveSentForUser((int)$id, (int)$_SESSION['user_id'])) {
+            $this->setFlash('success', "Message supprimé de votre boîte d'envoi.");
+        } else {
+            $this->setFlash('error', "Impossible de supprimer ce message (introuvable ou non autorisé).");
+        }
+        $this->redirect('message/sent');
+    }
 }

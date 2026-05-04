@@ -4,38 +4,29 @@
   },
   "permissions": {
     "allow": [
-      "Bash(php -r ' *)",
-      "Bash(curl -s -c /tmp/cookies.txt -b /tmp/cookies.txt \"http://localhost/Synd_Gest/public/admin/migrationSql/004_module_restauration\")",
-      "Bash(/c/xampp/php/php.exe -r ' *)",
-      "Bash(php c:\\\\\\\\xampp\\\\\\\\htdocs\\\\\\\\Synd_Gest\\\\\\\\tests\\\\\\\\test_require_auth.php --no-color)",
-      "Bash(php /c/xampp/htdocs/Synd_Gest/tests/test_require_auth.php --no-color)",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/controllers/ResidentController.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/residents/mon_espace.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/residents/mes_lots.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/residents/mes_occupations.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/residents/mes_residences.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/controllers/LotController.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/models/MaintenanceIntervention.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/controllers/MaintenanceController.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/maintenance/interventions.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/maintenance/intervention_show.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/maintenance/intervention_form.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/models/Piscine.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/maintenance/piscine.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/partials/navbar.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/models/Ascenseur.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/maintenance/ascenseurs.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/maintenance/ascenseur_form.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/maintenance/ascenseur_show.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/models/MaintenanceStock.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/maintenance/produits.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/maintenance/produit_form.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/maintenance/inventaire.php\")",
-      "Bash(/c/xampp/php/php.exe -l \"c:/xampp/htdocs/Synd_Gest/app/views/maintenance/inventaire_historique.php\")"
+      "Bash(/c/xampp/php/php.exe *)",
+      "Bash(php *)",
+      "Bash(/c/xampp/mysql/bin/mysql *)",
+      "Bash(/c/xampp/mysql/bin/mysqldump *)",
+      "Bash(curl *)",
+      "Bash(mkdir *)",
+      "Bash(ls *)",
+      "Bash(rm *)",
+      "Bash(mv *)",
+      "Bash(cp *)",
+      "Bash(cat *)",
+      "Bash(touch *)",
+      "Bash(echo *)",
+      "Bash(find *)",
+      "Bash(git *)",
+      "Bash(grep -c \"INSERT INTO \\\\`ecritures_comptables\\\\`\" c:/xampp/htdocs/Synd_Gest/database/synd_gest.sql)",
+      "Bash(grep -A2 \"INSERT INTO \\\\`ecritures_comptables\\\\`\" c:/xampp/htdocs/Synd_Gest/database/synd_gest.sql)"
     ],
     "additionalDirectories": [
       "c:\\xampp\\htdocs\\Synd_Gest\\app\\views",
-      "c:\\xampp\\htdocs\\Synd_Gest\\tests"
+      "c:\\xampp\\htdocs\\Synd_Gest\\tests",
+      "c:\\xampp\\htdocs\\Synd_Gest\\database",
+      "c:\\xampp\\htdocs\\Synd_Gest\\uploads"
     ]
   }
 }

@@ -74,6 +74,22 @@ include __DIR__ . '/../partials/breadcrumb.php';
         </div>
     </div>
 
+    <!-- Bandeau prochaine AG -->
+    <?php if (!empty($agStats['prochaine'])): ?>
+    <div class="alert alert-info d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+        <div>
+            <i class="fas fa-gavel me-2"></i>
+            <strong>Prochaine AG :</strong>
+            <?= htmlspecialchars($agStats['prochaine']['type'] === 'extraordinaire' ? 'AGE' : 'AGO') ?>
+            le <strong><?= date('d/m/Y à H\hi', strtotime($agStats['prochaine']['date_ag'])) ?></strong>
+            — <?= htmlspecialchars($agStats['prochaine']['residence_nom']) ?>
+        </div>
+        <a href="<?= BASE_URL ?>/coproprietaire/assembleeShow/<?= (int)$agStats['prochaine']['id'] ?>" class="btn btn-sm btn-info text-white">
+            <i class="fas fa-eye me-1"></i>Voir convocation
+        </a>
+    </div>
+    <?php endif; ?>
+
     <!-- Mes Résidences -->
     <?php if (!empty($mesResidences)): ?>
     <div class="card shadow mb-4">
@@ -274,6 +290,19 @@ include __DIR__ . '/../partials/breadcrumb.php';
                         <i class="fas fa-info-circle me-1"></i>
                         Pour modifier vos informations, contactez l'administration Domitys.
                     </div>
+                </div>
+            </div>
+
+            <!-- Sinistres (lecture seule) -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Sinistres sur mes lots</h5>
+                </div>
+                <div class="card-body small">
+                    <p class="text-muted mb-2">Consultez les sinistres déclarés sur vos lots (lecture seule). La déclaration et la gestion sont assurées par la direction Domitys.</p>
+                    <a href="<?= BASE_URL ?>/sinistre/index" class="btn btn-sm btn-outline-warning w-100">
+                        <i class="fas fa-eye me-1"></i>Voir les sinistres
+                    </a>
                 </div>
             </div>
 

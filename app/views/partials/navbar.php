@@ -99,6 +99,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="<?php echo BASE_URL; ?>/coproprietaire/assemblees">
+                        <i class="fas fa-gavel me-1 text-primary"></i> AG
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="<?php echo BASE_URL; ?>/coproprietaireDocument/index">
                         <i class="fas fa-folder-open me-1 text-warning"></i> Mes Documents
                     </a>
@@ -187,22 +192,77 @@
                     </ul>
                 </li>
 
-                <!-- Menu Comptabilité -->
+                <!-- Menu Comptabilité (restructuré Phase 12) -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navComptabilite" role="button" 
+                    <a class="nav-link dropdown-toggle" href="#" id="navComptabilite" role="button"
                        data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-calculator me-1 text-success"></i> Comptabilité
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="navComptabilite">
-                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/charge/index">
-                            <i class="fas fa-file-invoice-dollar me-2 text-warning"></i> Appels de fonds
+
+                        <li><h6 class="dropdown-header"><i class="fas fa-eye me-1"></i> Vue d'ensemble</h6></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/index">
+                            <i class="fas fa-tachometer-alt me-2 text-primary"></i> <strong>Tableau de bord</strong>
                         </a></li>
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/ecritures">
-                            <i class="fas fa-book me-2 text-primary"></i> Écritures
+                            <i class="fas fa-book me-2 text-primary"></i> Écritures détaillées
                         </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/assistant">
+                            <i class="fas fa-robot me-2 text-primary"></i> Assistant IA <small class="text-muted">(analyse)</small>
+                        </a></li>
+
                         <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="fas fa-users me-1"></i> RH &amp; Paie</h6></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/salarie/index">
+                            <i class="fas fa-id-card me-2 text-info"></i> Salariés &amp; fiches RH
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/bulletinPaie/index">
+                            <i class="fas fa-file-invoice me-2 text-success"></i> Bulletins de paie
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/bulletinPaie/assistant">
+                            <i class="fas fa-robot me-2 text-success"></i> Assistant Paie IA
+                        </a></li>
+
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="fas fa-chart-pie me-1"></i> États financiers</h6></li>
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/balance">
-                            <i class="fas fa-chart-bar me-2 text-success"></i> Balance
+                            <i class="fas fa-chart-bar me-2 text-info"></i> Balance comptable
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/grandLivre">
+                            <i class="fas fa-book-open me-2 text-info"></i> Grand livre
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/bilan">
+                            <i class="fas fa-balance-scale me-2 text-primary"></i> Bilan
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/sig">
+                            <i class="fas fa-chart-line me-2 text-primary"></i> SIG <small class="text-muted">(soldes intermédiaires)</small>
+                        </a></li>
+
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="fas fa-percent me-1"></i> Déclarations &amp; Exports</h6></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/tva">
+                            <i class="fas fa-percent me-2 text-warning"></i> Déclarations TVA <small class="text-muted">(CA3 / CA12)</small>
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/export">
+                            <i class="fas fa-file-export me-2 text-danger"></i> Exports <small class="text-muted">(FEC / CSV / Cegid)</small>
+                        </a></li>
+
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="fas fa-cogs me-1"></i> Périodes &amp; rapprochements</h6></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/exercices">
+                            <i class="fas fa-calendar-alt me-2 text-warning"></i> Exercices comptables
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/rapprochement">
+                            <i class="fas fa-university me-2 text-info"></i> Rapprochement bancaire
+                        </a></li>
+
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="fas fa-shield-alt me-1"></i> Audit &amp; legacy</h6></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/auditTrail">
+                            <i class="fas fa-history me-2 text-secondary"></i> Audit trail <small class="text-muted">(légal)</small>
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap text-muted" href="<?php echo BASE_URL; ?>/charge/index">
+                            <i class="fas fa-file-invoice-dollar me-2"></i> Appels de fonds <small>(dormant)</small>
                         </a></li>
                     </ul>
                 </li>
@@ -216,8 +276,54 @@
                 
                 <?php endif; ?>
 
-                <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin', 'directeur_residence', 'employe_residence'])): ?>
-                <!-- Menu Hôtes Temporaires -->
+                <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin', 'directeur_residence', 'accueil_manager', 'accueil_employe'])): ?>
+                <!-- Menu Accueil -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-concierge-bell me-1 text-info"></i> Accueil
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/accueil/index">
+                            <i class="fas fa-tachometer-alt me-2 text-info"></i> Dashboard
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/accueil/residents">
+                            <i class="fas fa-users me-2 text-primary"></i> Mes résidents
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/accueil/reservations">
+                            <i class="fas fa-calendar-check me-2 text-warning"></i> Réservations
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/accueil/animations">
+                            <i class="fas fa-music me-2 text-info"></i> Animations
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/accueil/planning">
+                            <i class="fas fa-calendar-alt me-2 text-primary"></i> Planning
+                        </a></li>
+                        <?php if (in_array($_SESSION['user_role'], ['admin', 'directeur_residence', 'accueil_manager'])): ?>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/accueil/equipe">
+                            <i class="fas fa-users-cog me-2 text-info"></i> Équipe
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/accueil/messageGroupe">
+                            <i class="fas fa-paper-plane me-2 text-warning"></i> Message groupé
+                        </a></li>
+                        <?php endif; ?>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/accueil/salles">
+                            <i class="fas fa-door-open me-2 text-info"></i> Salles communes
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/accueil/equipements">
+                            <i class="fas fa-toolbox me-2 text-success"></i> Équipements prêtables
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/hote/index">
+                            <i class="fas fa-suitcase-rolling me-2 text-warning"></i> Hôtes temporaires
+                        </a></li>
+                    </ul>
+                </li>
+                <?php endif; ?>
+
+                <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'employe_residence'): ?>
+                <!-- Menu Hôtes (employe_residence : pour eux ce n'est pas dans le dropdown Accueil) -->
                 <li class="nav-item">
                     <a class="nav-link" href="<?php echo BASE_URL; ?>/hote/index">
                         <i class="fas fa-calendar-check me-1 text-success"></i> Hôtes
@@ -549,6 +655,9 @@
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/contrats">
                             <i class="fas fa-file-contract me-2 text-primary"></i> Contrats de gestion
                         </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/assemblee/index">
+                            <i class="fas fa-gavel me-2 text-primary"></i> Assemblées Générales
+                        </a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/carteResidences">
                             <i class="fas fa-map-marked-alt me-2 text-success"></i> Carte des résidences
@@ -570,8 +679,34 @@
                     </a>
                 </li>
                 <?php endif; ?>
+
+                <?php
+                // Sinistres : accessible aux gestionnaires, staff résidence, résidents et propriétaires
+                $sinistreRoles = ['admin', 'directeur_residence', 'exploitant',
+                                  'employe_residence', 'technicien_chef', 'technicien',
+                                  'locataire_permanent', 'proprietaire'];
+                if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], $sinistreRoles, true)):
+                ?>
+                <li class="nav-item">
+                    <a class="nav-link" href="<?php echo BASE_URL; ?>/sinistre/index" title="Sinistres et déclarations">
+                        <i class="fas fa-shield-alt me-1 text-danger"></i> Sinistres
+                    </a>
+                </li>
+                <?php endif; ?>
+
+                <?php
+                // GED admin/staff direction : accessible aux rôles de pilotage
+                $documentRoles = ['admin', 'directeur_residence', 'exploitant', 'comptable'];
+                if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], $documentRoles, true)):
+                ?>
+                <li class="nav-item">
+                    <a class="nav-link" href="<?php echo BASE_URL; ?>/document/index" title="Documents Domitys (global + par résidence)">
+                        <i class="fas fa-folder-open me-1 text-warning"></i> Documents
+                    </a>
+                </li>
+                <?php endif; ?>
             </ul>
-            
+
             <!-- Menu utilisateur (droite) -->
             <ul class="navbar-nav ms-auto">
                 <!-- Messagerie -->
@@ -644,6 +779,23 @@
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/user/settings">
                             <i class="fas fa-cog me-2 text-secondary"></i> Paramètres
                         </a></li>
+                        <?php
+                        // Lien "Mes infos RH" pour le staff salarié (pas proprio, pas résident, pas admin pur)
+                        $roleSal = $_SESSION['user_role'] ?? '';
+                        $rolesSalaries = ['comptable','directeur_residence','employe_residence','technicien','technicien_chef',
+                                          'jardinier_manager','jardinier_employe',
+                                          'menage_interieur','menage_exterieur','employe_laverie','entretien_manager',
+                                          'restauration_manager','restauration_serveur','restauration_cuisine',
+                                          'exploitant','animateur','animateur_chef'];
+                        if (in_array($roleSal, $rolesSalaries, true)):
+                        ?>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/salarie/mesInfos">
+                            <i class="fas fa-id-badge me-2 text-primary"></i> Mes informations RH
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/bulletinPaie/mesBulletins">
+                            <i class="fas fa-file-invoice me-2 text-success"></i> Mes bulletins de paie
+                        </a></li>
+                        <?php endif; ?>
                         <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/logs">

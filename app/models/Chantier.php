@@ -49,11 +49,13 @@ class Chantier extends Model {
     public function getChantiers(int $userId, string $userRole, array $residencesIds, array $filtres = []): array {
         $sql = "SELECT c.*, s.nom AS specialite_nom, s.couleur AS specialite_couleur, s.icone AS specialite_icone,
                        co.nom AS residence_nom,
-                       ag.date_ag, ag.statut AS ag_statut
+                       ag.date_ag, ag.statut AS ag_statut,
+                       sin.id AS sinistre_id_lie, sin.titre AS sinistre_titre, sin.type_sinistre AS sinistre_type
                 FROM chantiers c
                 LEFT JOIN specialites s ON s.id = c.specialite_id
                 JOIN coproprietees co ON co.id = c.residence_id
                 LEFT JOIN assemblees_generales ag ON ag.id = c.ag_id
+                LEFT JOIN sinistres sin ON sin.id = c.sinistre_id
                 WHERE 1=1";
         $params = [];
 
@@ -78,16 +80,36 @@ class Chantier extends Model {
         $sql = "SELECT c.*, s.nom AS specialite_nom, s.couleur AS specialite_couleur, s.icone AS specialite_icone,
                        co.nom AS residence_nom, co.ville AS residence_ville,
                        ag.date_ag, ag.statut AS ag_statut, ag.type AS ag_type,
-                       u.prenom AS createur_prenom, u.nom AS createur_nom
+                       u.prenom AS createur_prenom, u.nom AS createur_nom,
+                       sin.titre AS sinistre_titre, sin.type_sinistre AS sinistre_type, sin.statut AS sinistre_statut
                 FROM chantiers c
                 LEFT JOIN specialites s ON s.id = c.specialite_id
                 JOIN coproprietees co ON co.id = c.residence_id
                 LEFT JOIN assemblees_generales ag ON ag.id = c.ag_id
                 LEFT JOIN users u ON u.id = c.created_by
+                LEFT JOIN sinistres sin ON sin.id = c.sinistre_id
                 WHERE c.id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
+     * Liste des chantiers liés à un sinistre (relation 1 → N).
+     * Utilisé sur la vue sinistre/show pour la section "Chantiers de réparation".
+     */
+    public function getChantiersBySinistre(int $sinistreId): array {
+        $sql = "SELECT c.id, c.titre, c.phase, c.statut, c.priorite,
+                       c.montant_estime, c.montant_engage, c.montant_paye,
+                       c.date_debut_prevue, c.date_fin_prevue, c.created_at,
+                       s.nom AS specialite_nom, s.couleur AS specialite_couleur
+                FROM chantiers c
+                LEFT JOIN specialites s ON s.id = c.specialite_id
+                WHERE c.sinistre_id = ?
+                ORDER BY c.created_at DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$sinistreId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function createChantier(array $data): int {
@@ -99,8 +121,8 @@ class Chantier extends Model {
 
         $sql = "INSERT INTO chantiers
                 (residence_id, specialite_id, titre, description, categorie, phase, statut, priorite,
-                 necessite_ag, ag_id, date_debut_prevue, date_fin_prevue, montant_estime, notes, created_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                 necessite_ag, ag_id, sinistre_id, date_debut_prevue, date_fin_prevue, montant_estime, notes, created_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $this->db->prepare($sql)->execute([
             $data['residence_id'],
             !empty($data['specialite_id']) ? (int)$data['specialite_id'] : null,
@@ -112,6 +134,7 @@ class Chantier extends Model {
             $data['priorite']  ?? 'normale',
             $necessiteAg,
             !empty($data['ag_id']) ? (int)$data['ag_id'] : null,
+            !empty($data['sinistre_id']) ? (int)$data['sinistre_id'] : null,
             $data['date_debut_prevue'] ?: null,
             $data['date_fin_prevue']   ?: null,
             !empty($data['montant_estime']) ? (float)$data['montant_estime'] : null,

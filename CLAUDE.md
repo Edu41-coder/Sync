@@ -143,5 +143,10 @@ Chaque rôle a ses propres boutons — ne jamais mélanger les privilèges entre
 - Module Ménage → @.claude/modules/menage.md
 - Module Jardinage ✅ → @.claude/modules/jardinage.md
 - Module Maintenance Technique ✅ (piscine, ascenseur, travaux/chantiers, plomberie, électricité, peinture) → @.claude/modules/maintenance.md
-- Module Comptabilité (à créer) → @.claude/modules/comptabilite.md
+- Module Sinistres ✅ MVP (déclarations, suivi assureur, GED constats/expertises, audit trail) → @.claude/modules/sinistres.md
+- Module Documents ✅ MVP (GED admin : global Domitys + par résidence, permissions multi-rôles) → @.claude/modules/documents.md
+- Module Accueil ✅ (résidents+notes, salles, équipements, réservations, animations, planning double-vue, équipe, messagerie groupée) → @.claude/modules/accueil.md
+- Module Assemblées Générales ✅ (workflow AGO/AGE, résolutions+votes, convocation messagerie, espace propriétaire lecture, calendrier proprio) → @.claude/modules/ag.md
+- Module Comptabilité 🚧 (Phases 0+1+2+3+4 ✅ — fondations + refonte modules + dashboard + RH + bulletins paie pilote, 8 phases restantes ~35 j) → @.claude/modules/comptabilite.md
 - Module Messagerie interne → @.claude/modules/messagerie.md
+- Module Appels de fonds 💤 (feature dormante — model existant, à activer si demande client) → @.claude/modules/appels_fonds.md

@@ -155,10 +155,29 @@ CREATE TABLE coproprietaire_fichiers (
 - [ ] Affichage : icône selon type de fichier (PDF, image, vidéo, etc.)
 - [ ] Prévisualisation : images en lightbox, vidéos en lecteur HTML5, PDF iframe
 
+## Assemblées Générales (espace propriétaire) ✅
+
+Le propriétaire accède à ses AG en lecture seule via `/coproprietaire/assemblees`. Détails complets : voir @.claude/modules/ag.md
+
+### Endpoints
+| URL | Méthode | Description |
+|-----|---------|-------------|
+| `GET /coproprietaire/assemblees` | `assemblees()` | Liste AG des résidences avec contrats actifs |
+| `GET /coproprietaire/assembleeShow/{id}` | `assembleeShow($id)` | Détail AG (OdJ, résolutions, PV, chantiers votés) |
+| `GET /coproprietaire/assembleeDownload/{id}/{convocation\|pv}` | `assembleeDownload($id, $type)` | Téléchargement PDF avec ownership vérifié |
+
+### Règles
+- Seules les AG `convoquee`, `tenue`, `annulee` sont visibles (les `planifiee` en cours de préparation sont masquées)
+- Filtrage strict via contrats actifs (`contrats_gestion.statut='actif'`) — ownership vérifié sur tous les endpoints
+- Bandeau "Prochaine AG" sur dashboard `monEspace` si une AG `convoquee` est à venir
+- Lien "AG" dans la navbar propriétaire (icône gavel, entre Calendrier et Mes Documents)
+- Les AG apparaissent en **violet** dans le calendrier propriétaire (catégorie `ag`, click → fiche détail)
+
 ## Intégration Messagerie
 Le propriétaire a accès à la messagerie (voir @.claude/modules/messagerie.md).
 - [ ] Lien "Contacter" disponible depuis l'espace propriétaire vers admin/direction
 - [ ] Notifications messagerie visibles dans le dashboard propriétaire
+- [x] Convocations AG envoyées via `/accueil/messageGroupe?ag_id=X` par admin/direction (voir @.claude/modules/ag.md § Convocation via messagerie)
 
 ## Checklist générale module Propriétaires
 - [ ] Isolation des données : proprio ne voit que ses lots/contrats

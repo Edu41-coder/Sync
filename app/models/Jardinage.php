@@ -950,60 +950,94 @@ class Jardinage extends Model {
     //  COMPTABILITÉ JARDINERIE
     // ─────────────────────────────────────────────────────────────
 
+    // Phase 1 (refonte) : la table jardin_comptabilite est remplacée par
+    // ecritures_comptables filtrée par module_source='jardinage'.
+    // L'API publique de ces méthodes reste IDENTIQUE pour ne pas casser le controller.
+    // Mappings :
+    //   - espace_id  → imputation_type='espace_jardin' + imputation_id
+    //   - reference_type/id → reference_externe_type/id
+    //   - compte_comptable (numero string) → compte_comptable_id (FK) via lookup auto
+    //   - mois/annee → calculés depuis date_ecriture (plus stockés explicitement)
+
     public function createEcriture(array $d): int {
         $date = $d['date_ecriture'] ?? date('Y-m-d');
-        $ht = (float)$d['montant_ht'];
-        $tva = (float)($d['montant_tva'] ?? 0);
-        $ttc = (float)($d['montant_ttc'] ?? ($ht + $tva));
+        // Résoudre numero_compte string → id FK
+        $compteId = null;
+        if (!empty($d['compte_comptable'])) {
+            $st = $this->db->prepare("SELECT id FROM comptes_comptables WHERE numero_compte = ? LIMIT 1");
+            $st->execute([trim($d['compte_comptable'])]);
+            $compteId = $st->fetchColumn() ?: null;
+        }
 
-        $sql = "INSERT INTO jardin_comptabilite
-                (residence_id, date_ecriture, type_ecriture, categorie, reference_id, reference_type,
-                 espace_id, libelle, montant_ht, montant_tva, montant_ttc, compte_comptable, mois, annee, notes, created_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            (int)$d['residence_id'],
-            $date,
-            $d['type_ecriture'],
-            $d['categorie'],
-            !empty($d['reference_id']) ? (int)$d['reference_id'] : null,
-            $d['reference_type'] ?? 'manuel',
-            !empty($d['espace_id']) ? (int)$d['espace_id'] : null,
-            trim($d['libelle']),
-            $ht, $tva, $ttc,
-            !empty($d['compte_comptable']) ? trim($d['compte_comptable']) : null,
-            (int)($d['mois'] ?? date('m', strtotime($date))),
-            (int)($d['annee'] ?? date('Y', strtotime($date))),
-            !empty($d['notes']) ? trim($d['notes']) : null,
-            !empty($d['created_by']) ? (int)$d['created_by'] : null,
+        $eModel = new Ecriture();
+        return $eModel->create([
+            'residence_id'           => (int)$d['residence_id'],
+            'module_source'          => 'jardinage',
+            'categorie'              => $d['categorie'],
+            'date_ecriture'          => $date,
+            'type_ecriture'          => $d['type_ecriture'],
+            'montant_ht'             => (float)$d['montant_ht'],
+            'taux_tva'               => $d['taux_tva'] ?? null,
+            'montant_tva'            => (float)($d['montant_tva'] ?? 0),
+            'montant_ttc'            => $d['montant_ttc'] ?? null,
+            'compte_comptable_id'    => $compteId,
+            'reference_externe_type' => $d['reference_type'] ?? null,
+            'reference_externe_id'   => !empty($d['reference_id']) ? (int)$d['reference_id'] : null,
+            'imputation_type'        => !empty($d['espace_id']) ? 'espace_jardin' : null,
+            'imputation_id'          => !empty($d['espace_id']) ? (int)$d['espace_id'] : null,
+            'libelle'                => trim($d['libelle']),
+            'notes'                  => !empty($d['notes']) ? trim($d['notes']) : null,
+            'auto_genere'            => !empty($d['auto_genere']) ? 1 : 0,
+            'created_by'             => !empty($d['created_by']) ? (int)$d['created_by'] : null,
         ]);
-        return (int)$this->db->lastInsertId();
     }
 
     public function deleteEcriture(int $id): void {
-        $this->db->prepare("DELETE FROM jardin_comptabilite WHERE id = ?")->execute([$id]);
+        // Force statut=brouillon pour que deleteEcriture du model Ecriture passe.
+        // (On reste sur du hard delete car l'API publique d'origine était hard delete.)
+        $this->db->prepare("UPDATE ecritures_comptables SET statut='brouillon' WHERE id = ? AND module_source='jardinage'")->execute([$id]);
+        (new Ecriture())->deleteEcriture($id);
     }
 
     public function getEcriture(int $id): ?array {
-        $stmt = $this->db->prepare("SELECT * FROM jardin_comptabilite WHERE id = ?");
-        $stmt->execute([$id]);
-        $r = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $r ?: null;
+        $sql = "SELECT e.id, e.residence_id, e.date_ecriture, e.type_ecriture, e.categorie,
+                       e.reference_externe_id AS reference_id, e.reference_externe_type AS reference_type,
+                       e.imputation_id AS espace_id,
+                       e.libelle, e.montant_ht, e.taux_tva, e.montant_tva, e.montant_ttc,
+                       cc.numero_compte AS compte_comptable,
+                       MONTH(e.date_ecriture) AS mois, YEAR(e.date_ecriture) AS annee,
+                       e.notes, e.created_by, e.created_at
+                FROM ecritures_comptables e
+                LEFT JOIN comptes_comptables cc ON cc.id = e.compte_comptable_id
+                WHERE e.id = ? AND e.module_source = 'jardinage'";
+        try { $stmt = $this->db->prepare($sql); $stmt->execute([$id]); $r = $stmt->fetch(PDO::FETCH_ASSOC); return $r ?: null; }
+        catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return null; }
     }
 
     public function getEcritures(array $residenceIds, ?int $annee = null, ?int $mois = null, ?string $type = null): array {
         if (empty($residenceIds)) return [];
         $ph = implode(',', array_fill(0, count($residenceIds), '?'));
         $params = array_values($residenceIds);
-        $sql = "SELECT c.*, r.nom as residence_nom, e.nom as espace_nom
-                FROM jardin_comptabilite c
-                JOIN coproprietees r ON c.residence_id = r.id
-                LEFT JOIN jardin_espaces e ON c.espace_id = e.id
-                WHERE c.residence_id IN ($ph)";
-        if ($annee) { $sql .= " AND c.annee = ?"; $params[] = $annee; }
-        if ($mois)  { $sql .= " AND c.mois = ?";  $params[] = $mois; }
-        if ($type)  { $sql .= " AND c.type_ecriture = ?"; $params[] = $type; }
-        $sql .= " ORDER BY c.date_ecriture DESC, c.id DESC";
+        $sql = "SELECT e.id, e.residence_id, e.date_ecriture, e.type_ecriture, e.categorie,
+                       e.reference_externe_id AS reference_id, e.reference_externe_type AS reference_type,
+                       e.imputation_id AS espace_id,
+                       e.libelle, e.montant_ht, e.taux_tva, e.montant_tva, e.montant_ttc,
+                       cc.numero_compte AS compte_comptable,
+                       MONTH(e.date_ecriture) AS mois, YEAR(e.date_ecriture) AS annee,
+                       e.notes, e.created_at,
+                       r.nom AS residence_nom,
+                       jesp.nom AS espace_nom
+                FROM ecritures_comptables e
+                JOIN coproprietees r ON e.residence_id = r.id
+                LEFT JOIN comptes_comptables cc ON cc.id = e.compte_comptable_id
+                LEFT JOIN jardin_espaces jesp ON jesp.id = e.imputation_id AND e.imputation_type = 'espace_jardin'
+                WHERE e.module_source = 'jardinage'
+                  AND e.residence_id IN ($ph)
+                  AND e.statut != 'brouillon'";
+        if ($annee) { $sql .= " AND YEAR(e.date_ecriture) = ?"; $params[] = $annee; }
+        if ($mois)  { $sql .= " AND MONTH(e.date_ecriture) = ?"; $params[] = $mois; }
+        if ($type)  { $sql .= " AND e.type_ecriture = ?"; $params[] = $type; }
+        $sql .= " ORDER BY e.date_ecriture DESC, e.id DESC";
         try { $stmt = $this->db->prepare($sql); $stmt->execute($params); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
         catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
     }
@@ -1015,15 +1049,17 @@ class Jardinage extends Model {
         if (empty($residenceIds)) return $res;
         $ph = implode(',', array_fill(0, count($residenceIds), '?'));
         $params = array_merge(array_values($residenceIds), [$annee]);
-
         try {
             $sql = "SELECT type_ecriture,
-                           COALESCE(SUM(montant_ht),0) as ht,
-                           COALESCE(SUM(montant_tva),0) as tva,
-                           COALESCE(SUM(montant_ttc),0) as ttc,
-                           COUNT(*) as n
-                    FROM jardin_comptabilite
-                    WHERE residence_id IN ($ph) AND annee = ?
+                           COALESCE(SUM(montant_ht),0) AS ht,
+                           COALESCE(SUM(montant_tva),0) AS tva,
+                           COALESCE(SUM(montant_ttc),0) AS ttc,
+                           COUNT(*) AS n
+                    FROM ecritures_comptables
+                    WHERE module_source = 'jardinage'
+                      AND residence_id IN ($ph)
+                      AND YEAR(date_ecriture) = ?
+                      AND statut != 'brouillon'
                     GROUP BY type_ecriture";
             $stmt = $this->db->prepare($sql); $stmt->execute($params);
             foreach ($stmt as $row) {
@@ -1043,14 +1079,44 @@ class Jardinage extends Model {
         if (empty($residenceIds)) return [];
         $ph = implode(',', array_fill(0, count($residenceIds), '?'));
         $params = array_merge(array_values($residenceIds), [$annee]);
-        $sql = "SELECT mois,
-                       COALESCE(SUM(CASE WHEN type_ecriture='recette' THEN montant_ttc ELSE 0 END),0) as recettes_ttc,
-                       COALESCE(SUM(CASE WHEN type_ecriture='depense' THEN montant_ttc ELSE 0 END),0) as depenses_ttc
-                FROM jardin_comptabilite
-                WHERE residence_id IN ($ph) AND annee = ?
-                GROUP BY mois ORDER BY mois";
+        $sql = "SELECT MONTH(date_ecriture) AS mois,
+                       COALESCE(SUM(CASE WHEN type_ecriture='recette' THEN montant_ttc ELSE 0 END),0) AS recettes_ttc,
+                       COALESCE(SUM(CASE WHEN type_ecriture='depense' THEN montant_ttc ELSE 0 END),0) AS depenses_ttc
+                FROM ecritures_comptables
+                WHERE module_source = 'jardinage'
+                  AND residence_id IN ($ph)
+                  AND YEAR(date_ecriture) = ?
+                  AND statut != 'brouillon'
+                GROUP BY MONTH(date_ecriture)
+                ORDER BY mois";
         try { $stmt = $this->db->prepare($sql); $stmt->execute($params); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
         catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
+    }
+
+    /**
+     * TVA collectée (recettes) vs déductible (dépenses) sur la période — pour KPIs et CA3.
+     * Mêmes signatures et clés que Restauration::getTVA et Menage (cohérence dashboard).
+     */
+    public function getTVA(array $residenceIds, int $annee, ?int $mois = null): array {
+        $defaut = ['collectee' => 0, 'deductible' => 0, 'a_reverser' => 0];
+        if (empty($residenceIds)) return $defaut;
+        $ph = implode(',', array_fill(0, count($residenceIds), '?'));
+        $params = array_merge(array_values($residenceIds), [$annee]);
+        $sql = "SELECT
+                    SUM(CASE WHEN type_ecriture='recette' THEN montant_tva ELSE 0 END) AS collectee,
+                    SUM(CASE WHEN type_ecriture='depense' THEN montant_tva ELSE 0 END) AS deductible
+                FROM ecritures_comptables
+                WHERE module_source = 'jardinage'
+                  AND residence_id IN ($ph)
+                  AND YEAR(date_ecriture) = ?
+                  AND statut != 'brouillon'";
+        if ($mois) { $sql .= " AND MONTH(date_ecriture) = ?"; $params[] = $mois; }
+        try {
+            $stmt = $this->db->prepare($sql); $stmt->execute($params);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: $defaut;
+            $row['a_reverser'] = ($row['collectee'] ?? 0) - ($row['deductible'] ?? 0);
+            return $row;
+        } catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return $defaut; }
     }
 
     /**
@@ -1061,13 +1127,19 @@ class Jardinage extends Model {
         if (empty($residenceIds)) return [];
         $ph = implode(',', array_fill(0, count($residenceIds), '?'));
 
-        // Part 1 : écritures compta directement imputées
+        // Part 1 : écritures compta directement imputées (via imputation_type='espace_jardin')
         $sql1 = "SELECT e.id as espace_id, e.nom as espace_nom, e.type as espace_type,
                         r.nom as residence_nom,
                         COALESCE(SUM(c.montant_ttc),0) as total_compta
                  FROM jardin_espaces e
                  JOIN coproprietees r ON e.residence_id = r.id
-                 LEFT JOIN jardin_comptabilite c ON c.espace_id = e.id AND c.type_ecriture = 'depense' AND c.annee = ?
+                 LEFT JOIN ecritures_comptables c
+                        ON c.imputation_type = 'espace_jardin'
+                       AND c.imputation_id = e.id
+                       AND c.module_source = 'jardinage'
+                       AND c.type_ecriture = 'depense'
+                       AND YEAR(c.date_ecriture) = ?
+                       AND c.statut != 'brouillon'
                  WHERE e.residence_id IN ($ph) AND e.actif = 1
                  GROUP BY e.id";
         try {
@@ -1147,8 +1219,11 @@ class Jardinage extends Model {
                   AND r.residence_id IN ($ph)
                   AND YEAR(v.date_visite) = ?
                   AND NOT EXISTS (
-                    SELECT 1 FROM jardin_comptabilite c
-                    WHERE c.reference_type = 'ruche_visite' AND c.reference_id = v.id
+                    SELECT 1 FROM ecritures_comptables c
+                    WHERE c.module_source = 'jardinage'
+                      AND c.reference_externe_type = 'ruche_visite'
+                      AND c.reference_externe_id = v.id
+                      AND c.statut != 'brouillon'
                   )
                 ORDER BY v.date_visite DESC";
         try { $stmt = $this->db->prepare($sql); $stmt->execute($params); return $stmt->fetchAll(PDO::FETCH_ASSOC); }

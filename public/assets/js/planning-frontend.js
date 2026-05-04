@@ -364,7 +364,7 @@ class PlanningFrontend {
     updateHeader() {
         const d = this.calendar.getDate();
         const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-        document.getElementById('calendar-date-header').textContent = months[d.getMonth()] + ' ' + d.getFullYear();
+        document.getElementById('cal-header').textContent = months[d.getMonth()] + ' ' + d.getFullYear();
     }
 
     updateViewButtons(view) {

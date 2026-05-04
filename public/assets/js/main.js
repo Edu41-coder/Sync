@@ -8,18 +8,82 @@
 document.addEventListener('DOMContentLoaded', function() {
     
     // Auto-fermeture des alertes selon leur durée flash
-    const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
-    alerts.forEach(alert => {
-        const duration = parseInt(alert.getAttribute('data-flash-duration') || '5000', 10);
+    //
+    // Règle :
+    //   - Alertes hors modal : timer démarré au chargement de page (cas flash messages classiques)
+    //   - Alertes DANS un modal : timer démarré à l'ouverture du modal (shown.bs.modal)
+    //                              et annulé à sa fermeture (hidden.bs.modal). Permet à
+    //                              l'utilisateur de voir l'alerte à chaque ouverture, même
+    //                              s'il a chargé la page longtemps avant d'ouvrir le modal.
+    //   - Classe `alert-permanent` : alerte jamais auto-fermée (cas très spécifiques).
 
-        if (!Number.isFinite(duration) || duration <= 0) {
-            return;
-        }
+    function getFlashDuration(alertEl) {
+        const v = parseInt(alertEl.getAttribute('data-flash-duration') || '5000', 10);
+        return Number.isFinite(v) && v > 0 ? v : 0;
+    }
 
-        setTimeout(() => {
-            const bsAlert = new bootstrap.Alert(alert);
+    function closeAlert(alertEl) {
+        if (!alertEl.parentNode) return; // déjà retirée
+        try {
+            const bsAlert = bootstrap.Alert.getOrCreateInstance(alertEl);
             bsAlert.close();
-        }, duration);
+        } catch (e) { /* DOM possiblement détaché */ }
+    }
+
+    // 1) Alertes hors modal — timer immédiat
+    document.querySelectorAll('.alert:not(.alert-permanent)').forEach(alert => {
+        if (alert.closest('.modal')) return; // gérées plus bas
+        const duration = getFlashDuration(alert);
+        if (duration > 0) setTimeout(() => closeAlert(alert), duration);
+    });
+
+    // 2) Alertes dans des modals — timer démarré à l'ouverture du modal
+    document.querySelectorAll('.modal').forEach(modal => {
+        // Mémorise le HTML d'origine de chaque alerte pour pouvoir la restaurer
+        // si elle a été fermée (sortie du DOM par bsAlert.close()) lors d'une
+        // ouverture précédente du modal.
+        const alertOriginals = new WeakMap();
+        const containers = modal.querySelectorAll('.alert:not(.alert-permanent)');
+        containers.forEach(alert => {
+            alertOriginals.set(alert, { html: alert.outerHTML, parent: alert.parentNode, next: alert.nextSibling });
+        });
+
+        let pendingTimers = [];
+
+        modal.addEventListener('show.bs.modal', function () {
+            // Restaurer les alertes manquantes (fermées lors d'une précédente ouverture)
+            containers.forEach(alert => {
+                const meta = alertOriginals.get(alert);
+                if (meta && !alert.parentNode && meta.parent) {
+                    // Reconstruire l'alerte à partir du HTML mémorisé
+                    const tmp = document.createElement('div');
+                    tmp.innerHTML = meta.html;
+                    const restored = tmp.firstElementChild;
+                    if (restored) {
+                        meta.parent.insertBefore(restored, meta.next);
+                        // Remplacer la référence dans la NodeList par le nouvel élément
+                        alertOriginals.set(restored, meta);
+                    }
+                }
+            });
+        });
+
+        modal.addEventListener('shown.bs.modal', function () {
+            pendingTimers.forEach(clearTimeout);
+            pendingTimers = [];
+            // Re-query pour avoir les éventuels éléments restaurés
+            modal.querySelectorAll('.alert:not(.alert-permanent)').forEach(alert => {
+                const duration = getFlashDuration(alert);
+                if (duration > 0) {
+                    pendingTimers.push(setTimeout(() => closeAlert(alert), duration));
+                }
+            });
+        });
+
+        modal.addEventListener('hidden.bs.modal', function () {
+            pendingTimers.forEach(clearTimeout);
+            pendingTimers = [];
+        });
     });
     
     // Toggle password visibility

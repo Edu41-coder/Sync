@@ -1,8 +1,6 @@
 <?php $title = "Planning Ménage"; ?>
 
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-calendar.css">
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-date-picker.css">
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-time-picker.css">
+<?php include ROOT_PATH . '/app/views/partials/tui_calendar_assets.php'; ?>
 <style>#calendar { height: 700px; } .btn-group .btn.active { font-weight: bold; }</style>
 
 <?php
@@ -26,43 +24,30 @@ include __DIR__ . '/../partials/breadcrumb.php';
         </div>
     </div>
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-body py-2">
-            <div class="row g-2 align-items-center">
-                <div class="col-auto">
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary" id="prev-btn"><i class="fas fa-chevron-left"></i></button>
-                        <button class="btn btn-outline-info" id="today-btn">Aujourd'hui</button>
-                        <button class="btn btn-outline-secondary" id="next-btn"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </div>
-                <div class="col-auto"><h5 class="mb-0" id="calendar-date-header">...</h5></div>
-                <div class="col-auto ms-auto">
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-dark" id="day-view">Jour</button>
-                        <button class="btn btn-outline-dark active" id="week-view">Semaine</button>
-                        <button class="btn btn-outline-dark" id="month-view">Mois</button>
-                    </div>
-                </div>
-                <div class="col-12 col-md-3">
-                    <select class="form-select form-select-sm" id="filterResidence">
-                        <option value="0">Toutes résidences</option>
-                        <?php foreach ($residences as $r): ?>
-                        <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nom']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-12 col-md-3">
-                    <select class="form-select form-select-sm" id="filterEmployee">
-                        <option value="0">Tout le staff</option>
-                        <?php foreach ($staff as $s): ?>
-                        <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['prenom'] . ' ' . $s['nom']) ?> (<?= $s['role_nom'] ?? $s['role'] ?>)</option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-        </div>
+    <?php
+    $tuiToolbarColor = 'info';
+    ob_start();
+    ?>
+    <div class="col-12 col-md-3">
+        <select class="form-select form-select-sm" id="filterResidence">
+            <option value="0">Toutes résidences</option>
+            <?php foreach ($residences as $r): ?>
+            <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nom']) ?></option>
+            <?php endforeach; ?>
+        </select>
     </div>
+    <div class="col-12 col-md-3">
+        <select class="form-select form-select-sm" id="filterEmployee">
+            <option value="0">Tout le staff</option>
+            <?php foreach ($staff as $s): ?>
+            <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['prenom'] . ' ' . $s['nom']) ?> (<?= $s['role_nom'] ?? $s['role'] ?>)</option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <?php
+    $tuiToolbarExtra = ob_get_clean();
+    include ROOT_PATH . '/app/views/partials/tui_calendar_toolbar.php';
+    ?>
 
     <div class="card shadow"><div class="card-body p-0"><div id="calendar"></div></div></div>
 </div>
@@ -123,35 +108,16 @@ const AJAX_URL = BASE + '/menage/planningAjax';
 const canManage = <?= $canManage ? 'true' : 'false' ?>;
 const currentUserId = <?= $userId ?>;
 
-function jsonHeaders() {
-    const meta = document.querySelector('meta[name="csrf-token"]');
-    return { 'Content-Type': 'application/json', 'X-CSRF-Token': meta ? meta.content : '' };
-}
-
-const cal = new tui.Calendar('#calendar', {
-    defaultView: 'week',
-    taskView: false,
+const cal = new tui.Calendar('#calendar', TuiCalHelpers.defaultConfig({
     useDetailPopup: !canManage,
-    useCreationPopup: false,
-    week: { startDayOfWeek: 1, hourStart: 6, hourEnd: 22 },
-    month: { startDayOfWeek: 1 },
-    template: {
-        time: function(schedule) { return '<span style="font-size:11px">' + schedule.title + '</span>'; }
-    }
-});
-
-function formatDate(d) { return d.toISOString().slice(0, 10); }
-function formatDT(d) { return d.toISOString().slice(0, 16); }
-function updateHeader() {
-    const d = cal.getDate().toDate();
-    document.getElementById('calendar-date-header').textContent = d.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' });
-}
+    week: { startDayOfWeek: 1, hourStart: 6, hourEnd: 22 }
+}));
 
 function loadEvents() {
     const range = cal.getDateRangeStart().toDate();
     const rangeEnd = cal.getDateRangeEnd().toDate();
     const params = new URLSearchParams({
-        start: formatDate(range), end: formatDate(rangeEnd),
+        start: TuiCalHelpers.formatDate(range), end: TuiCalHelpers.formatDate(rangeEnd),
         residence_id: document.getElementById('filterResidence').value,
         user_id: document.getElementById('filterEmployee').value
     });
@@ -166,13 +132,7 @@ function loadEvents() {
     });
 }
 
-document.getElementById('prev-btn').onclick = () => { cal.prev(); loadEvents(); updateHeader(); };
-document.getElementById('next-btn').onclick = () => { cal.next(); loadEvents(); updateHeader(); };
-document.getElementById('today-btn').onclick = () => { cal.today(); loadEvents(); updateHeader(); };
-document.getElementById('day-view').onclick = function() { cal.changeView('day'); setActiveView(this); loadEvents(); updateHeader(); };
-document.getElementById('week-view').onclick = function() { cal.changeView('week'); setActiveView(this); loadEvents(); updateHeader(); };
-document.getElementById('month-view').onclick = function() { cal.changeView('month'); setActiveView(this); loadEvents(); updateHeader(); };
-function setActiveView(btn) { document.querySelectorAll('#day-view,#week-view,#month-view').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+TuiCalHelpers.bindToolbar(cal, { headerId: 'cal-header', onChange: loadEvents });
 document.getElementById('filterResidence').onchange = loadEvents;
 document.getElementById('filterEmployee').onchange = loadEvents;
 
@@ -184,8 +144,8 @@ function openCreateModal(start, end, isAllDay) {
     document.getElementById('shiftResidence').value = '';
     document.getElementById('shiftCategory').value = '';
     document.getElementById('shiftTypeHeures').value = 'normales';
-    document.getElementById('shiftStart').value = formatDT(start);
-    document.getElementById('shiftEnd').value = formatDT(end);
+    document.getElementById('shiftStart').value = TuiCalHelpers.formatDT(start);
+    document.getElementById('shiftEnd').value = TuiCalHelpers.formatDT(end);
     document.getElementById('shiftAllDay').checked = isAllDay;
     document.getElementById('shiftDescription').value = '';
     document.getElementById('shiftModalLabel').innerHTML = '<i class="fas fa-calendar-plus me-2"></i>Nouveau shift';
@@ -215,8 +175,8 @@ cal.on('clickEvent', ({event}) => {
     });
 });
 cal.on('beforeUpdateEvent', ({event, changes}) => {
-    fetch(AJAX_URL + '/move', { method: 'POST', headers: jsonHeaders(),
-        body: JSON.stringify({ id: event.id, start: formatDT(changes.start?.toDate() || event.start.toDate()), end: formatDT(changes.end?.toDate() || event.end.toDate()) })
+    fetch(AJAX_URL + '/move', { method: 'POST', headers: TuiCalHelpers.jsonHeaders(),
+        body: JSON.stringify({ id: event.id, start: TuiCalHelpers.formatDT(changes.start?.toDate() || event.start.toDate()), end: TuiCalHelpers.formatDT(changes.end?.toDate() || event.end.toDate()) })
     }).then(() => loadEvents());
 });
 
@@ -234,18 +194,17 @@ function saveShift() {
         typeShift: 'travail',
         description: document.getElementById('shiftDescription').value
     };
-    fetch(AJAX_URL + '/save', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(body) })
+    fetch(AJAX_URL + '/save', { method: 'POST', headers: TuiCalHelpers.jsonHeaders(), body: JSON.stringify(body) })
         .then(r => r.json()).then(data => { bootstrap.Modal.getInstance(document.getElementById('shiftModal')).hide(); loadEvents(); });
 }
 
 function deleteShift() {
     if (!confirm('Supprimer ce shift ?')) return;
     const id = document.getElementById('shiftId').value;
-    fetch(AJAX_URL + '/delete', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ id: parseInt(id) }) })
+    fetch(AJAX_URL + '/delete', { method: 'POST', headers: TuiCalHelpers.jsonHeaders(), body: JSON.stringify({ id: parseInt(id) }) })
         .then(() => { bootstrap.Modal.getInstance(document.getElementById('shiftModal')).hide(); loadEvents(); });
 }
 <?php endif; ?>
 
 loadEvents();
-updateHeader();
 </script>

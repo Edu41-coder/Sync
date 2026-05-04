@@ -72,6 +72,25 @@
 
 `coproprietees.piscine` + `coproprietees.ascenseur` (TINYINT) ajoutés pour masquer les sections inutiles.
 
+## Module Accueil (migration 025)
+| Table | Description |
+|-------|-------------|
+| `accueil_salles` | Catalogue salles communes par résidence (capacité, photo, équipements inclus) |
+| `accueil_equipements` | Catalogue équipements prêtables (mobilité, info, loisirs, médical) avec statut |
+| `accueil_reservations` | Réservations multi-types (salle/équipement/service_personnel) — workflow validation |
+| `accueil_animation_inscriptions` | Pivot résident ↔ shift animation (UNIQUE shift+resident) |
+| `resident_notes_accueil` | Notes texte libre sur résidents par l'équipe accueil |
+
+## Module Sinistres (migration 026)
+| Table | Description |
+|-------|-------------|
+| `sinistres` | Table principale — XOR `lot_id`/`lieu_partie_commune` (CHECK), workflow 7 statuts, infos assureur en texte libre, dates clés (survenue/constat/déclaration/clôture/indemnisation), montants estimé/indemnisé |
+| `sinistres_documents` | GED — type ENUM (constat, photos avant/après, devis, facture, expertise, courrier assureur), MIME whitelist, stockage hors `public/` |
+| `sinistres_log` | Audit trail append-only — actions (creation/changement_statut/update/indemnisation/cloture/document_*), capture statut_avant→statut_apres |
+
+## Lien sinistres ↔ chantiers (migration 027)
+`chantiers.sinistre_id` (INT NULLABLE, FK `sinistres(id)` ON DELETE SET NULL) — un chantier peut être issu d'un sinistre (relation 1→N : 1 sinistre génère 0..N chantiers de réparation). NULL = chantier de maintenance courante (rénovation, ravalement, etc.).
+
 ## Logs
 | Table | Description |
 |-------|-------------|

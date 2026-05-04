@@ -145,17 +145,6 @@ class User extends Model {
     }
     
     /**
-     * Obtenir la description d'un rôle
-     * 
-     * @param string $role Rôle
-     * @return object|false
-     */
-    public function getRoleDescription($role) {
-        $sql = "SELECT * FROM role_descriptions WHERE role = ?";
-        return $this->queryOne($sql, [$role]);
-    }
-    
-    /**
      * Obtenir tous les utilisateurs actifs
      * 
      * @return array
@@ -501,7 +490,30 @@ class User extends Model {
     // ─────────────────────────────────────────────────────────────
 
     public function getAdminDashboardStats(): array {
-        $sql = "SELECT (SELECT COUNT(*) FROM users WHERE actif = 1) as total_users, (SELECT COUNT(*) FROM contrats_gestion WHERE statut = 'actif') as total_contrats, (SELECT COUNT(*) FROM residents_seniors) as total_residents, (SELECT COALESCE(SUM(loyer_mensuel_garanti), 0) FROM contrats_gestion WHERE statut = 'actif') as revenus_mensuels, (SELECT COALESCE(AVG(taux_occupation_pct), 0) FROM v_taux_occupation) as taux_occupation_moyen";
+        // Taux d'occupation = % de lots habitables (studio/t2/t2_bis/t3) actuellement
+        // occupés par une occupation active, moyenné sur les résidences seniors actives.
+        // Les lots `parking` et `cave` sont exclus du dénominateur (non habitables).
+        $sql = "
+            SELECT
+                (SELECT COUNT(*) FROM users WHERE actif = 1)                                            AS total_users,
+                (SELECT COUNT(*) FROM contrats_gestion WHERE statut = 'actif')                          AS total_contrats,
+                (SELECT COUNT(*) FROM residents_seniors)                                                AS total_residents,
+                (SELECT COALESCE(SUM(loyer_mensuel_garanti), 0) FROM contrats_gestion WHERE statut = 'actif') AS revenus_mensuels,
+                (
+                    SELECT COALESCE(AVG(taux_pct), 0) FROM (
+                        SELECT
+                            ROUND(
+                                COUNT(DISTINCT CASE WHEN o.statut = 'actif' AND o.date_sortie IS NULL THEN o.id END) * 100.0
+                                / NULLIF(COUNT(DISTINCT CASE WHEN l.type IN ('studio','t2','t2_bis','t3') THEN l.id END), 0)
+                            , 2) AS taux_pct
+                        FROM coproprietees c
+                        LEFT JOIN lots l                  ON l.copropriete_id = c.id
+                        LEFT JOIN occupations_residents o ON o.lot_id = l.id
+                        WHERE c.type_residence = 'residence_seniors' AND c.actif = 1
+                        GROUP BY c.id
+                    ) AS sub
+                ) AS taux_occupation_moyen
+        ";
         try { return $this->db->query($sql)->fetch(PDO::FETCH_ASSOC) ?: []; }
         catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
     }

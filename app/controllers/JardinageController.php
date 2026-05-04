@@ -819,6 +819,7 @@ class JardinageController extends Controller {
             default:
                 // Vue principale
                 $totaux   = $model->getTotauxAnnuels($filteredIds, $annee);
+                $tva      = $model->getTVA($filteredIds, $annee, $mois);
                 $synthese = $model->getSyntheseMensuelle($filteredIds, $annee);
                 $coutEspaces = $model->getCoutParEspace($filteredIds, $annee);
                 $depFourn = $model->getDepensesParFournisseur($filteredIds, $annee, $mois);
@@ -841,6 +842,7 @@ class JardinageController extends Controller {
                     'annee'             => $annee,
                     'mois'              => $mois,
                     'totaux'            => $totaux,
+                    'tva'               => $tva,
                     'coutEspaces'       => $coutEspaces,
                     'depensesFournisseurs' => $depFourn,
                     'ecritures'         => $ecritures,

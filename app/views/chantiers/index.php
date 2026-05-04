@@ -136,6 +136,7 @@ $badgePrio = ['basse'=>'secondary','normale'=>'primary','haute'=>'warning','urge
                             <th>Titre</th>
                             <th>Résidence</th>
                             <th>Catégorie</th>
+                            <th>Origine</th>
                             <th>Phase</th>
                             <th class="text-center">Priorité</th>
                             <th>AG</th>
@@ -156,6 +157,15 @@ $badgePrio = ['basse'=>'secondary','normale'=>'primary','haute'=>'warning','urge
                             </td>
                             <td><small><?= htmlspecialchars($c['residence_nom']) ?></small></td>
                             <td><small><?= htmlspecialchars($c['categorie']) ?></small></td>
+                            <td data-sort="<?= !empty($c['sinistre_id_lie']) ? 1 : 0 ?>">
+                                <?php if (!empty($c['sinistre_id_lie'])): ?>
+                                    <a href="<?= BASE_URL ?>/sinistre/show/<?= (int)$c['sinistre_id_lie'] ?>" class="badge bg-danger text-decoration-none" title="<?= htmlspecialchars($c['sinistre_titre'] ?? '') ?>">
+                                        <i class="fas fa-shield-alt me-1"></i>Sinistre #<?= (int)$c['sinistre_id_lie'] ?>
+                                    </a>
+                                <?php else: ?>
+                                    <small class="text-muted">Maintenance</small>
+                                <?php endif; ?>
+                            </td>
                             <td><span class="badge bg-<?= $badgePhase[$c['phase']] ?? 'secondary' ?>"><?= htmlspecialchars($phasesLabels[$c['phase']] ?? $c['phase']) ?></span></td>
                             <td class="text-center"><span class="badge bg-<?= $badgePrio[$c['priorite']] ?? 'secondary' ?>"><?= $c['priorite'] ?></span></td>
                             <td>
@@ -202,7 +212,7 @@ $badgePrio = ['basse'=>'secondary','normale'=>'primary','haute'=>'warning','urge
 <script>
 new DataTableWithPagination('tableChantiers', {
     rowsPerPage: 15, searchInputId: 'searchInput',
-    paginationId: 'pagination', infoId: 'tableInfo', excludeColumns: [7]
+    paginationId: 'pagination', infoId: 'tableInfo', excludeColumns: [8]
 });
 </script>
 <?php endif; ?>

@@ -989,153 +989,166 @@ class Restauration extends Model {
     //  COMPTABILITÉ RESTAURATION
     // ─────────────────────────────────────────────────────────────
 
-    /**
-     * Créer une écriture comptable
-     */
+    // Refonte Phase 1 : table rest_comptabilite remplacée par ecritures_comptables
+    // (filtre module_source='restauration'). API publique conservée à l'identique.
+
     public function createEcriture(array $d): int {
-        $sql = "INSERT INTO rest_comptabilite
-                (residence_id, date_ecriture, type_ecriture, categorie, reference_id, reference_type,
-                 libelle, montant_ht, montant_tva, montant_ttc, compte_comptable, mois, annee, notes)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-        $this->db->prepare($sql)->execute([
-            $d['residence_id'], $d['date_ecriture'] ?? date('Y-m-d'),
-            $d['type_ecriture'], $d['categorie'],
-            $d['reference_id'] ?? null, $d['reference_type'] ?? null,
-            $d['libelle'], (float)$d['montant_ht'], (float)($d['montant_tva'] ?? 0), (float)$d['montant_ttc'],
-            $d['compte_comptable'] ?? null,
-            (int)($d['mois'] ?? date('m')), (int)($d['annee'] ?? date('Y')),
-            $d['notes'] ?? null
+        $compteId = null;
+        if (!empty($d['compte_comptable'])) {
+            $st = $this->db->prepare("SELECT id FROM comptes_comptables WHERE numero_compte = ? LIMIT 1");
+            $st->execute([trim($d['compte_comptable'])]);
+            $compteId = $st->fetchColumn() ?: null;
+        }
+        return (new Ecriture())->create([
+            'residence_id'           => (int)$d['residence_id'],
+            'module_source'          => 'restauration',
+            'categorie'              => $d['categorie'],
+            'date_ecriture'          => $d['date_ecriture'] ?? date('Y-m-d'),
+            'type_ecriture'          => $d['type_ecriture'],
+            'montant_ht'             => (float)$d['montant_ht'],
+            'taux_tva'               => $d['taux_tva'] ?? null,
+            'montant_tva'            => (float)($d['montant_tva'] ?? 0),
+            'montant_ttc'            => $d['montant_ttc'] ?? null,
+            'compte_comptable_id'    => $compteId,
+            'reference_externe_type' => $d['reference_type'] ?? null,
+            'reference_externe_id'   => !empty($d['reference_id']) ? (int)$d['reference_id'] : null,
+            'libelle'                => $d['libelle'],
+            'notes'                  => $d['notes'] ?? null,
+            'auto_genere'            => !empty($d['auto_genere']) ? 1 : 0,
+            'created_by'             => !empty($d['created_by']) ? (int)$d['created_by'] : null,
         ]);
-        return (int)$this->db->lastInsertId();
     }
 
-    /**
-     * Écritures comptables avec filtres
-     */
     public function getEcritures(array $residenceIds, ?int $annee = null, ?int $mois = null, ?string $type = null): array {
         if (empty($residenceIds)) return [];
         $ph = implode(',', array_fill(0, count($residenceIds), '?'));
         $params = array_values($residenceIds);
-
-        $sql = "SELECT c.*, res.nom as residence_nom
-                FROM rest_comptabilite c
-                JOIN coproprietees res ON c.residence_id = res.id
-                WHERE c.residence_id IN ($ph)";
-        if ($annee) { $sql .= " AND c.annee = ?"; $params[] = $annee; }
-        if ($mois) { $sql .= " AND c.mois = ?"; $params[] = $mois; }
-        if ($type) { $sql .= " AND c.type_ecriture = ?"; $params[] = $type; }
-        $sql .= " ORDER BY c.date_ecriture DESC, c.id DESC";
-
+        $sql = "SELECT e.id, e.residence_id, e.date_ecriture, e.type_ecriture, e.categorie,
+                       e.reference_externe_id AS reference_id, e.reference_externe_type AS reference_type,
+                       e.libelle, e.montant_ht, e.taux_tva, e.montant_tva, e.montant_ttc,
+                       cc.numero_compte AS compte_comptable,
+                       MONTH(e.date_ecriture) AS mois, YEAR(e.date_ecriture) AS annee,
+                       e.notes, e.created_at,
+                       res.nom as residence_nom
+                FROM ecritures_comptables e
+                JOIN coproprietees res ON e.residence_id = res.id
+                LEFT JOIN comptes_comptables cc ON cc.id = e.compte_comptable_id
+                WHERE e.module_source = 'restauration'
+                  AND e.residence_id IN ($ph)
+                  AND e.statut != 'brouillon'";
+        if ($annee) { $sql .= " AND YEAR(e.date_ecriture) = ?"; $params[] = $annee; }
+        if ($mois)  { $sql .= " AND MONTH(e.date_ecriture) = ?"; $params[] = $mois; }
+        if ($type)  { $sql .= " AND e.type_ecriture = ?"; $params[] = $type; }
+        $sql .= " ORDER BY e.date_ecriture DESC, e.id DESC";
         try { $stmt = $this->db->prepare($sql); $stmt->execute($params); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
         catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
     }
 
-    /**
-     * Synthèse mensuelle (recettes / dépenses / résultat)
-     */
     public function getSyntheseMensuelle(array $residenceIds, int $annee): array {
         if (empty($residenceIds)) return [];
         $ph = implode(',', array_fill(0, count($residenceIds), '?'));
         $params = array_merge(array_values($residenceIds), [$annee]);
-
-        $sql = "SELECT mois,
+        $sql = "SELECT MONTH(date_ecriture) AS mois,
                    SUM(CASE WHEN type_ecriture = 'recette' THEN montant_ht ELSE 0 END) as recettes_ht,
                    SUM(CASE WHEN type_ecriture = 'recette' THEN montant_tva ELSE 0 END) as recettes_tva,
                    SUM(CASE WHEN type_ecriture = 'recette' THEN montant_ttc ELSE 0 END) as recettes_ttc,
                    SUM(CASE WHEN type_ecriture = 'depense' THEN montant_ht ELSE 0 END) as depenses_ht,
                    SUM(CASE WHEN type_ecriture = 'depense' THEN montant_tva ELSE 0 END) as depenses_tva,
                    SUM(CASE WHEN type_ecriture = 'depense' THEN montant_ttc ELSE 0 END) as depenses_ttc
-                FROM rest_comptabilite
-                WHERE residence_id IN ($ph) AND annee = ?
-                GROUP BY mois ORDER BY mois";
+                FROM ecritures_comptables
+                WHERE module_source = 'restauration'
+                  AND residence_id IN ($ph)
+                  AND YEAR(date_ecriture) = ?
+                  AND statut != 'brouillon'
+                GROUP BY MONTH(date_ecriture) ORDER BY mois";
         try { $stmt = $this->db->prepare($sql); $stmt->execute($params); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
         catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
     }
 
-    /**
-     * Synthèse par catégorie (pour camembert)
-     */
     public function getSyntheseParCategorie(array $residenceIds, int $annee, ?int $mois = null): array {
         if (empty($residenceIds)) return [];
         $ph = implode(',', array_fill(0, count($residenceIds), '?'));
         $params = array_merge(array_values($residenceIds), [$annee]);
-
         $sql = "SELECT type_ecriture, categorie,
                    SUM(montant_ht) as total_ht, SUM(montant_tva) as total_tva, SUM(montant_ttc) as total_ttc,
                    COUNT(*) as nb_ecritures
-                FROM rest_comptabilite
-                WHERE residence_id IN ($ph) AND annee = ?";
-        if ($mois) { $sql .= " AND mois = ?"; $params[] = $mois; }
+                FROM ecritures_comptables
+                WHERE module_source = 'restauration'
+                  AND residence_id IN ($ph)
+                  AND YEAR(date_ecriture) = ?
+                  AND statut != 'brouillon'";
+        if ($mois) { $sql .= " AND MONTH(date_ecriture) = ?"; $params[] = $mois; }
         $sql .= " GROUP BY type_ecriture, categorie ORDER BY type_ecriture, total_ttc DESC";
         try { $stmt = $this->db->prepare($sql); $stmt->execute($params); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
         catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
     }
 
-    /**
-     * TVA collectée et déductible pour une période
-     */
     public function getTVA(array $residenceIds, int $annee, ?int $mois = null): array {
-        if (empty($residenceIds)) return ['collectee' => 0, 'deductible' => 0, 'a_reverser' => 0];
+        $defaut = ['collectee' => 0, 'deductible' => 0, 'a_reverser' => 0];
+        if (empty($residenceIds)) return $defaut;
         $ph = implode(',', array_fill(0, count($residenceIds), '?'));
         $params = array_merge(array_values($residenceIds), [$annee]);
-
         $sql = "SELECT
                    SUM(CASE WHEN type_ecriture = 'recette' THEN montant_tva ELSE 0 END) as collectee,
                    SUM(CASE WHEN type_ecriture = 'depense' THEN montant_tva ELSE 0 END) as deductible
-                FROM rest_comptabilite
-                WHERE residence_id IN ($ph) AND annee = ?";
-        if ($mois) { $sql .= " AND mois = ?"; $params[] = $mois; }
+                FROM ecritures_comptables
+                WHERE module_source = 'restauration'
+                  AND residence_id IN ($ph)
+                  AND YEAR(date_ecriture) = ?
+                  AND statut != 'brouillon'";
+        if ($mois) { $sql .= " AND MONTH(date_ecriture) = ?"; $params[] = $mois; }
         try {
             $stmt = $this->db->prepare($sql); $stmt->execute($params);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: $defaut;
             $row['a_reverser'] = ($row['collectee'] ?? 0) - ($row['deductible'] ?? 0);
             return $row;
-        } catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return ['collectee' => 0, 'deductible' => 0, 'a_reverser' => 0]; }
+        } catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return $defaut; }
     }
 
-    /**
-     * Export des écritures pour comptabilité générale (format tabulaire)
-     */
     public function getEcrituresExport(array $residenceIds, int $annee, ?int $mois = null): array {
         if (empty($residenceIds)) return [];
         $ph = implode(',', array_fill(0, count($residenceIds), '?'));
         $params = array_merge(array_values($residenceIds), [$annee]);
-
-        $sql = "SELECT c.date_ecriture, c.compte_comptable, c.libelle, c.type_ecriture,
-                   c.montant_ht, c.montant_tva, c.montant_ttc, c.categorie,
-                   c.reference_type, c.reference_id, c.mois, c.annee,
+        $sql = "SELECT e.date_ecriture, cc.numero_compte AS compte_comptable, e.libelle, e.type_ecriture,
+                   e.montant_ht, e.montant_tva, e.montant_ttc, e.categorie,
+                   e.reference_externe_type AS reference_type, e.reference_externe_id AS reference_id,
+                   MONTH(e.date_ecriture) AS mois, YEAR(e.date_ecriture) AS annee,
                    res.nom as residence_nom
-                FROM rest_comptabilite c
-                JOIN coproprietees res ON c.residence_id = res.id
-                WHERE c.residence_id IN ($ph) AND c.annee = ?";
-        if ($mois) { $sql .= " AND c.mois = ?"; $params[] = $mois; }
-        $sql .= " ORDER BY c.date_ecriture, c.id";
+                FROM ecritures_comptables e
+                JOIN coproprietees res ON e.residence_id = res.id
+                LEFT JOIN comptes_comptables cc ON cc.id = e.compte_comptable_id
+                WHERE e.module_source = 'restauration'
+                  AND e.residence_id IN ($ph)
+                  AND YEAR(e.date_ecriture) = ?
+                  AND e.statut != 'brouillon'";
+        if ($mois) { $sql .= " AND MONTH(e.date_ecriture) = ?"; $params[] = $mois; }
+        $sql .= " ORDER BY e.date_ecriture, e.id";
         try { $stmt = $this->db->prepare($sql); $stmt->execute($params); return $stmt->fetchAll(PDO::FETCH_ASSOC); }
         catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return []; }
     }
 
-    /**
-     * Totaux annuels (pour le dashboard comptabilité)
-     */
     public function getTotauxAnnuels(array $residenceIds, int $annee): array {
-        if (empty($residenceIds)) return ['recettes_ht' => 0, 'recettes_ttc' => 0, 'depenses_ht' => 0, 'depenses_ttc' => 0, 'resultat_ht' => 0, 'resultat_ttc' => 0];
+        $defaut = ['recettes_ht' => 0, 'recettes_ttc' => 0, 'depenses_ht' => 0, 'depenses_ttc' => 0, 'resultat_ht' => 0, 'resultat_ttc' => 0];
+        if (empty($residenceIds)) return $defaut;
         $ph = implode(',', array_fill(0, count($residenceIds), '?'));
         $params = array_merge(array_values($residenceIds), [$annee]);
-
         $sql = "SELECT
                    COALESCE(SUM(CASE WHEN type_ecriture='recette' THEN montant_ht END), 0) as recettes_ht,
                    COALESCE(SUM(CASE WHEN type_ecriture='recette' THEN montant_ttc END), 0) as recettes_ttc,
                    COALESCE(SUM(CASE WHEN type_ecriture='depense' THEN montant_ht END), 0) as depenses_ht,
                    COALESCE(SUM(CASE WHEN type_ecriture='depense' THEN montant_ttc END), 0) as depenses_ttc
-                FROM rest_comptabilite
-                WHERE residence_id IN ($ph) AND annee = ?";
+                FROM ecritures_comptables
+                WHERE module_source = 'restauration'
+                  AND residence_id IN ($ph)
+                  AND YEAR(date_ecriture) = ?
+                  AND statut != 'brouillon'";
         try {
             $stmt = $this->db->prepare($sql); $stmt->execute($params);
-            $r = $stmt->fetch(PDO::FETCH_ASSOC);
+            $r = $stmt->fetch(PDO::FETCH_ASSOC) ?: $defaut;
             $r['resultat_ht'] = $r['recettes_ht'] - $r['depenses_ht'];
             $r['resultat_ttc'] = $r['recettes_ttc'] - $r['depenses_ttc'];
             return $r;
-        } catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return ['recettes_ht'=>0,'recettes_ttc'=>0,'depenses_ht'=>0,'depenses_ttc'=>0,'resultat_ht'=>0,'resultat_ttc'=>0]; }
+        } catch (PDOException $e) { $this->logError($e->getMessage(), $sql); return $defaut; }
     }
 
     // ─────────────────────────────────────────────────────────────

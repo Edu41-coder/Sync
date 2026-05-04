@@ -236,6 +236,31 @@ class CoproprietaireController extends Controller {
             $current->modify('+1 month');
         }
 
+        // Assemblées Générales (AG visibles par le propriétaire : convoquee, tenue, annulee)
+        $catAg = $model->getCategorieBySlug('ag');
+        $agModel = $this->model('Assemblee');
+        $ags = $agModel->getAGsProprietaire($proprioId);
+        foreach ($ags as $ag) {
+            $dateAg = new DateTime($ag['date_ag']);
+            if ($dateAg < $startDate || $dateAg > $endDate) continue;
+            $statutLib = ['convoquee' => '📨 Convoquée', 'tenue' => '✅ Tenue', 'annulee' => '🚫 Annulée'][$ag['statut']] ?? '';
+            $typeLib = $ag['type'] === 'extraordinaire' ? 'AGE' : 'AGO';
+            $events[] = [
+                'id' => 'auto_ag_' . (int)$ag['id'],
+                'titre' => "🏛️ $typeLib — " . $ag['residence_nom'] . ' (' . $statutLib . ')',
+                'description' => 'Lieu : ' . ($ag['lieu'] ?: 'à définir') . ' · Mode : ' . $ag['mode'],
+                'date_debut' => $ag['date_ag'],
+                'date_fin' => date('Y-m-d H:i:s', strtotime($ag['date_ag']) + 7200),
+                'journee_entiere' => 0,
+                'auto_genere' => 1,
+                'cat_slug' => 'ag',
+                'couleur' => $catAg['couleur'] ?? '#6610f2',
+                'bg_couleur' => $catAg['bg_couleur'] ?? '#e2d4f9',
+                'category_id' => $catAg['id'] ?? null,
+                'ag_id' => (int)$ag['id'],
+            ];
+        }
+
         // Formater pour TUI Calendar
         $formatted = array_map(function($e) {
             $isAuto = !empty($e['auto_genere']);
@@ -257,6 +282,7 @@ class CoproprietaireController extends Controller {
                     'catSlug' => $e['cat_slug'] ?? 'note',
                     'description' => $e['description'] ?? '',
                     'notes' => $e['notes'] ?? '',
+                    'agId' => $e['ag_id'] ?? null,
                 ],
             ];
         }, $events);
@@ -326,6 +352,95 @@ class CoproprietaireController extends Controller {
             'residences' => $proprioId ? $model->getMesResidences($proprioId) : [],
             'flash'      => $this->getFlash()
         ], true);
+    }
+
+    /**
+     * Liste AG accessibles au propriétaire (lecture seule).
+     * Seules les AG `convoquee`/`tenue`/`annulee` sont visibles.
+     */
+    public function assemblees() {
+        $this->requireAuth();
+        $this->requireRole(['proprietaire']);
+
+        $coproModel = $this->model('Coproprietaire');
+        $agModel    = $this->model('Assemblee');
+        $proprioId  = $coproModel->getIdByUserId($_SESSION['user_id']);
+
+        if (!$proprioId) {
+            $this->setFlash('error', 'Profil propriétaire introuvable.');
+            $this->redirect('coproprietaire/monEspace'); return;
+        }
+
+        $filtres = [
+            'statut'       => $_GET['statut'] ?? '',
+            'residence_id' => isset($_GET['residence_id']) ? (int)$_GET['residence_id'] : 0,
+        ];
+
+        $this->view('coproprietaires/assemblees', [
+            'title'      => 'Assemblées Générales - ' . APP_NAME,
+            'showNavbar' => true,
+            'residences' => $agModel->getResidencesProprietaire($proprioId),
+            'ags'        => $agModel->getAGsProprietaire($proprioId, $filtres),
+            'stats'      => $agModel->getStatsProprietaire($proprioId),
+            'filtres'    => $filtres,
+            'flash'      => $this->getFlash(),
+        ], true);
+    }
+
+    /**
+     * Détail AG côté propriétaire (lecture seule).
+     */
+    public function assembleeShow($id) {
+        $this->requireAuth();
+        $this->requireRole(['proprietaire']);
+
+        $coproModel = $this->model('Coproprietaire');
+        $agModel    = $this->model('Assemblee');
+        $proprioId  = $coproModel->getIdByUserId($_SESSION['user_id']);
+
+        if (!$proprioId || !$agModel->agAccessibleProprietaire((int)$id, $proprioId)) {
+            $this->setFlash('error', 'Cette assemblée ne vous est pas accessible.');
+            $this->redirect('coproprietaire/assemblees'); return;
+        }
+
+        $ag = $agModel->findAG((int)$id);
+        $this->view('coproprietaires/assemblee_show', [
+            'title'         => 'AG du ' . date('d/m/Y', strtotime($ag['date_ag'])) . ' - ' . APP_NAME,
+            'showNavbar'    => true,
+            'ag'            => $ag,
+            'resolutions'   => $agModel->getResolutions((int)$id),
+            'chantiersLies' => $agModel->getChantiersLies((int)$id),
+            'flash'         => $this->getFlash(),
+        ], true);
+    }
+
+    /**
+     * Téléchargement convocation/PV : ownership vérifié via contrats actifs.
+     */
+    public function assembleeDownload($id, $type = '') {
+        $this->requireAuth();
+        $this->requireRole(['proprietaire']);
+
+        $coproModel = $this->model('Coproprietaire');
+        $agModel    = $this->model('Assemblee');
+        $proprioId  = $coproModel->getIdByUserId($_SESSION['user_id']);
+
+        if (!$proprioId || !$agModel->agAccessibleProprietaire((int)$id, $proprioId)) {
+            http_response_code(404); echo 'Introuvable'; return;
+        }
+        $ag = $agModel->findAG((int)$id);
+        $champ = $type === 'pv' ? 'document_pv' : 'document_convocation';
+        if (empty($ag[$champ])) {
+            http_response_code(404); echo 'Aucun document'; return;
+        }
+        $file = '../uploads/ag/' . ltrim($ag[$champ], '/');
+        if (!file_exists($file)) {
+            http_response_code(404); echo 'Fichier introuvable'; return;
+        }
+        header('Content-Type: ' . (mime_content_type($file) ?: 'application/octet-stream'));
+        header('Content-Disposition: inline; filename="' . basename($file) . '"');
+        header('Content-Length: ' . filesize($file));
+        readfile($file);
     }
 
     /**
@@ -437,6 +552,7 @@ RÈGLES : Réponds en français, clair et pédagogique. Explique les formulaires
             return;
         }
 
+        $agModel = $this->model('Assemblee');
         $this->view('coproprietaires/espace', [
             'title'         => 'Mon Espace Propriétaire - ' . APP_NAME,
             'showNavbar'    => true,
@@ -444,6 +560,7 @@ RÈGLES : Réponds en français, clair et pédagogique. Explique les formulaires
             'contrats'      => $model->getContratsDetailles($proprietaire['id']),
             'fiscalite'     => $model->getFiscalite($proprietaire['id']),
             'mesResidences' => $model->getMesResidencesDetaillees($proprietaire['id']),
+            'agStats'       => $agModel->getStatsProprietaire($proprietaire['id']),
             'flash'         => $this->getFlash()
         ], true);
     }

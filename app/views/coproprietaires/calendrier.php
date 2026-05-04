@@ -1,8 +1,6 @@
 <?php $title = "Mon Calendrier"; ?>
 
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-calendar.css">
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-date-picker.css">
-<link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tui-time-picker.css">
+<?php include ROOT_PATH . '/app/views/partials/tui_calendar_assets.php'; ?>
 <style>
     #calendar { height: 650px; }
     .btn-group .btn.active { font-weight: bold; }
@@ -163,20 +161,10 @@ include __DIR__ . '/../partials/breadcrumb.php';
     </div>
 </div>
 
-<!-- TUI Calendar JS -->
-<script src="<?= BASE_URL ?>/assets/js/tui-code-snippet.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/tui-time-picker.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/tui-date-picker.js"></script>
-<script src="<?= BASE_URL ?>/assets/js/tui-calendar.js"></script>
-
 <script>
 const BASE = '<?= BASE_URL ?>';
 const CATEGORIES = <?= json_encode($categories) ?>;
-
-function jsonHeaders() {
-    const meta = document.querySelector('meta[name="csrf-token"]');
-    return { 'Content-Type': 'application/json', 'X-CSRF-Token': meta ? meta.content : '' };
-}
+const jsonHeaders = TuiCalHelpers.jsonHeaders;
 
 // Calendriers TUI = 1 par catégorie
 const calendarData = CATEGORIES.map(c => ({
@@ -237,8 +225,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Clic simple = rien
-    calendar.on('clickSchedule', () => {});
+    // Clic simple : si AG → ouvre la fiche; sinon rien
+    calendar.on('clickSchedule', e => {
+        const sched = e?.schedule;
+        if (sched?.raw?.agId) {
+            window.location.href = '<?= BASE_URL ?>/coproprietaire/assembleeShow/' + parseInt(sched.raw.agId, 10);
+        }
+    });
 
     // Double-clic = éditer
     document.getElementById('calendar').addEventListener('dblclick', e => {

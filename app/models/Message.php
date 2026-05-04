@@ -85,6 +85,68 @@ class Message extends Model {
     }
 
     /**
+     * Soft delete : archive le message côté destinataire (le message reste pour les autres destinataires).
+     * Renvoie true si une ligne a été affectée — sert à valider qu'on est bien destinataire.
+     */
+    public function archiveForUser(int $messageId, int $userId): bool {
+        $sql = "UPDATE messages_destinataires SET archive=1 WHERE message_id=? AND destinataire_id=? AND archive=0";
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$messageId, $userId]);
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            $this->logError($e->getMessage(), $sql, [$messageId, $userId]);
+            return false;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  BOÎTE D'ENVOI (messages envoyés par l'utilisateur)
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Messages envoyés par un utilisateur (non archivés côté expéditeur).
+     * Inclut le nombre de destinataires + le nombre de lectures pour visibilité.
+     */
+    public function getSent(int $userId): array {
+        $sql = "SELECT m.id, m.parent_id, m.sujet, m.contenu, m.priorite, m.type_envoi, m.created_at,
+                   (SELECT COUNT(*) FROM messages_destinataires md WHERE md.message_id = m.id) AS nb_destinataires,
+                   (SELECT COUNT(*) FROM messages_destinataires md WHERE md.message_id = m.id AND md.lu = 1) AS nb_lus,
+                   (SELECT GROUP_CONCAT(CONCAT(COALESCE(u.prenom,''), ' ', COALESCE(u.nom,'')) SEPARATOR ', ')
+                      FROM messages_destinataires md
+                      JOIN users u ON u.id = md.destinataire_id
+                      WHERE md.message_id = m.id) AS destinataires_noms
+                FROM messages_internes m
+                WHERE m.expediteur_id = ? AND m.archive_expediteur = 0
+                ORDER BY m.created_at DESC";
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $this->logError($e->getMessage(), $sql, [$userId]);
+            return [];
+        }
+    }
+
+    /**
+     * Soft delete côté expéditeur. Renvoie true si la ligne appartient bien à l'utilisateur
+     * (sinon false → on ne révèle pas si le message existe).
+     */
+    public function archiveSentForUser(int $messageId, int $userId): bool {
+        $sql = "UPDATE messages_internes SET archive_expediteur = 1
+                WHERE id = ? AND expediteur_id = ? AND archive_expediteur = 0";
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$messageId, $userId]);
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            $this->logError($e->getMessage(), $sql, [$messageId, $userId]);
+            return false;
+        }
+    }
+
+    /**
      * Récupérer un fil de conversation complet
      */
     public function getThread(int $threadId): array {

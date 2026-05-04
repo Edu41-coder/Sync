@@ -94,6 +94,7 @@ class ChantierController extends Controller {
                     'priorite'          => $_POST['priorite'] ?? 'normale',
                     'necessite_ag_force' => isset($_POST['necessite_ag_force']) ? $_POST['necessite_ag_force'] : null,
                     'ag_id'             => $_POST['ag_id'] ?? null,
+                    'sinistre_id'       => $_POST['sinistre_id'] ?? null, // chantier issu d'un sinistre
                     'date_debut_prevue' => $_POST['date_debut_prevue'] ?? null,
                     'date_fin_prevue'   => $_POST['date_fin_prevue'] ?? null,
                     'date_debut_reelle' => $_POST['date_debut_reelle'] ?? null,
@@ -131,6 +132,30 @@ class ChantierController extends Controller {
             $this->redirect('chantier/index'); return;
         }
 
+        // Pré-remplissage depuis un sinistre (?sinistre_id=X) à la création
+        // Permet le bouton "Créer un chantier de réparation" sur la fiche sinistre.
+        $sinistrePrefill = null;
+        if (!$id && !empty($_GET['sinistre_id'])) {
+            $sinistreModel = $this->model('Sinistre');
+            $sinistreId = (int)$_GET['sinistre_id'];
+            $userId   = (int)$this->getUserId();
+            $userRoleSession = $_SESSION['user_role'] ?? '';
+            if ($sinistreModel->userCanAccess($sinistreId, $userId, $userRoleSession)) {
+                $sinistre = $sinistreModel->findWithDetails($sinistreId);
+                if ($sinistre) {
+                    $sinistrePrefill = [
+                        'sinistre_id'    => $sinistreId,
+                        'sinistre_titre' => $sinistre['titre'],
+                        'sinistre_type'  => $sinistre['type_sinistre'],
+                        'residence_id'   => (int)$sinistre['residence_id'],
+                        'titre'          => 'Réparation : ' . $sinistre['titre'],
+                        'description'    => "Chantier de réparation suite au sinistre #{$sinistreId} (" . $sinistre['type_sinistre'] . ").\n\n" . $sinistre['description'],
+                        'montant_estime' => $sinistre['montant_estime'] ?? null,
+                    ];
+                }
+            }
+        }
+
         // Résidences accessibles
         $pdo = Database::getInstance()->getConnection();
         $userRole = $_SESSION['user_role'] ?? '';
@@ -144,23 +169,24 @@ class ChantierController extends Controller {
 
         // AGs de la résidence sélectionnée
         $ags = [];
-        $resForAg = $chantier['residence_id'] ?? (int)($_GET['residence_id'] ?? 0);
+        $resForAg = $chantier['residence_id'] ?? $sinistrePrefill['residence_id'] ?? (int)($_GET['residence_id'] ?? 0);
         if ($resForAg) $ags = $cModel->getAGsResidence((int)$resForAg);
 
         $this->view('chantiers/form', [
-            'title'       => ($id ? 'Modifier' : 'Nouveau') . ' chantier - ' . APP_NAME,
-            'showNavbar'  => true,
-            'chantier'    => $chantier,
-            'residences'  => $residences,
-            'specialites' => $specModel->getAll(),
-            'ags'         => $ags,
-            'categories'  => Chantier::CATEGORIES,
-            'phases'      => Chantier::PHASES,
-            'phasesLabels' => Chantier::PHASES_LABELS,
-            'statuts'     => Chantier::STATUTS,
-            'priorites'   => Chantier::PRIORITES,
-            'seuilAg'     => Chantier::SEUIL_AG_HT,
-            'flash'       => $this->getFlash(),
+            'title'           => ($id ? 'Modifier' : 'Nouveau') . ' chantier - ' . APP_NAME,
+            'showNavbar'      => true,
+            'chantier'        => $chantier,
+            'residences'      => $residences,
+            'specialites'     => $specModel->getAll(),
+            'ags'             => $ags,
+            'sinistrePrefill' => $sinistrePrefill,
+            'categories'      => Chantier::CATEGORIES,
+            'phases'          => Chantier::PHASES,
+            'phasesLabels'    => Chantier::PHASES_LABELS,
+            'statuts'         => Chantier::STATUTS,
+            'priorites'       => Chantier::PRIORITES,
+            'seuilAg'         => Chantier::SEUIL_AG_HT,
+            'flash'           => $this->getFlash(),
         ], true);
     }
 

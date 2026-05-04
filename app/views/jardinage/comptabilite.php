@@ -49,49 +49,49 @@ $typeEspaceLabels = [
                 <i class="fas fa-download me-1"></i>Export CSV
             </a>
             <?php if ($selectedResidence): ?>
-            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalEcriture">
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalEcriture">
                 <i class="fas fa-plus me-1"></i>Nouvelle écriture
             </button>
             <?php endif; ?>
         </form>
     </div>
 
-    <!-- KPI Cards -->
+    <!-- KPI Cards (alignées sur Restauration / Ménage : 6 cards en col-lg-2) -->
     <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-3">
-            <div class="card shadow-sm border-start border-success border-4">
-                <div class="card-body">
-                    <h6 class="text-muted small mb-1">Recettes TTC</h6>
-                    <h3 class="mb-0 text-success"><?= number_format($totaux['recettes_ttc'], 2, ',', ' ') ?> €</h3>
-                    <small class="text-muted">HT : <?= number_format($totaux['recettes_ht'], 2, ',', ' ') ?> €</small>
-                </div>
+        <div class="col-6 col-lg-2">
+            <div class="card shadow-sm border-start border-success border-4 text-center py-3">
+                <h4 class="mb-0 text-success"><?= number_format($totaux['recettes_ttc'], 0, ',', ' ') ?> &euro;</h4>
+                <small class="text-muted">Recettes TTC</small>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="card shadow-sm border-start border-danger border-4">
-                <div class="card-body">
-                    <h6 class="text-muted small mb-1">Dépenses TTC</h6>
-                    <h3 class="mb-0 text-danger"><?= number_format($totaux['depenses_ttc'], 2, ',', ' ') ?> €</h3>
-                    <small class="text-muted">HT : <?= number_format($totaux['depenses_ht'], 2, ',', ' ') ?> €</small>
-                </div>
+        <div class="col-6 col-lg-2">
+            <div class="card shadow-sm border-start border-danger border-4 text-center py-3">
+                <h4 class="mb-0 text-danger"><?= number_format($totaux['depenses_ttc'], 0, ',', ' ') ?> &euro;</h4>
+                <small class="text-muted">Dépenses TTC</small>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="card shadow-sm border-start border-<?= $totaux['resultat_ttc'] >= 0 ? 'primary' : 'warning' ?> border-4">
-                <div class="card-body">
-                    <h6 class="text-muted small mb-1">Résultat TTC</h6>
-                    <h3 class="mb-0 text-<?= $totaux['resultat_ttc'] >= 0 ? 'primary' : 'warning' ?>"><?= number_format($totaux['resultat_ttc'], 2, ',', ' ') ?> €</h3>
-                    <small class="text-muted"><?= $totaux['resultat_ttc'] >= 0 ? 'Bénéfice' : 'Perte' ?></small>
-                </div>
+        <div class="col-6 col-lg-2">
+            <div class="card shadow-sm border-start border-<?= $totaux['resultat_ttc'] >= 0 ? 'primary' : 'warning' ?> border-4 text-center py-3">
+                <h4 class="mb-0 text-<?= $totaux['resultat_ttc'] >= 0 ? 'primary' : 'warning' ?>"><?= number_format($totaux['resultat_ttc'], 0, ',', ' ') ?> &euro;</h4>
+                <small class="text-muted">Résultat TTC</small>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
-            <div class="card shadow-sm border-start border-info border-4">
-                <div class="card-body">
-                    <h6 class="text-muted small mb-1">Écritures</h6>
-                    <h3 class="mb-0"><?= (int)$totaux['nb_ecritures'] ?></h3>
-                    <small class="text-muted">sur l'année <?= $annee ?></small>
-                </div>
+        <div class="col-6 col-lg-2">
+            <div class="card shadow-sm border-start border-info border-4 text-center py-3">
+                <h4 class="mb-0 text-info"><?= number_format((float)($tva['collectee'] ?? 0), 0, ',', ' ') ?> &euro;</h4>
+                <small class="text-muted">TVA collectée</small>
+            </div>
+        </div>
+        <div class="col-6 col-lg-2">
+            <div class="card shadow-sm text-center py-3">
+                <h4 class="mb-0"><?= number_format((float)($tva['deductible'] ?? 0), 0, ',', ' ') ?> &euro;</h4>
+                <small class="text-muted">TVA déductible</small>
+            </div>
+        </div>
+        <div class="col-6 col-lg-2">
+            <div class="card shadow-sm border-start border-dark border-4 text-center py-3">
+                <h4 class="mb-0"><?= number_format((float)($tva['a_reverser'] ?? 0), 0, ',', ' ') ?> &euro;</h4>
+                <small class="text-muted">TVA à reverser</small>
             </div>
         </div>
     </div>

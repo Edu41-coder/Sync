@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <meta name="description" content="Connexion à <?php echo APP_NAME; ?> - Plateforme de gestion immobilière et syndic">
+    <meta name="description" content="Connexion à <?php echo APP_NAME; ?> - Plateforme de gestion de résidences seniors">
     <meta name="theme-color" content="#667eea">
     <title><?php echo $title; ?> - <?php echo APP_NAME; ?></title>
     
@@ -153,7 +153,7 @@
             <img src="<?= BASE_URL ?>/assets/images/domitys-logo.svg" alt="Domitys Logo" style="height: 80px; filter: brightness(0) invert(1);">
         </div>
         <h1><?php echo APP_NAME; ?></h1>
-        <p>Gestion Immobilière & Syndic</p>
+        <p>Gestion résidences seniors</p>
     </div>
     
     <!-- Body -->

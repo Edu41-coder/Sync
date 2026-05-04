@@ -23,6 +23,11 @@ $today = new DateTime();
         <div>
             <h1 class="h3 mb-1">
                 <i class="fas fa-hammer text-warning me-2"></i><?= htmlspecialchars($chantier['titre']) ?>
+                <?php if (!empty($chantier['sinistre_id'])): ?>
+                    <a href="<?= BASE_URL ?>/sinistre/show/<?= (int)$chantier['sinistre_id'] ?>" class="badge bg-danger text-decoration-none ms-2" style="font-size:0.7rem" title="Origine : sinistre">
+                        <i class="fas fa-shield-alt me-1"></i>Sinistre #<?= (int)$chantier['sinistre_id'] ?>
+                    </a>
+                <?php endif; ?>
             </h1>
             <p class="text-muted mb-0">
                 <?= htmlspecialchars($chantier['residence_nom']) ?>
