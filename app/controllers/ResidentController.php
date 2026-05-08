@@ -878,12 +878,46 @@ class ResidentController extends Controller {
 
         $budget = $this->calculerBudget((int)$resident['id']);
 
+        // 5 dernières quittances (Phase 13)
+        $qrModel = new QuittanceResident();
+        $quittances = $qrModel->listByResident((int)$resident['id'], 5);
+
         $this->view('residents/comptabilite', [
             'title'      => 'Ma comptabilité - ' . APP_NAME,
             'showNavbar' => true,
             'resident'   => $resident,
             'budget'     => $budget,
+            'quittances' => $quittances,
             'flash'      => $this->getFlash()
+        ], true);
+    }
+
+    /**
+     * GET /resident/mesQuittances — liste complète des quittances du résident (Phase 13).
+     */
+    public function mesQuittances() {
+        $this->requireAuth();
+        $this->requireRole(['locataire_permanent']);
+
+        $resident = $this->currentResident();
+        if (!$resident) {
+            $this->setFlash('error', "Aucun profil résident associé à votre compte.");
+            $this->redirect('');
+            return;
+        }
+
+        $qrModel = new QuittanceResident();
+        $quittances = $qrModel->listByResident((int)$resident['id'], 100);
+
+        $this->view('residents/mes_quittances', [
+            'title'      => 'Mes quittances - ' . APP_NAME,
+            'showNavbar' => true,
+            'resident'   => $resident,
+            'quittances' => $quittances,
+            'moisLabels' => [1=>'Janvier',2=>'Février',3=>'Mars',4=>'Avril',5=>'Mai',6=>'Juin',
+                             7=>'Juillet',8=>'Août',9=>'Septembre',10=>'Octobre',11=>'Novembre',12=>'Décembre'],
+            'statuts'    => QuittanceResident::STATUTS,
+            'flash'      => $this->getFlash(),
         ], true);
     }
 

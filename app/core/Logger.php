@@ -353,6 +353,7 @@ class Logger {
     public const COMPTA_ACTION_PREFIXES = [
         'ecriture_', 'exercice_', 'bulletin_', 'tva_',
         'bank_', 'salarie_', 'export_',
+        'quittance_', 'relance_', 'impaye_',
     ];
 
     /**

@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Synd_Gest — Présentation de l'application</title>
+<style>
+    /* ====================================================================
+       Print-friendly + écran — Palette Domitys (#322D2D anthracite, #F0AA00 jaune, #E64B00 orange)
+       ==================================================================== */
+
+    @page {
+        size: A4;
+        margin: 1.5cm 1.2cm;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
+        font-size: 10.5pt;
+        line-height: 1.55;
+        color: #322D2D;
+        background: #fff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* ----------------------------- Boutons print (visibles uniquement à l'écran) ----------------------------- */
+    .no-print button:hover { background: #E64B00 !important; color: #fff !important; }
+    @media print { .no-print { display: none !important; } }
+
+    /* ----------------------------- Page de couverture ----------------------------- */
+    .cover {
+        page-break-after: always;
+        height: 26cm;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        background: linear-gradient(135deg, #FFF8E1 0%, #FFFFFF 50%, #FFE0B2 100%);
+        padding: 2cm 1cm;
+        position: relative;
+    }
+    .cover .logo-domitys {
+        width: 280px;
+        max-width: 80%;
+        margin-bottom: 60px;
+    }
+    .cover h1 {
+        font-size: 38pt;
+        font-weight: 800;
+        margin: 0 0 15px 0;
+        color: #322D2D;
+        letter-spacing: -1px;
+    }
+    .cover h1 .accent { color: #E64B00; }
+    .cover .subtitle {
+        font-size: 16pt;
+        color: #6c6c6c;
+        font-weight: 300;
+        margin: 0 0 50px 0;
+        max-width: 600px;
+    }
+    .cover .badge-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 40px;
+    }
+    .cover .badge {
+        background: #fff;
+        border: 2px solid #F0AA00;
+        color: #322D2D;
+        padding: 10px 18px;
+        border-radius: 50px;
+        font-size: 11pt;
+        font-weight: 600;
+    }
+    .cover .footer-meta {
+        position: absolute;
+        bottom: 2cm;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 10pt;
+        color: #888;
+    }
+    .cover .footer-meta strong { color: #E64B00; }
+
+    /* ----------------------------- Sections principales ----------------------------- */
+    /* Pagination automatique — pas de saut forcé pour éviter les grands espaces vides.
+       Les cards sont juste protégées contre les coupures en milieu d'élément.
+       (.section-page-break n'est plus utilisée — laissée dans le HTML pour rétro-compat
+       mais sans effet CSS désormais.) */
+    .section {
+        margin: 0 0 25px 0;
+    }
+
+    h2.section-title {
+        font-size: 20pt;
+        font-weight: 800;
+        color: #322D2D;
+        margin: 0 0 8px 0;
+        padding: 10px 16px;
+        border-left: 6px solid #F0AA00;
+        background: linear-gradient(90deg, #FFF8E1 0%, transparent 100%);
+        page-break-after: avoid;        /* éviter qu'un titre se retrouve isolé en bas de page */
+        break-after: avoid;
+    }
+    h3.subsection-title {
+        font-size: 13pt;
+        color: #E64B00;
+        margin: 18px 0 8px 0;
+        font-weight: 700;
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+    /* ----------------------------- Liste "En bref" ----------------------------- */
+    .bref-list {
+        list-style: none;
+        padding: 0;
+        margin: 15px 0;
+    }
+    .bref-list li {
+        padding: 10px 12px 10px 40px;
+        margin-bottom: 6px;
+        background: #FAFAFA;
+        border-left: 4px solid #F0AA00;
+        position: relative;
+        font-size: 11pt;
+    }
+    .bref-list li::before {
+        content: "✓";
+        position: absolute;
+        left: 12px;
+        top: 8px;
+        color: #E64B00;
+        font-weight: bold;
+        font-size: 14pt;
+    }
+    .bref-list li strong { color: #322D2D; }
+
+    /* ----------------------------- Stack tech ----------------------------- */
+    .stack-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 15px 0;
+        padding: 15px;
+        background: #322D2D;
+        border-radius: 8px;
+    }
+    .stack-row .stack-item {
+        background: #fff;
+        color: #322D2D;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 10pt;
+        font-weight: 600;
+    }
+
+    /* ----------------------------- Cards modules ----------------------------- */
+    .module-card {
+        page-break-inside: avoid;
+        break-inside: avoid;            /* standard moderne */
+        display: flex;
+        background: #fff;
+        border: 1px solid #e8e8e8;
+        border-left: 8px solid #F0AA00;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    }
+    .module-number {
+        background: #F0AA00;
+        color: #322D2D;
+        width: 80px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-weight: 800;
+        text-align: center;
+        padding: 10px 0;
+    }
+    .module-number .num {
+        font-size: 26pt;
+        line-height: 1;
+    }
+    .module-number .lab {
+        font-size: 8pt;
+        text-transform: uppercase;
+        margin-top: 4px;
+        opacity: 0.8;
+        letter-spacing: 1px;
+    }
+    .module-content {
+        flex: 1;
+        padding: 14px 20px;
+    }
+    .module-content h3 {
+        margin: 0 0 6px 0;
+        font-size: 14pt;
+        color: #322D2D;
+        font-weight: 700;
+    }
+    .module-content h3 .icon {
+        margin-right: 8px;
+        font-size: 16pt;
+    }
+    .module-content .module-tagline {
+        color: #6c6c6c;
+        font-style: italic;
+        margin: 0 0 10px 0;
+        font-size: 10pt;
+    }
+    .module-content ul {
+        margin: 8px 0 0 0;
+        padding-left: 20px;
+        font-size: 10pt;
+    }
+    .module-content ul li {
+        margin-bottom: 4px;
+        line-height: 1.4;
+    }
+    .module-content ul li strong { color: #E64B00; }
+
+    /* Variantes couleurs cycliques pour les cards modules */
+    .module-card.c-amber  { border-left-color: #F0AA00; }
+    .module-card.c-amber  .module-number { background: #F0AA00; color: #322D2D; }
+    .module-card.c-orange { border-left-color: #E64B00; }
+    .module-card.c-orange .module-number { background: #E64B00; color: #fff; }
+    .module-card.c-dark   { border-left-color: #322D2D; }
+    .module-card.c-dark   .module-number { background: #322D2D; color: #F0AA00; }
+
+    /* ----------------------------- Module Comptabilité (mise en avant) ----------------------------- */
+    .compta-highlight {
+        background: linear-gradient(135deg, #322D2D 0%, #4a3838 100%);
+        color: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        margin: 20px 0;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+    .compta-highlight h3 {
+        color: #F0AA00;
+        margin-top: 0;
+    }
+    .compta-highlight .compta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px 16px;
+        margin-top: 12px;
+    }
+    .compta-highlight .compta-grid div {
+        background: rgba(255, 255, 255, 0.08);
+        padding: 8px 12px;
+        border-radius: 4px;
+        border-left: 3px solid #F0AA00;
+        font-size: 9.5pt;
+    }
+    .compta-highlight .compta-grid strong { color: #F0AA00; }
+
+    /* ----------------------------- Tableau ----------------------------- */
+    table.crypto-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 12px 0;
+        font-size: 10pt;
+    }
+    table.crypto-table th, table.crypto-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+    }
+    table.crypto-table th {
+        background: #F0AA00;
+        color: #322D2D;
+        font-weight: 700;
+    }
+
+    /* ----------------------------- Footer ----------------------------- */
+    .end-page {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        padding: 2cm 1cm 1cm 1cm;
+        text-align: center;
+        margin-top: 30px;
+    }
+    .end-page .end-logo {
+        width: 200px;
+        margin: 0 auto 30px;
+    }
+    .end-page h2 {
+        color: #322D2D;
+        font-size: 24pt;
+        margin: 20px 0;
+    }
+    .end-page p {
+        color: #6c6c6c;
+        font-size: 12pt;
+        max-width: 600px;
+        margin: 10px auto;
+    }
+    .end-page .end-cta {
+        display: inline-block;
+        margin-top: 30px;
+        padding: 14px 28px;
+        background: #E64B00;
+        color: #fff;
+        font-weight: 700;
+        border-radius: 6px;
+        font-size: 13pt;
+    }
+</style>
+</head>
+<body>
+
+<!-- Bouton flottant déclenchant la modale d'aide -->
+<button class="no-print" onclick="document.getElementById('printHelpModal').style.display='flex'"
+        style="position:fixed;top:12px;right:12px;z-index:999;background:#F0AA00;color:#322D2D;border:2px solid #322D2D;padding:12px 22px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+    🖨️ Imprimer / Enregistrer en PDF
+</button>
+
+<!-- Modale d'aide impression -->
+<div id="printHelpModal" class="no-print" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;justify-content:center;align-items:center;padding:20px;">
+    <div style="background:#fff;max-width:560px;border-radius:10px;padding:30px 35px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+        <h2 style="margin:0 0 6px 0;color:#322D2D;font-size:20pt;">🖨️ Avant d'imprimer</h2>
+        <p style="color:#6c6c6c;margin:0 0 20px 0;font-size:11pt;">
+            Pour un PDF propre <strong>sans la date ni l'URL</strong> en haut/bas de page :
+        </p>
+
+        <div style="background:#FFF8E1;border-left:5px solid #F0AA00;padding:18px;border-radius:4px;margin-bottom:16px;">
+            <strong style="color:#E64B00;font-size:12pt;">Étape 1 — Dans le dialogue d'impression qui va s'ouvrir :</strong>
+            <ol style="margin:10px 0 0 20px;padding:0;font-size:11pt;line-height:1.6;">
+                <li>Cliquer sur <strong>« Plus de paramètres »</strong> (en bas à gauche)</li>
+                <li><strong>Décocher</strong> la case <span style="background:#fff;padding:2px 8px;border:1px solid #ccc;border-radius:3px;font-family:monospace;">☑ En-têtes et pieds de page</span></li>
+                <li>Pour le PDF : choisir <strong>Destination = « Enregistrer au format PDF »</strong></li>
+            </ol>
+        </div>
+
+        <div style="background:#FFF8E1;border-left:5px solid #F0AA00;padding:18px;border-radius:4px;margin-bottom:20px;">
+            <strong style="color:#E64B00;font-size:12pt;">Étape 2 — Cocher aussi :</strong>
+            <p style="margin:8px 0 0 0;font-size:11pt;">
+                ☑ <strong>Graphismes d'arrière-plan</strong> <small style="color:#6c6c6c;">(préserve les couleurs Domitys)</small>
+            </p>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+            <button onclick="document.getElementById('printHelpModal').style.display='none'"
+                    style="padding:10px 18px;background:#fff;color:#322D2D;border:2px solid #ccc;border-radius:6px;cursor:pointer;font-weight:600;font-size:12pt;">
+                Annuler
+            </button>
+            <button onclick="document.getElementById('printHelpModal').style.display='none';setTimeout(()=>window.print(),100);"
+                    style="padding:10px 22px;background:#E64B00;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:12pt;box-shadow:0 2px 8px rgba(230,75,0,0.3);">
+                ✓ J'ai compris, ouvrir l'impression
+            </button>
+        </div>
+
+        <p style="margin:18px 0 0 0;font-size:9pt;color:#999;text-align:center;font-style:italic;">
+            Note : la date/URL ajoutée par le navigateur n'est pas contrôlable depuis le HTML — c'est une étape manuelle obligatoire en 2 clics.
+        </p>
+    </div>
+</div>
+
+<!-- ============================ COUVERTURE ============================ -->
+<div class="cover">
+    <svg class="logo-domitys" viewBox="0 0 478.6 220.3" xmlns="http://www.w3.org/2000/svg">
+        <g>
+            <g>
+                <path style="fill:#322D2D" d="M273.9,95.6l-12.7-15.8v29.3h-8.4v-43h8.3l12.8,16.6l12.8-16.6h8.3v43h-8.4V79.9L273.9,95.6z M361.4,66.2h10.1l9,16.6l9-16.6h10.1l-14.8,25.3v17.7h-8.5V91.5L361.4,66.2z M317.6,66.2v43h-8.4v-43H317.6z M325.5,74v-7.9h32.8V74h-12.2v35.1h-8.5V74H325.5z M401.6,102.8l5.1-6.1l0.4,0.3c4,3.4,7.9,5.3,13,5.2c4.5,0,6.9-2.1,6.9-4.8c0-2.7-1.3-4.2-9.2-6c-9-2.1-14.5-4.8-14.6-13c-0.1-7.7,6.2-12.9,14.8-13c6.3-0.1,11.3,1.8,15.7,5.3l0.4,0.3l-4.5,6.5l-0.4-0.3c-3.8-2.8-7.5-4.2-11.2-4.1c-4.2,0-6.3,2.2-6.3,4.5c0,2.9,1.5,4.3,9.7,6.2c9,2.1,14,5.4,14.1,12.7c0.1,8.4-6.4,13.3-15.5,13.4c-6.6,0.1-12.8-2.2-18-6.7L401.6,102.8z M221.2,65.5c13.2,0,22.4,10,22.4,22.1c0,12.2-9.3,22.3-22.5,22.3c-13.2,0-22.4-10-22.4-22.1C198.7,75.6,208,65.5,221.2,65.5z M221.1,73.3c-8,0-13.6,6.4-13.6,14.3c0,8,5.7,14.5,13.7,14.5c8,0,13.6-6.4,13.6-14.3C234.8,79.8,229.1,73.3,221.1,73.3z M160.4,73.9l0,26.2l-8.4-8.4l0-25.5h16.8c13.4,0,22.8,9.3,22.8,21.4c0,12.1-9.4,21.6-22.2,21.6l-7.7-7.7h7.1c8.5,0,14-5.7,14-13.6c0-8-5.5-13.9-14-13.9H160.4z"/>
+                <path style="fill:#F0AA00" d="M102.4,49.6l23.3,23.3c-4.2-4.2-10-6.8-16.5-6.8h-43L43,43h42.9C92.3,43,98.2,45.4,102.4,49.6z"/>
+                <polygon style="fill:#E64B00" points="43,43 66.3,66.1 66.3,107.5 43,84.2"/>
+                <path style="fill:#F0AA00" d="M67.8,109.1h41.4v3.6c0,10.4-8,18.8-18.2,19.5L67.8,109.1z"/>
+                <path style="fill:#E64B00" d="M109.2,66.1c12.9,0,23.3,10.4,23.3,23.3c0,6.4-2.6,12.3-6.8,16.5l-19.6,19.6c-3.7,3.7-8.6,6.1-14.1,6.7c9.7-1.2,17.2-9.4,17.2-19.4V66.1z"/>
+            </g>
+        </g>
+    </svg>
+    <h1>Synd_Gest <span class="accent">·</span></h1>
+    <p class="subtitle">Plateforme de gestion intégrée pour résidences-services seniors — modèle Domitys</p>
+    <div class="badge-row">
+        <span class="badge">14 modules métier</span>
+        <span class="badge">13 phases comptables</span>
+        <span class="badge">5 assistants IA</span>
+        <span class="badge">RGPD · FEC DGFIP</span>
+    </div>
+    <div class="footer-meta">
+        Document de présentation · Édition <strong>2026</strong> · Pilote vitrine
+    </div>
+</div>
+
+<!-- ============================ EN BREF ============================ -->
+<div class="section">
+    <h2 class="section-title">📌 En bref</h2>
+    <p>Synd_Gest est une application web modulaire couvrant <strong>l'ensemble des opérations</strong> d'une résidence-services seniors :</p>
+    <ul class="bref-list">
+        <li><strong>Gestion administrative</strong> — résidences, lots, propriétaires, contrats de gestion</li>
+        <li><strong>Gestion résidentielle</strong> — profils résidents seniors, occupations, services</li>
+        <li><strong>Gestion opérationnelle</strong> — restauration, ménage, jardinage, maintenance, accueil, animations</li>
+        <li><strong>Gestion comptable</strong> — 13 phases (compta unifiée, paie, TVA, exports FEC, IA assistants, rapprochement bancaire, quittances, impayés)</li>
+        <li><strong>Conformité</strong> — RGPD, audit trail légal, FEC DGFIP, PCG art. 410-1</li>
+        <li><strong>Espaces personnels</strong> — propriétaires, résidents, salariés (chacun voit ses propres données)</li>
+    </ul>
+
+    <h3 class="subsection-title">Stack technique</h3>
+    <div class="stack-row">
+        <span class="stack-item">PHP 8.2</span>
+        <span class="stack-item">MariaDB 10.4</span>
+        <span class="stack-item">Bootstrap 5.3</span>
+        <span class="stack-item">Chart.js</span>
+        <span class="stack-item">Leaflet</span>
+        <span class="stack-item">TUI Calendar</span>
+        <span class="stack-item">Claude AI</span>
+    </div>
+</div>
+
+<!-- ============================ CATALOGUE 14 MODULES ============================ -->
+<div class="section section-page-break">
+    <h2 class="section-title">📦 Catalogue des 14 modules</h2>
+
+    <!-- Module 1 -->
+    <div class="module-card c-amber">
+        <div class="module-number"><div class="num">1</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">⚙️</span>Admin</h3>
+            <p class="module-tagline">Gestion centrale de la plateforme.</p>
+            <ul>
+                <li><strong>Users &amp; rôles</strong> : 18 rôles dynamiques (admin, comptable, direction, propriétaires, résidents, 12 rôles staff)</li>
+                <li><strong>Résidences</strong> : géocodage Leaflet, normalisation ville, soft delete intelligent</li>
+                <li><strong>Lots</strong> : 6 types (studio, T2, T2 bis, T3, parking, cave) + terrasse/loggia</li>
+                <li><strong>Carte interactive</strong> : 22+ résidences géolocalisées avec marqueurs colorés</li>
+                <li><strong>Migrations BDD</strong> : interface dédiée pour appliquer les évolutions schéma</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Module 2 -->
+    <div class="module-card c-orange">
+        <div class="module-number"><div class="num">2</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">🏠</span>Propriétaires &amp; Contrats</h3>
+            <p class="module-tagline">Le propriétaire investit dans les lots, Domitys garantit le loyer.</p>
+            <ul>
+                <li><strong>Profils propriétaires</strong> : 1:1 avec users (rôle <em>proprietaire</em>)</li>
+                <li><strong>Contrats de gestion</strong> : 1 actif/lot, 4 dispositifs fiscaux (LMNP réel/micro, Censi-Bouvard, nue-propriété)</li>                
+                <li><strong>Espace propriétaire</strong> : tableau de bord, lots, résidences, calendrier, GED 1 GB, comptabilité, déclaration fiscale assistée IA, AG, <strong>quittances loyer garanti</strong></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Module 3 -->
+    <div class="module-card c-dark">
+        <div class="module-number"><div class="num">3</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">👵</span>Résidents Seniors &amp; Occupations</h3>
+            <p class="module-tagline">Les résidents louent un logement et bénéficient de services.</p>
+            <ul>
+                <li><strong>Profils résidents</strong> : 34 champs (santé, CNI, contact urgence, médecin, allergies, APL/APA)</li>
+                <li><strong>Occupations</strong> : 1 occupation active/lot, multi-lots multi-résidences possible</li>
+                <li><strong>Services</strong> : catalogue inclus/supplémentaires, prix négociable</li>
+                <li><strong>Espace résident</strong> : tableau de bord, calendrier auto-généré (loyers + animations + rappels fiscaux), GED 500 MB, <strong>mes quittances</strong>, déclaration fiscale assistée IA</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Module 4 -->
+    <div class="module-card c-amber">
+        <div class="module-number"><div class="num">4</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">🧳</span>Hôtes Temporaires</h3>
+            <p class="module-tagline">Visiteurs courts séjours sans compte utilisateur (essai, convalescence, famille).</p>
+            <ul>
+                <li><strong>Pas de user_id</strong> : géré par fiche autonome</li>
+                <li>Anti-chevauchement lot vérifié (résident actif + autre séjour hôte)</li>
+                <li>Calcul auto durée × tarif × nombre de personnes</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Module 5 -->
+    <div class="module-card c-orange">
+        <div class="module-number"><div class="num">5</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">📅</span>Planning Staff</h3>
+            <p class="module-tagline">Affectation horaire de tout le personnel.</p>
+            <ul>
+                <li><strong>TUI Calendar v1.15.3</strong> avec catégories colorées</li>
+                <li><strong>13 catégories</strong> : ménage, restauration, technique, jardinage, animation, etc.</li>
+                <li>Heures normales vs supplémentaires (calcul auto)</li>
+                <li>Drag &amp; drop pour réaffectation</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Module 6 -->
+    <div class="module-card c-dark">
+        <div class="module-number"><div class="num">6</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">🍽️</span>Restauration</h3>
+            <p class="module-tagline">Service repas + approvisionnement + laverie linge de table.</p>
+            <ul>
+                <li><strong>Catalogue plats</strong> : 6 catégories, 6 régimes (vegan, sans gluten, halal…), allergènes, photo</li>
+                <li><strong>Menus du jour</strong> : 4 services (petit-déjeuner, déjeuner, goûter, dîner)</li>
+                <li><strong>Suivi services repas</strong> : 3 types client × 3 modes facturation</li>
+                <li><strong>Approvisionnement</strong> : commandes fournisseurs, inventaire, factures</li>
+                <li><strong>Section laverie restauration</strong> : cycles envoi/retour du linge de table (nappes, serviettes, torchons, tabliers)</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="section section-page-break">
+    <!-- Module 7 -->
+    <div class="module-card c-amber">
+        <div class="module-number"><div class="num">7</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">🧹</span>Ménage</h3>
+            <p class="module-tagline">3 sections distinctes : intérieur (chambres) / extérieur (zones) / laverie (service à la demande).</p>
+            <ul>
+                <li><strong>Auto-routage par rôle</strong> : un agent intérieur ne voit jamais les tâches extérieures</li>
+                <li><strong>Niveau de service</strong> par tâche : aucun/basique/premium</li>
+                <li><strong>Distribution équitable automatique</strong> des tâches</li>
+                <li><strong>Laverie résident</strong> : workflow demandée → en cours → prête → livrée → facturée</li>
+                <li><strong>Comptabilité bloquée</strong> aux rôles d'exécution (manager only strict)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Module 8 -->
+    <div class="module-card c-orange">
+        <div class="module-number"><div class="num">8</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">🌱</span>Jardinage &amp; Apiculture</h3>
+            <p class="module-tagline">Espaces verts + apiculture si la résidence dispose de ruches.</p>
+            <ul>
+                <li><strong>Espaces</strong> : 12 types (potager, parterre, pelouse, rucher…), tâches récurrentes</li>
+                <li><strong>Catalogue produits</strong> : 11 catégories, mention BIO/danger</li>
+                <li><strong>Inventaire traçable</strong> : transaction <em>FOR UPDATE</em>, refus stock négatif</li>
+                <li><strong>Apiculture</strong> : config réglementaire (NAPI, référent), CRUD ruches, <strong>carnet de visite avec export CSV conforme FR</strong>, alertes traitements saisonniers (varroa, nourrissement)</li>
+                <li><strong>Comptabilité</strong> : Chart.js, coût par espace, récoltes miel à comptabiliser</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Module 9 -->
+    <div class="module-card c-dark">
+        <div class="module-number"><div class="num">9</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">🔧</span>Maintenance Technique</h3>
+            <p class="module-tagline">6 spécialités : piscine, ascenseur, travaux, plomberie, électricité, peinture.</p>
+            <ul>
+                <li><strong>Spécialités multi-affectées</strong> par user (débutant/confirmé/expert)</li>
+                <li><strong>Certifications</strong> avec date expiration + alerte 3 mois avant</li>
+                <li><strong>Piscine</strong> : journal analyses chimiques, contrôles ARS, alertes santé publique</li>
+                <li><strong>Ascenseurs</strong> : journal + 3 contrôles réglementaires, calcul auto prochaine échéance</li>
+                <li><strong>Chantiers</strong> : workflow 9 phases, multi-devis, <strong>3 garanties auto</strong> (parfait achèvement, biennale, décennale), quote-part propriétaires</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Module 10 -->
+    <div class="module-card c-amber">
+        <div class="module-number"><div class="num">10</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">🛡️</span>Sinistres</h3>
+            <p class="module-tagline">Déclarations + suivi assureur + GED + audit trail.</p>
+            <ul>
+                <li><strong>9 types</strong> : dégât eaux, incendie, vol, bris, catastrophe naturelle, vandalisme, chute résident…</li>
+                <li><strong>Workflow 7 statuts</strong> : déclaré → transmis assureur → expertise → réparation → indemnisé → clos</li>
+                <li><strong>GED</strong> : constats, photos, devis, expertises, courriers (HORS public/, accès contrôlé)</li>
+                <li><strong>Audit trail</strong> dédié</li>
+                <li><strong>Intégration Maintenance</strong> : bouton "Créer un chantier de réparation" depuis fiche sinistre</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Module 11 -->
+    <div class="module-card c-orange">
+        <div class="module-number"><div class="num">11</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">📁</span>Documents (GED Direction)</h3>
+            <p class="module-tagline">GED admin/staff direction (HQ Domitys + par résidence).</p>
+            <ul>
+                <li><strong>2 scopes</strong> : global Domitys (modèles, contrats cadre) ou par résidence</li>
+                <li><strong>Permissions multi-rôles</strong> : admin/dir écriture, comptable lecture seule</li>
+                <li><strong>18 extensions</strong> : PDF, Office, ODF, images, vidéos, ZIP, CSV</li>
+                <li><strong>Triple validation upload</strong> : taille → extension → MIME finfo (anti-polyglot)</li>
+                <li><strong>50 MB max/fichier</strong>, stockage HORS public/</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Module 12 -->
+    <div class="module-card c-dark">
+        <div class="module-number"><div class="num">12</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">🎯</span>Accueil</h3>
+            <p class="module-tagline">Service accueil de la résidence.</p>
+            <ul>
+                <li><strong>Notes résidents</strong> texte libre par l'équipe</li>
+                <li><strong>Catalogues</strong> : salles communes + équipements prêtables (mobilité, info, loisirs, médical)</li>
+                <li><strong>Réservations</strong> multi-types avec workflow validation et anti-chevauchement</li>
+                <li><strong>Animations</strong> : créées comme shifts planning + inscriptions résidents + pointage</li>
+                <li><strong>Planning double-vue</strong> TUI Calendar (résidents/staff/tout)</li>
+                <li><strong>Messagerie groupée</strong> multi-cibles (résidents/staff/propriétaires)</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="section section-page-break">
+    <!-- Module 13 -->
+    <div class="module-card c-amber">
+        <div class="module-number"><div class="num">13</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">⚖️</span>Assemblées Générales</h3>
+            <p class="module-tagline">AGO/AGE avec workflow + résolutions + votes pondérés + lien chantiers.</p>
+            <ul>
+                <li><strong>Workflow</strong> : planifiée → convoquée → tenue / annulée</li>
+                <li><strong>Résolutions</strong> avec votes (voix + tantièmes) + calcul résultat auto</li>
+                <li><strong>Upload PDF</strong> convocation + PV</li>
+                <li><strong>Convocation par messagerie</strong> : pré-rempli (proprios + sujet + corps + priorité haute)</li>
+                <li><strong>Espace propriétaire</strong> : lecture AG des résidences avec contrats actifs</li>
+                <li><strong>Lien chantiers</strong> : un chantier &gt; 5000€ HT auto-coché "nécessite AG"</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Module 14 — Comptabilité (mise en avant) -->
+    <div class="module-card c-orange">
+        <div class="module-number"><div class="num">14</div><div class="lab">Module</div></div>
+        <div class="module-content">
+            <h3><span class="icon">💰</span>Comptabilité <span style="color:#E64B00;font-size:10pt;font-weight:600;margin-left:8px;">— Le module phare</span></h3>
+            <p class="module-tagline"><strong>Le plus riche — couvre tout le besoin comptable d'un parc de résidences.</strong></p>
+            <p style="margin:8px 0;font-size:10pt;"><strong>Schéma unifié</strong> : 1 seule table <em>ecritures_comptables</em> agrège jardinage + ménage + restauration + maintenance + loyers + paie + admin + sinistres + hôtes + services. <strong>PCG simplifié</strong> : 44 comptes seedés.</p>
+        </div>
+    </div>
+
+    <div class="compta-highlight">
+        <h3>📊 Les 13 phases du module</h3>
+        <div class="compta-grid">
+            <div><strong>1.</strong> Fondations : schéma unifié + Model + audit</div>
+            <div><strong>2.</strong> Refonte modules → table unifiée</div>
+            <div><strong>3.</strong> Dashboard central : 6 KPIs + Chart.js + comparaison N vs N-1</div>
+            <div><strong>4.</strong> RH salariés : 8 conventions collectives FR + espace salarié</div>
+            <div><strong>5.</strong> Bulletins de paie : taux 2026 réalistes + import auto heures</div>
+            <div><strong>6.</strong> Exports comptables : <strong>FEC DGFIP officiel</strong> + CSV + Cegid</div>
+            <div><strong>7.</strong> TVA CA3/CA12 : mapping CERFA 3310 lignes 01 à 32</div>
+            <div><strong>8.</strong> IA Assistant Comptable (Claude Sonnet)</div>
+            <div><strong>9.</strong> IA Assistant Paie (taux 2026 + conventions)</div>
+            <div><strong>10.</strong> Bilan + SIG + Balance + GL + Exercices</div>
+            <div><strong>11.</strong> Rapprochement bancaire : import CSV + matching auto</div>
+            <div><strong>12.</strong> Audit trail métier : 18 actions tracées (RGPD + PCG)</div>
+            <div style="grid-column: span 2;"><strong>13.</strong> Quittances + Gestion des impayés : génération mensuelle, escalade auto J+10, 3 niveaux de relance avec 9 templates FR</div>
+        </div>
+        <p style="margin-top:15px;font-size:9.5pt;opacity:0.9;">+ Polish navbar restructurée en 6 sections + bandeau "Actions à mener" + 8 cards "Accès rapides"</p>
+    </div>
+</div>
+
+<!-- ============================ MODULES TRANSVERSAUX ============================ -->
+<div class="section section-page-break">
+    <h2 class="section-title">🔀 Modules transversaux</h2>
+
+    <h3 class="subsection-title">📨 Messagerie interne</h3>
+    <ul class="bref-list">
+        <li>Accessible à <strong>tous</strong> les utilisateurs authentifiés (sauf hôtes temporaires sans compte)</li>
+        <li>Multi-destinataires (individuel ou groupe par rôle)</li>
+        <li>Compteur non-lus en navbar avec badge dynamique</li>
+        <li>Archive séparée expéditeur/destinataire</li>
+        <li>Utilisée pour : convocations AG, notifications quittances, relances impayés, échanges génériques</li>
+    </ul>
+
+    <h3 class="subsection-title">🔐 Sécurité &amp; conformité</h3>
+    <ul class="bref-list">
+        <li><strong>Sessions</strong> : timeout 30 min + avertissement 5 min avant</li>
+        <li><strong>CSRF</strong> : token sur tous les POST + header X-CSRF-Token sur AJAX</li>
+        <li><strong>Rate limiting</strong> : 200 req/min par IP</li>
+        <li><strong>Logs sécurité</strong> fichier : 4 types (UNAUTHORIZED_ACCESS, FAILED_LOGIN, CSRF_VIOLATION, RATE_LIMIT_EXCEEDED)</li>
+        <li><strong>Audit trail métier BDD</strong> : 18 actions comptables tracées avec ip + user_agent + JSON details</li>
+        <li><strong>RGPD</strong> : masquage IBAN dans logs, accès données santé restreint, droit d'accès via espaces personnels</li>
+        <li><strong>Headers HTTP sécurité</strong> : CSP, X-Frame-Options, X-Content-Type-Options…</li>
+    </ul>
+
+    <h3 class="subsection-title">🤖 Intelligence Artificielle (Claude Sonnet)</h3>
+    <p><strong>5 assistants spécialisés</strong> intégrés via service <em>ClaudeService</em>, chacun avec un contexte chiffré injecté en temps réel :</p>
+    <table class="crypto-table">
+        <thead>
+            <tr><th>Assistant</th><th>Cible</th><th>Capacités</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Budget résident</strong></td>
+                <td>Locataire senior</td>
+                <td>Conseils sur reste à charge, aides supplémentaires (ASH, APA)</td>
+            </tr>
+            <tr>
+                <td><strong>Fiscal résident</strong></td>
+                <td>Locataire senior</td>
+                <td>Préparation déclaration 2042 (cases 1AS, 7DB, 7CD), crédit d'impôt services à la personne, réduction résidence services médicalisée — <strong>analyse vision PDF</strong> de l'avis d'imposition</td>
+            </tr>
+            <tr>
+                <td><strong>Fiscal propriétaire</strong></td>
+                <td>Investisseur</td>
+                <td>Aide au régime LMNP réel/micro-BIC, Censi-Bouvard, nue-propriété — calcul revenu net imposable, charges déductibles, amortissements — <strong>analyse vision PDF</strong> documents fiscaux</td>
+            </tr>
+            <tr>
+                <td><strong>Comptable</strong></td>
+                <td>Direction / comptable</td>
+                <td>Analyse écritures, anomalies, comparaisons N/N-1, suggestions d'imputation, préparation TVA</td>
+            </tr>
+            <tr>
+                <td><strong>Paie</strong></td>
+                <td>RH / direction</td>
+                <td>Taux 2026, 8 conventions collectives, simulations brut→net, conformité Code du travail, détection anomalies (sans fiche RH, salaire &lt;SMIC, dépassement 48h hebdo)</td>
+            </tr>
+        </tbody>
+    </table>
+    <p style="font-style: italic; color: #6c6c6c; font-size: 9.5pt; margin-top: 8px;">Tous avec garde-fous : « ne jamais prétendre être un expert agréé », « validation cabinet obligatoire avant décision ».</p>
+</div>
+
+<!-- ============================ FIN ============================ -->
+<div class="end-page">
+    <svg class="end-logo" viewBox="0 0 478.6 220.3" xmlns="http://www.w3.org/2000/svg">
+        <g>
+            <g>
+                <path style="fill:#322D2D" d="M273.9,95.6l-12.7-15.8v29.3h-8.4v-43h8.3l12.8,16.6l12.8-16.6h8.3v43h-8.4V79.9L273.9,95.6z M361.4,66.2h10.1l9,16.6l9-16.6h10.1l-14.8,25.3v17.7h-8.5V91.5L361.4,66.2z M317.6,66.2v43h-8.4v-43H317.6z M325.5,74v-7.9h32.8V74h-12.2v35.1h-8.5V74H325.5z M401.6,102.8l5.1-6.1l0.4,0.3c4,3.4,7.9,5.3,13,5.2c4.5,0,6.9-2.1,6.9-4.8c0-2.7-1.3-4.2-9.2-6c-9-2.1-14.5-4.8-14.6-13c-0.1-7.7,6.2-12.9,14.8-13c6.3-0.1,11.3,1.8,15.7,5.3l0.4,0.3l-4.5,6.5l-0.4-0.3c-3.8-2.8-7.5-4.2-11.2-4.1c-4.2,0-6.3,2.2-6.3,4.5c0,2.9,1.5,4.3,9.7,6.2c9,2.1,14,5.4,14.1,12.7c0.1,8.4-6.4,13.3-15.5,13.4c-6.6,0.1-12.8-2.2-18-6.7L401.6,102.8z M221.2,65.5c13.2,0,22.4,10,22.4,22.1c0,12.2-9.3,22.3-22.5,22.3c-13.2,0-22.4-10-22.4-22.1C198.7,75.6,208,65.5,221.2,65.5z M221.1,73.3c-8,0-13.6,6.4-13.6,14.3c0,8,5.7,14.5,13.7,14.5c8,0,13.6-6.4,13.6-14.3C234.8,79.8,229.1,73.3,221.1,73.3z M160.4,73.9l0,26.2l-8.4-8.4l0-25.5h16.8c13.4,0,22.8,9.3,22.8,21.4c0,12.1-9.4,21.6-22.2,21.6l-7.7-7.7h7.1c8.5,0,14-5.7,14-13.6c0-8-5.5-13.9-14-13.9H160.4z"/>
+                <path style="fill:#F0AA00" d="M102.4,49.6l23.3,23.3c-4.2-4.2-10-6.8-16.5-6.8h-43L43,43h42.9C92.3,43,98.2,45.4,102.4,49.6z"/>
+                <polygon style="fill:#E64B00" points="43,43 66.3,66.1 66.3,107.5 43,84.2"/>
+                <path style="fill:#F0AA00" d="M67.8,109.1h41.4v3.6c0,10.4-8,18.8-18.2,19.5L67.8,109.1z"/>
+                <path style="fill:#E64B00" d="M109.2,66.1c12.9,0,23.3,10.4,23.3,23.3c0,6.4-2.6,12.3-6.8,16.5l-19.6,19.6c-3.7,3.7-8.6,6.1-14.1,6.7c9.7-1.2,17.2-9.4,17.2-19.4V66.1z"/>
+            </g>
+        </g>
+    </svg>
+    <h2>Une plateforme intégrée<br>pour piloter vos résidences-services</h2>
+    <p>14 modules, 13 phases comptables, 5 assistants IA, une architecture pensée pour la conformité RGPD et la traçabilité fiscale.</p>
+    <p style="font-size: 10pt; margin-top: 30px; color: #999;">
+        Document généré pour présentation client · Édition 2026<br>
+        Pilote — Module Comptabilité en atente de validation par cabinet comptable
+    </p>
+</div>
+
+</body>
+</html>

@@ -108,7 +108,7 @@ if (!isset($user) || !is_object($user)) {
                 </div>
                 <div class="list-group list-group-flush">
                     <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-building text-primary me-2"></i>Copropriétés</span>
+                        <span><i class="fas fa-building text-primary me-2"></i>Résidences</span>
                         <span class="badge bg-primary rounded-pill"><?= $stats['coproprietes'] ?? 0 ?></span>
                     </div>
                     <div class="list-group-item d-flex justify-content-between align-items-center">

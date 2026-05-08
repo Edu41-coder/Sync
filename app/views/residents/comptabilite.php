@@ -149,6 +149,51 @@ include ROOT_PATH . '/app/views/partials/breadcrumb.php';
         </div>
     </div>
 
+    <!-- Mes dernières quittances (Phase 13) -->
+    <?php if (!empty($quittances)): ?>
+    <div class="card shadow-sm mb-4 border-success">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-receipt me-2"></i><strong>Mes dernières quittances</strong></span>
+            <a href="<?= BASE_URL ?>/resident/mesQuittances" class="btn btn-sm btn-light">
+                Voir toutes <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Période</th>
+                        <th>N° quittance</th>
+                        <th class="text-end">Montant</th>
+                        <th class="text-center">Statut</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $moisLabelsLocal = [1=>'Jan',2=>'Fév',3=>'Mar',4=>'Avr',5=>'Mai',6=>'Juin',7=>'Juil',8=>'Août',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Déc'];
+                    $badgeColors = ['emise'=>'primary','partiellement_payee'=>'warning','payee'=>'success','impayee'=>'danger','annulee'=>'secondary'];
+                    foreach ($quittances as $q): ?>
+                    <tr>
+                        <td><strong><?= htmlspecialchars($moisLabelsLocal[$q['periode_mois']] ?? '') ?> <?= (int)$q['periode_annee'] ?></strong></td>
+                        <td><small><?= htmlspecialchars($q['numero_quittance']) ?></small></td>
+                        <td class="text-end"><strong><?= number_format((float)$q['montant_du_total'], 2, ',', ' ') ?> €</strong></td>
+                        <td class="text-center">
+                            <span class="badge bg-<?= $badgeColors[$q['statut']] ?? 'secondary' ?>"><?= htmlspecialchars($q['statut']) ?></span>
+                        </td>
+                        <td class="text-center">
+                            <a href="<?= BASE_URL ?>/comptabilite/quittancePrintable/<?= (int)$q['id'] ?>" target="_blank" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-download me-1"></i>PDF
+                            </a>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Lien déclaration fiscale -->
     <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span>

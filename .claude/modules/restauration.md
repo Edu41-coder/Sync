@@ -120,31 +120,43 @@ Tous les rôles restauration ont accès à la messagerie (voir @.claude/modules/
 
 ---
 
-## ⚠️ À implémenter — Section Laverie restauration
+## ✅ Section Laverie restauration (livrée)
 
-**Manque actuellement.** Créer une section `laverie` pour la restauration, **analogue à `app/views/menage/laverie.php`** qui gère le linge des chambres.
+Gestion des **cycles d'envoi/retour du linge de table** (cuisine + manager).
 
-### Périmètre attendu
-Gestion du **linge de restauration** : nappes, serviettes de table, torchons, tabliers cuisine, vêtements de service.
+URL : `/restauration/laverie?residence_id=N`
 
-### Modèle suggéré (à créer)
-Table à créer : `rest_laverie` (analogue à la table laverie ménage si elle existe, ou structure équivalente)
-- `id`, `residence_id`
-- `type_linge` ENUM('nappe', 'serviette', 'torchon', 'tablier', 'tenue_service', 'autre')
-- `quantite_envoyee`, `quantite_recue`, `date_envoi`, `date_retour`
-- `prestataire` (interne / externe)
-- `cout`, `notes`
+### Modèle BDD : `rest_laverie`
 
-### Vue à créer
-`app/views/restauration/laverie.php` — basée sur la structure de `app/views/menage/laverie.php`
+| Colonne | Type | Notes |
+|---|---|---|
+| `id`, `residence_id` | FK | |
+| `type_linge` | ENUM | `nappe`, `serviette_table`, `torchon`, `tablier_cuisine`, `tenue_service`, `autre` |
+| `quantite_envoyee`, `quantite_recue` | INT | détection écart auto |
+| `date_envoi`, `date_retour` | DATETIME | |
+| `statut` | ENUM | `envoye` / `recu` / `partiel` / `perdu` |
+| `cout` | DECIMAL(8,2) | suivi budgétaire interne (non facturé au résident) |
+| `user_envoi_id`, `user_reception_id` | FK users | traçabilité |
+| `notes` | TEXT | |
 
-### Controller
-Ajouter méthode `laverie()` dans `RestaurationController`, avec `requireRole(['admin', 'restauration_manager', 'restauration_cuisine'])` (ou nouveau rôle `restauration_laverie` si pertinent).
+### Permissions
+`requireRole(['admin', 'directeur_residence', 'restauration_manager', 'restauration_cuisine'])`
 
-### Checklist implémentation
-- [ ] Reprendre la structure exacte de `menage/laverie.php` pour cohérence UX
-- [ ] DataTableWithPagination (tri + recherche + pagination)
-- [ ] CSRF sur tous les POST
-- [ ] Filtrage par `residence_id`
-- [ ] Lien depuis dashboard restauration
-- [ ] Mouvements de stock laverie traçables (analogue à `rest_inventaire_mouvements`)
+### Endpoints
+| URL | Action |
+|---|---|
+| `GET /restauration/laverie?residence_id=N` | Liste cycles |
+| `POST /restauration/laverie/create` | Créer cycle envoi |
+| `POST /restauration/laverie/update/{id}` | Modifier cycle |
+| `POST /restauration/laverie/recevoir/{id}` | Saisir réception |
+| `POST /restauration/laverie/delete/{id}` | Supprimer |
+
+### Distinction laverie restauration vs laverie ménage
+
+| | **rest_laverie** | **menage_laverie_demandes** |
+|---|---|---|
+| Type de linge | Nappes, serviettes de table, torchons, tabliers cuisine, tenue service | Draps, serviettes bain, peignoir, linge personnel résident |
+| Modèle | Cycles envoi/retour (stock interne) | Service à la demande (vendu au résident) |
+| Workflow | envoyé → reçu / partiel / perdu | demandée → en cours → prête → livrée → facturée |
+| Facturation | Non (coût d'exploitation interne) | Oui (au résident, tarif par type) |
+| Voir aussi | — | @.claude/modules/menage.md § Laverie |

@@ -1154,6 +1154,476 @@ class ComptabiliteController extends Controller {
     }
 
     // =================================================================
+    //  QUITTANCES & GESTION DES IMPAYÉS (Phase 13)
+    // =================================================================
+
+    private const MOIS_LABELS_FR = [
+        1=>'Janvier', 2=>'Février', 3=>'Mars', 4=>'Avril', 5=>'Mai', 6=>'Juin',
+        7=>'Juillet', 8=>'Août', 9=>'Septembre', 10=>'Octobre', 11=>'Novembre', 12=>'Décembre'
+    ];
+
+    /**
+     * GET /comptabilite/quittancesResidents — liste filtrée + bouton génération mois.
+     */
+    public function quittancesResidents() {
+        $this->requireAuth();
+        $this->requireRole(self::ROLES);
+
+        $resAccessibles = $this->residencesAccessibles();
+        $sel            = (int)($_GET['residence_id'] ?? 0);
+        $filteredIds    = $sel ? [$sel] : $resAccessibles;
+        $annee          = !empty($_GET['annee']) ? (int)$_GET['annee'] : (int)date('Y');
+        $mois           = !empty($_GET['mois']) ? (int)$_GET['mois'] : null;
+        $statut         = $_GET['statut'] ?? null;
+
+        $qrModel = new QuittanceResident();
+        $filters = ['residence_ids' => $filteredIds, 'periode_annee' => $annee];
+        if ($mois) $filters['periode_mois'] = $mois;
+        if ($statut) $filters['statut'] = $statut;
+        $quittances = $qrModel->listFiltered($filters);
+
+        $this->view('comptabilite/quittances_residents_index', [
+            'title'             => 'Quittances résidents - ' . APP_NAME,
+            'showNavbar'        => true,
+            'residences'        => $this->residencesPourSelecteur(),
+            'selectedResidence' => $sel,
+            'annee'             => $annee,
+            'mois'              => $mois,
+            'statut'            => $statut,
+            'statuts'           => QuittanceResident::STATUTS,
+            'moisLabels'        => self::MOIS_LABELS_FR,
+            'quittances'        => $quittances,
+            'flash'             => $this->getFlash(),
+        ], true);
+    }
+
+    /**
+     * POST /comptabilite/quittanceGenerer — génère les quittances d'un mois.
+     */
+    public function quittanceGenerer() {
+        $this->requireAuth();
+        $this->requireRole(self::ROLES);
+        $this->verifyCsrf();
+
+        $resAccessibles = $this->residencesAccessibles();
+        $residenceId    = (int)($_POST['residence_id'] ?? 0);
+        $annee          = (int)($_POST['annee'] ?? date('Y'));
+        $mois           = (int)($_POST['mois'] ?? date('n'));
+        $envoyerNotif   = !empty($_POST['envoyer_notif']);
+
+        if ($residenceId && !in_array($residenceId, $resAccessibles, true)) {
+            $this->setFlash('error', "Résidence non accessible.");
+            $this->redirect('comptabilite/quittancesResidents');
+            return;
+        }
+
+        $targetIds = $residenceId ? [$residenceId] : $resAccessibles;
+
+        $qrModel = new QuittanceResident();
+        $res = $qrModel->genererPourMois($targetIds, $annee, $mois, $this->getUserId());
+
+        $msg = sprintf(
+            "%d quittance(s) générée(s), %d ignorée(s) (déjà existantes)",
+            $res['created'], $res['skipped']
+        );
+        if (!empty($res['errors'])) {
+            $msg .= ' — ' . count($res['errors']) . ' erreur(s)';
+        }
+
+        // Notifications messagerie aux résidents (Phase 13F — Q4b)
+        if ($envoyerNotif && $res['created'] > 0) {
+            $nbNotif = $this->envoyerNotificationsQuittances($targetIds, $annee, $mois);
+            $msg .= ", $nbNotif notification(s) messagerie envoyée(s)";
+        }
+
+        $this->setFlash($res['created'] > 0 ? 'success' : 'info', $msg);
+        $this->redirect('comptabilite/quittancesResidents?residence_id=' . $residenceId . '&annee=' . $annee . '&mois=' . $mois);
+    }
+
+    /**
+     * GET /comptabilite/quittanceShow/{id} — fiche détail.
+     */
+    public function quittanceShow($id = null) {
+        $this->requireAuth();
+        $this->requireRole(self::ROLES);
+
+        $id = (int)$id;
+        $qrModel = new QuittanceResident();
+        $q = $qrModel->findById($id);
+        if (!$q || !in_array((int)$q['residence_id'], $this->residencesAccessibles(), true)) {
+            $this->setFlash('error', "Quittance introuvable ou non accessible.");
+            $this->redirect('comptabilite/quittancesResidents');
+            return;
+        }
+
+        $relanceModel = new Relance();
+        $historiqueRelances = $relanceModel->getHistorique('quittance_resident', $id);
+
+        $this->view('comptabilite/quittance_show', [
+            'title'      => 'Quittance ' . $q['numero_quittance'] . ' - ' . APP_NAME,
+            'showNavbar' => true,
+            'q'          => $q,
+            'relances'   => $historiqueRelances,
+            'statuts'    => QuittanceResident::STATUTS,
+            'niveaux'    => Relance::NIVEAUX,
+            'moisLabels' => self::MOIS_LABELS_FR,
+            'flash'      => $this->getFlash(),
+        ], true);
+    }
+
+    /**
+     * GET /comptabilite/quittancePrintable/{id} — vue HTML imprimable.
+     * Accessible à l'admin/comptable ET au résident propriétaire de la quittance.
+     */
+    public function quittancePrintable($id = null) {
+        $this->requireAuth();
+        $id = (int)$id;
+        $qrModel = new QuittanceResident();
+        $q = $qrModel->findById($id);
+        if (!$q) {
+            $this->setFlash('error', 'Quittance introuvable.');
+            $this->redirect('home');
+            return;
+        }
+
+        $userId = (int)$_SESSION['user_id'];
+        $userRole = $_SESSION['user_role'] ?? '';
+        $isAdmin = in_array($userRole, self::ROLES, true);
+
+        // Vérification ownership : admin OU résident propriétaire
+        $isOwner = false;
+        if (!$isAdmin) {
+            $stmt = Database::getInstance()->getConnection()->prepare(
+                "SELECT user_id FROM residents_seniors WHERE id = ?"
+            );
+            $stmt->execute([$q['resident_id']]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $isOwner = $row && (int)$row['user_id'] === $userId;
+        }
+        if (!$isAdmin && !$isOwner) {
+            $this->setFlash('error', 'Accès refusé.');
+            $this->redirect('home');
+            return;
+        }
+
+        $this->view('comptabilite/quittance_printable', [
+            'title'      => 'Quittance ' . $q['numero_quittance'],
+            'q'          => $q,
+            'moisLabels' => self::MOIS_LABELS_FR,
+        ], false);
+    }
+
+    /**
+     * POST /comptabilite/quittanceMarquerPayee/{id}
+     */
+    public function quittanceMarquerPayee($id = null) {
+        $this->requireAuth();
+        $this->requireRole(self::ROLES);
+        $this->verifyCsrf();
+
+        $id = (int)$id;
+        $qrModel = new QuittanceResident();
+        $q = $qrModel->findById($id);
+        if (!$q || !in_array((int)$q['residence_id'], $this->residencesAccessibles(), true)) {
+            $this->setFlash('error', "Quittance introuvable ou non accessible.");
+            $this->redirect('comptabilite/quittancesResidents');
+            return;
+        }
+
+        $montant = (float)($_POST['montant_paye'] ?? $q['montant_du_total']);
+        $mode    = $_POST['mode_paiement'] ?? 'virement';
+        $ref     = trim((string)($_POST['reference_paiement'] ?? '')) ?: null;
+        $date    = trim((string)($_POST['date_paiement'] ?? '')) ?: null;
+
+        if ($qrModel->marquerPayee($id, $montant, $mode, $ref, $date, $this->getUserId())) {
+            $this->setFlash('success', "Quittance marquée comme payée.");
+        } else {
+            $this->setFlash('error', "Erreur lors du marquage.");
+        }
+        $this->redirect('comptabilite/quittanceShow/' . $id);
+    }
+
+    /**
+     * POST /comptabilite/quittanceAnnuler/{id}
+     */
+    public function quittanceAnnuler($id = null) {
+        $this->requireAuth();
+        $this->requireRole(self::ROLES);
+        $this->verifyCsrf();
+
+        $id = (int)$id;
+        $qrModel = new QuittanceResident();
+        $q = $qrModel->findById($id);
+        if (!$q || !in_array((int)$q['residence_id'], $this->residencesAccessibles(), true)) {
+            $this->setFlash('error', "Quittance introuvable ou non accessible.");
+            $this->redirect('comptabilite/quittancesResidents');
+            return;
+        }
+        if ($qrModel->annuler($id, $this->getUserId())) {
+            $this->setFlash('success', "Quittance annulée.");
+        } else {
+            $this->setFlash('error', "Annulation impossible (déjà payée ?).");
+        }
+        $this->redirect('comptabilite/quittanceShow/' . $id);
+    }
+
+    /**
+     * GET /comptabilite/quittanceProprioPrintable/{paiementId} — quittance loyer propriétaire.
+     */
+    public function quittanceProprioPrintable($paiementId = null) {
+        $this->requireAuth();
+        $paiementId = (int)$paiementId;
+
+        $stmt = Database::getInstance()->getConnection()->prepare(
+            "SELECT p.*, c.nom AS residence_nom, c.adresse AS residence_adresse, c.code_postal, c.ville,
+                    co.civilite, co.nom, co.prenom, co.adresse_principale, co.code_postal AS proprio_cp, co.ville AS proprio_ville,
+                    co.user_id AS proprio_user_id, e.raison_sociale AS exploitant_raison
+             FROM paiements_loyers_exploitant p
+             JOIN coproprietees c ON c.id = p.copropriete_id
+             JOIN coproprietaires co ON co.id = p.coproprietaire_id
+             LEFT JOIN exploitants e ON e.id = p.exploitant_id
+             WHERE p.id = ?"
+        );
+        $stmt->execute([$paiementId]);
+        $p = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$p) {
+            $this->setFlash('error', 'Quittance introuvable.');
+            $this->redirect('home');
+            return;
+        }
+
+        // Ownership : admin/comptable OU le propriétaire concerné
+        $userId = (int)$_SESSION['user_id'];
+        $userRole = $_SESSION['user_role'] ?? '';
+        $isAdmin = in_array($userRole, self::ROLES, true);
+        $isOwner = !$isAdmin && (int)$p['proprio_user_id'] === $userId;
+        if (!$isAdmin && !$isOwner) {
+            $this->setFlash('error', 'Accès refusé.');
+            $this->redirect('home');
+            return;
+        }
+
+        $this->view('comptabilite/quittance_proprio_printable', [
+            'title'      => 'Quittance loyer propriétaire ' . $p['mois'] . '/' . $p['annee'],
+            'p'          => $p,
+            'moisLabels' => self::MOIS_LABELS_FR,
+        ], false);
+    }
+
+    /**
+     * GET /comptabilite/impayes — vue unifiée avec auto-escalade.
+     */
+    public function impayes() {
+        $this->requireAuth();
+        $this->requireRole(self::ROLES);
+
+        $resAccessibles = $this->residencesAccessibles();
+
+        // Auto-escalade des quittances émises trop anciennes (Q7b)
+        $qrModel = new QuittanceResident();
+        $nbEscalades = $qrModel->escaladerImpayes();
+
+        $imModel = new Impaye();
+        $impayes = $imModel->listAll($resAccessibles);
+        $stats   = $imModel->getStats($resAccessibles);
+
+        // Filtre source si demandé
+        $sourceFilter = $_GET['source'] ?? null;
+        if ($sourceFilter && array_key_exists($sourceFilter, Relance::SOURCES)) {
+            $impayes = array_values(array_filter($impayes, fn($i) => $i['source_type'] === $sourceFilter));
+        }
+
+        $this->view('comptabilite/impayes_index', [
+            'title'        => 'Gestion des impayés - ' . APP_NAME,
+            'showNavbar'   => true,
+            'impayes'      => $impayes,
+            'stats'        => $stats,
+            'nbEscalades'  => $nbEscalades,
+            'sources'      => Relance::SOURCES,
+            'niveaux'      => Relance::NIVEAUX,
+            'sourceFilter' => $sourceFilter,
+            'flash'        => $this->getFlash(),
+        ], true);
+    }
+
+    /**
+     * POST /comptabilite/impayeRelancer — crée une relance + envoie messagerie.
+     */
+    public function impayeRelancer() {
+        $this->requireAuth();
+        $this->requireRole(self::ROLES);
+        $this->verifyCsrf();
+
+        $sourceType = $_POST['source_type'] ?? '';
+        $sourceId   = (int)($_POST['source_id'] ?? 0);
+        $niveau     = (int)($_POST['niveau'] ?? 0);
+
+        $imModel = new Impaye();
+        $detail  = $imModel->getDetail($sourceType, $sourceId);
+        if (!$detail || !in_array((int)$detail['residence_id'], $this->residencesAccessibles(), true)) {
+            $this->setFlash('error', 'Impayé introuvable ou non accessible.');
+            $this->redirect('comptabilite/impayes');
+            return;
+        }
+
+        $relanceModel = new Relance();
+        $template = $relanceModel->getTemplate($sourceType, $niveau);
+        $vars = [
+            'prenom'    => $detail['prenom'] ?? '',
+            'nom'       => $detail['nom'] ?? '',
+            'montant'   => number_format((float)$detail['montant_du'], 2, ',', ' '),
+            'periode'   => $detail['periode'] ?? '',
+            'numero'    => $detail['reference'] ?? '',
+            'residence' => $detail['residence_nom'] ?? '',
+            'date_n1'   => date('d/m/Y'),
+            'contact'   => 'comptabilite@domitys.fr',
+        ];
+        $sujet = trim($_POST['sujet'] ?? '') ?: Relance::appliquerVariables($template['sujet'], $vars);
+        $corps = trim($_POST['corps'] ?? '') ?: Relance::appliquerVariables($template['corps'], $vars);
+
+        try {
+            $relanceId = $relanceModel->creer(
+                $sourceType, $sourceId, $niveau,
+                (int)$detail['residence_id'],
+                (float)$detail['montant_du'],
+                $detail['tiers_user_id'] ? (int)$detail['tiers_user_id'] : null,
+                null,
+                $sujet, $corps, 'messagerie',
+                $this->getUserId()
+            );
+
+            // Envoi messagerie interne si destinataire a un user_id
+            if (!empty($detail['tiers_user_id'])) {
+                $this->envoyerMessageRelance(
+                    (int)$detail['tiers_user_id'],
+                    (int)$detail['residence_id'],
+                    $sujet, $corps,
+                    $niveau >= 2 ? 'haute' : 'normale',
+                    $relanceId
+                );
+            }
+
+            $this->setFlash('success', "Relance niveau $niveau envoyée.");
+        } catch (Throwable $e) {
+            $this->setFlash('error', 'Erreur : ' . $e->getMessage());
+        }
+        $this->redirect('comptabilite/impayes');
+    }
+
+    /**
+     * POST /comptabilite/impayeMarquerPaye/{src}/{id}
+     */
+    public function impayeMarquerPaye($src = null, $id = null) {
+        $this->requireAuth();
+        $this->requireRole(self::ROLES);
+        $this->verifyCsrf();
+
+        $src = (string)$src;
+        $id  = (int)$id;
+        if (!array_key_exists($src, Relance::SOURCES)) {
+            $this->setFlash('error', 'Source invalide.');
+            $this->redirect('comptabilite/impayes');
+            return;
+        }
+
+        $imModel = new Impaye();
+        $detail = $imModel->getDetail($src, $id);
+        if (!$detail || !in_array((int)$detail['residence_id'], $this->residencesAccessibles(), true)) {
+            $this->setFlash('error', 'Impayé introuvable ou non accessible.');
+            $this->redirect('comptabilite/impayes');
+            return;
+        }
+
+        if ($imModel->marquerPaye($src, $id, $this->getUserId())) {
+            $this->setFlash('success', 'Marqué comme payé. Les relances actives ont été clôturées.');
+        } else {
+            $this->setFlash('error', 'Action impossible (déjà payé ?).');
+        }
+        $this->redirect('comptabilite/impayes');
+    }
+
+    /**
+     * Crée le message interne de relance (helper).
+     */
+    private function envoyerMessageRelance(int $destinataireUserId, int $residenceId, string $sujet, string $contenu, string $priorite, int $relanceId): void {
+        try {
+            $msgModel = $this->model('Message');
+            $messageId = $msgModel->createMessage($this->getUserId(), [
+                'parent_id'    => null,
+                'sujet'        => $sujet,
+                'contenu'      => $contenu,
+                'priorite'     => $priorite,
+                'type_envoi'   => 'individuel',
+                'residence_id' => $residenceId,
+            ]);
+            $msgModel->addDestinataires($messageId, [$destinataireUserId]);
+
+            // Lier la relance au message créé
+            $stmt = Database::getInstance()->getConnection()->prepare(
+                "UPDATE impayes_relances SET message_id = ? WHERE id = ?"
+            );
+            $stmt->execute([$messageId, $relanceId]);
+        } catch (Throwable $e) {
+            // Best-effort — ne bloque pas la relance si la messagerie échoue
+            error_log('Envoi message relance échoué : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Envoie une notification messagerie automatique aux résidents
+     * dont la quittance vient d'être émise (Phase 13F — Q4b).
+     */
+    private function envoyerNotificationsQuittances(array $residenceIds, int $annee, int $mois): int {
+        if (empty($residenceIds)) return 0;
+        $resPh = implode(',', array_fill(0, count($residenceIds), '?'));
+        $stmt = Database::getInstance()->getConnection()->prepare(
+            "SELECT q.id, q.numero_quittance, q.residence_id, q.montant_du_total,
+                    rs.user_id AS resident_user_id, rs.prenom, rs.nom,
+                    c.nom AS residence_nom
+             FROM quittances_residents q
+             JOIN residents_seniors rs ON rs.id = q.resident_id
+             JOIN coproprietees c ON c.id = q.residence_id
+             WHERE q.residence_id IN ($resPh)
+               AND q.periode_annee = ? AND q.periode_mois = ?
+               AND q.statut = 'emise'
+               AND DATE(q.emis_at) = CURDATE()
+               AND rs.user_id IS NOT NULL"
+        );
+        $stmt->execute(array_merge(array_map('intval', $residenceIds), [$annee, $mois]));
+
+        $msgModel = $this->model('Message');
+        $count = 0;
+        $moisLabel = self::MOIS_LABELS_FR[$mois] ?? '';
+
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            try {
+                $sujet = "Votre quittance " . $row['numero_quittance'] . " est disponible";
+                $corps = "Bonjour " . $row['prenom'] . ",\n\n"
+                       . "Votre quittance pour le mois de $moisLabel $annee est désormais disponible "
+                       . "dans votre espace personnel.\n\n"
+                       . "Montant à régler : " . number_format((float)$row['montant_du_total'], 2, ',', ' ') . " €\n"
+                       . "Référence : " . $row['numero_quittance'] . "\n\n"
+                       . "Pour la consulter, rendez-vous dans Comptabilité > Mes quittances.\n\n"
+                       . "Cordialement,\n" . $row['residence_nom'];
+
+                $messageId = $msgModel->createMessage($this->getUserId(), [
+                    'parent_id'    => null,
+                    'sujet'        => $sujet,
+                    'contenu'      => $corps,
+                    'priorite'     => 'normale',
+                    'type_envoi'   => 'individuel',
+                    'residence_id' => (int)$row['residence_id'],
+                ]);
+                $msgModel->addDestinataires($messageId, [(int)$row['resident_user_id']]);
+                $count++;
+            } catch (Throwable $e) {
+                // best-effort
+            }
+        }
+        return $count;
+    }
+
+    // =================================================================
     //  AUDIT TRAIL (Phase 11)
     // =================================================================
 

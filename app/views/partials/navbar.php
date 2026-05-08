@@ -63,6 +63,9 @@
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/resident/comptabilite">
                             <i class="fas fa-chart-line me-2 text-success"></i> Mon budget
                         </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/resident/mesQuittances">
+                            <i class="fas fa-receipt me-2 text-success"></i> <strong>Mes quittances</strong>
+                        </a></li>
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/resident/declarationFiscale">
                             <i class="fas fa-file-invoice me-2 text-primary"></i> Déclaration fiscale
                         </a></li>
@@ -126,19 +129,19 @@
 
                 <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin', 'directeur_residence'])): ?>
 
-                <!-- Menu Copropriétés -->
+                <!-- Menu Résidences -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navCoproprietes" role="button" 
+                    <a class="nav-link dropdown-toggle" href="#" id="navResidences" role="button"
                        data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-building me-1 text-info"></i> Copropriétés
+                        <i class="fas fa-building me-1 text-info"></i> Résidences
                     </a>
-                    <ul class="dropdown-menu" aria-labelledby="navCoproprietes">
+                    <ul class="dropdown-menu" aria-labelledby="navResidences">
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/residences">
                             <i class="fas fa-list me-2 text-info"></i> Liste
                         </a></li>
                         <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/admin/createResidence">
-                            <i class="fas fa-plus me-2 text-success"></i> Nouvelle copropriété
+                            <i class="fas fa-plus me-2 text-success"></i> Nouvelle résidence
                         </a></li>
                         <?php endif; ?>
                     </ul>
@@ -254,6 +257,15 @@
                         </a></li>
                         <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/rapprochement">
                             <i class="fas fa-university me-2 text-info"></i> Rapprochement bancaire
+                        </a></li>
+
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="fas fa-receipt me-1"></i> Quittances &amp; impayés</h6></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/quittancesResidents">
+                            <i class="fas fa-receipt me-2 text-primary"></i> <strong>Quittances résidents</strong>
+                        </a></li>
+                        <li><a class="dropdown-item text-nowrap" href="<?php echo BASE_URL; ?>/comptabilite/impayes">
+                            <i class="fas fa-exclamation-triangle me-2 text-danger"></i> <strong>Gestion des impayés</strong> <small class="text-muted">(3 niveaux)</small>
                         </a></li>
 
                         <li><hr class="dropdown-divider"></li>
